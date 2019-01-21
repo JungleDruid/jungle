@@ -1,0 +1,19 @@
+{
+  "fonts": [
+    {
+      "name": "normal",
+      "file": "NotoSansCJKtc-Medium.otf",
+      "size": 24
+    },
+    {
+      "name": "big",
+      "file": "NotoSansCJKtc-Medium.otf",
+      "size": 32
+    },
+    {
+      "name": "small",
+      "file": "NotoSansCJKtc-Medium.otf",
+      "size": 16
+    }
+  ]
+}
