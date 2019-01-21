@@ -13,9 +13,10 @@ import com.kotcrab.vis.ui.VisUI
 import net.natruid.jungle.screens.AbstractScreen
 import net.natruid.jungle.screens.TestScreen
 import net.natruid.jungle.utils.MySkin
+import net.natruid.jungle.utils.ResizableClient
 import net.natruid.jungle.views.TestView
 
-class Jungle : ApplicationListener, InputProcessor {
+class Jungle(private val client: ResizableClient?) : ApplicationListener, InputProcessor {
     var batch: SpriteBatch? = null
         private set
 
@@ -94,7 +95,6 @@ class Jungle : ApplicationListener, InputProcessor {
 
     override fun keyUp(keycode: Int): Boolean {
         if (currentView?.stage?.keyUp(keycode) == true || currentScreen?.keyUp(keycode) == true) {
-            println("What?!")
             return true
         }
 
@@ -104,6 +104,9 @@ class Jungle : ApplicationListener, InputProcessor {
                 currentView?.stage?.clear()
                 createParser().createView(currentView, currentView!!.templateFile)
             }
+
+            client?.resize(1024, 768)
+
             return true
         }
 
