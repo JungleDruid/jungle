@@ -28,17 +28,15 @@ class TestScreen : AbstractScreen() {
                 }
             }
             entity {
-                with<TransformComponent> {
-                    //                    layer = Layer.UI
-                }
+                with<TransformComponent>()
                 with<LabelComponent> {
                     text = "測試 test with a long text abcdefghijklmnopqrstuvwxyz"
                     color = Color.RED
+                    width = 300f
                 }
             }
         }
         val root = table {
-            //            debug = true
             setFillParent(true)
             padBottom(20f)
             padLeft(100f)
@@ -55,7 +53,13 @@ class TestScreen : AbstractScreen() {
             label("Small 測試", "small") { l ->
                 l.padRight(20f)
             }
-            textButton("1") { b -> b.width(50f).pad(5f) }
+            label("newline\ntest", "small") { l ->
+                l.padRight(20f)
+            }
+            textButton("1") { b ->
+                b.width(50f).pad(5f)
+                isDisabled = true
+            }
             textButton("2") { b -> b.width(50f).pad(5f) }
             textButton("3") { b -> b.width(50f).pad(5f) }
             textButton("4") { b -> b.width(50f).pad(5f) }
@@ -71,6 +75,7 @@ class TestScreen : AbstractScreen() {
             renderSystem.camera.translate(cameraMovement)
             renderSystem.camera.update()
         }
+
         super.render(delta)
     }
 
@@ -92,7 +97,7 @@ class TestScreen : AbstractScreen() {
             cameraMovement.x += cameraSpeed
         }
 
-        return true
+        return false
     }
 
     override fun keyUp(keycode: Int): Boolean {
@@ -120,7 +125,7 @@ class TestScreen : AbstractScreen() {
             renderSystem.zoom += 0.2f
         }
 
-        return true
+        return false
     }
 
     override fun scrolled(amount: Int): Boolean {
@@ -129,6 +134,6 @@ class TestScreen : AbstractScreen() {
         }
 
         renderSystem.zoom += amount * 0.2f
-        return true
+        return false
     }
 }

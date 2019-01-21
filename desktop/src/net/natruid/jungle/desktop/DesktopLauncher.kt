@@ -8,5 +8,6 @@ fun main(arg: Array<String>) {
     val config = Lwjgl3ApplicationConfiguration()
     config.setTitle("Jungle")
     config.setWindowedMode(1024, 768)
+    config.setResizable(false)
     Lwjgl3Application(Jungle(), config)
 }

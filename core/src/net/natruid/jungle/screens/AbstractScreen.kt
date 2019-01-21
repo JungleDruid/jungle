@@ -3,15 +3,15 @@ package net.natruid.jungle.screens
 import com.badlogic.ashley.core.PooledEngine
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.Screen
-import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.utils.viewport.ScreenViewport
+import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.systems.RenderSystem
 
 abstract class AbstractScreen : Screen, InputProcessor {
     protected val engine = PooledEngine()
-    protected val renderSystem = RenderSystem(SpriteBatch())
-    protected val stage = Stage(ScreenViewport())
+    protected val renderSystem = RenderSystem(Jungle.instance!!.batch!!)
+    val stage = Stage(ScreenViewport())
 
     init {
         engine.addSystem(renderSystem)
@@ -63,12 +63,7 @@ abstract class AbstractScreen : Screen, InputProcessor {
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-        if (stage.touchDown(screenX, screenY, pointer, button)) {
-            return true
-        }
-
-        stage.unfocusAll()
-        return false
+        return stage.touchDown(screenX, screenY, pointer, button)
     }
 
     override fun hide() {}

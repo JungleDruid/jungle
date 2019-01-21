@@ -10,5 +10,4 @@ class LabelComponent : Component {
     var color = Color.WHITE!!
     var width = 0f
     var align = Align.topLeft
-    var wrap = false
 }

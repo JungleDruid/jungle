@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!DOCTYPE window SYSTEM "lml.dtd">
+
+<window title="Hello Window">
+    <label width="200" wrap="true">
+        Lalalalala lalalalala lalalalalalalalalalala 中文測試
+        棒棒
+    </label>
+    <textfield row="true">
+        Test LML
+    </textfield>
+    <textfield row="true">
+        Another LML Field
+    </textfield>
+    <linklabel>
+        https://duckduckgo.org
+    </linklabel>
+</window>

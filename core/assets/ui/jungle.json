@@ -32,7 +32,7 @@
     },
     "t-highlight": {
       "r": 0.5,
-      "g": 0.85,
+      "g": 0.75,
       "b": 0.05,
       "a": 1
     },
@@ -57,25 +57,25 @@
     "t-light": {
       "r": 0.3,
       "g": 0.4,
-      "b": 0.3,
+      "b": 0.1,
       "a": 1
     },
     "t-medium": {
-      "r": 0.1,
+      "r": 0.15,
       "g": 0.2,
-      "b": 0.1,
+      "b": 0,
       "a": 1
     },
     "t-medium-dark": {
       "r": 0.10,
-      "g": 0.20,
-      "b": 0.10,
+      "g": 0.15,
+      "b": 0,
       "a": 1
     },
     "t-dark": {
       "r": 0.05,
-      "g": 0.15,
-      "b": 0.05,
+      "g": 0.10,
+      "b": 0,
       "a": 1
     },
     "t-alpha": {
@@ -531,23 +531,23 @@
   },
   "com.badlogic.gdx.scenes.scene2d.ui.Window$WindowStyle": {
     "default": {
-      "titleFont": "normal",
+      "titleFont": "small",
       "background": "window",
       "titleFontColor": "white"
     },
     "resizable": {
       "background": "window-resizable",
-      "titleFont": "normal",
+      "titleFont": "small",
       "titleFontColor": "white"
     },
     "noborder": {
       "background": "window-noborder",
-      "titleFont": "normal",
+      "titleFont": "small",
       "titleFontColor": "white"
     },
     "dialog": {
       "stageBackground": "dialogDim",
-      "titleFont": "normal",
+      "titleFont": "small",
       "background": "window",
       "titleFontColor": "white"
     }

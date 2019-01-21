@@ -1,9 +1,9 @@
 package net.natruid.jungle.systems
 
 import com.badlogic.ashley.core.Entity
-import com.badlogic.ashley.core.Family
 import com.badlogic.ashley.systems.SortedIteratingSystem
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
@@ -18,11 +18,8 @@ import net.natruid.jungle.utils.Layer
 import java.lang.Float.max
 import java.lang.Float.min
 
-class RenderSystem private constructor(
-        private val batch: SpriteBatch,
-        family: Family?,
-        comparator: Comparator<Entity>
-) : SortedIteratingSystem(family, comparator) {
+class RenderSystem(private val batch: SpriteBatch)
+    : SortedIteratingSystem(allOf(TransformComponent::class).get(), ZComparator()) {
 
     val camera = OrthographicCamera(Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
     var zoom: Float
@@ -37,9 +34,6 @@ class RenderSystem private constructor(
     private val labelMapper = mapperFor<LabelComponent>()
     private val glyphLayout = GlyphLayout()
     private var layer = Layer.DEFAULT.value
-
-    constructor(batch: SpriteBatch)
-            : this(batch, allOf(TransformComponent::class).get(), ZComparator())
 
     class ZComparator : Comparator<Entity> {
         private val transformMapper = mapperFor<TransformComponent>()
@@ -84,7 +78,7 @@ class RenderSystem private constructor(
         val label = labelMapper[entity]
         if (label != null) {
             val font = Data.Fonts[label.fontName]
-            glyphLayout.setText(font, label.text, label.color, label.width, label.align, label.wrap)
+            glyphLayout.setText(font, label.text, label.color, label.width, label.align, label.width > 0f)
             val originX = glyphLayout.width * transform.pivot.x
             val originY = glyphLayout.height * transform.pivot.y
             font.draw(batch, glyphLayout, transform.position.x - originX, transform.position.y - originY)
@@ -92,6 +86,7 @@ class RenderSystem private constructor(
     }
 
     override fun update(deltaTime: Float) {
+        batch.color = Color.WHITE
         batch.projectionMatrix = camera.combined
         batch.enableBlending()
         batch.use {
