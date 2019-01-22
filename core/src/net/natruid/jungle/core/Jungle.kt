@@ -154,7 +154,12 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
         val debug = ManagementFactory.getRuntimeMXBean().inputArguments.toString().indexOf("-agentlib:jdwp") > 0
         val lmlParser: LmlParser by lazy { VisLml.parser().i18nBundle(Marsh.I18N["assets/locale/UI"]).build() }
 
-        var instance: Jungle? = null
-            private set
+        @Suppress("ObjectPropertyName")
+        private var _instance: Jungle? = null
+        var instance: Jungle
+            get() = _instance!!
+            private set(value) {
+                _instance = value
+            }
     }
 }
