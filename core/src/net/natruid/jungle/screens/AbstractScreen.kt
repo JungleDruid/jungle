@@ -35,35 +35,35 @@ abstract class AbstractScreen : Screen, InputProcessor {
     }
 
     override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-        return stage.touchUp(screenX, screenY, pointer, button)
+        return false
     }
 
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
-        return stage.mouseMoved(screenX, screenY)
+        return false
     }
 
     override fun keyTyped(character: Char): Boolean {
-        return stage.keyTyped(character)
+        return false
     }
 
     override fun scrolled(amount: Int): Boolean {
-        return stage.scrolled(amount)
+        return false
     }
 
     override fun keyUp(keycode: Int): Boolean {
-        return stage.keyUp(keycode)
+        return false
     }
 
     override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
-        return stage.touchDragged(screenX, screenY, pointer)
+        return false
     }
 
     override fun keyDown(keycode: Int): Boolean {
-        return stage.keyDown(keycode)
+        return false
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-        return stage.touchDown(screenX, screenY, pointer, button)
+        return false
     }
 
     override fun hide() {}

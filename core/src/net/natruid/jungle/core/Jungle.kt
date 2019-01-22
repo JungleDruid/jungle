@@ -24,6 +24,7 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
 
     private var currentScreen: AbstractScreen? = null
     private var currentView: AbstractLmlView? = null
+    private val inputProcessors = ArrayList<InputProcessor>()
 
     init {
         instance = this
@@ -58,14 +59,28 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
     }
 
     private fun setScreen(screen: AbstractScreen) {
+        inputProcessors.clear()
         currentScreen?.dispose()
 
         currentScreen = screen
+        if (currentScreen != null) {
+            inputProcessors.add(currentScreen!!.stage)
+            inputProcessors.add(currentScreen!!)
+        }
     }
 
     private fun setView(view: AbstractView?) {
-        currentView?.dispose()
+        if (currentView != null) {
+            if (inputProcessors.contains(currentView!!.stage)) {
+                inputProcessors.remove(currentView!!.stage)
+            }
+            currentView?.dispose()
+        }
+
         currentView = view
+        if (currentView != null) {
+            inputProcessors.add(0, currentView!!.stage)
+        }
     }
 
     override fun pause() {
@@ -82,28 +97,45 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
     }
 
     override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-        return currentView?.stage?.touchUp(screenX, screenY, pointer, button) == true
-                || currentScreen?.touchUp(screenX, screenY, pointer, button) == true
+        for (processor in inputProcessors) {
+            if (processor.touchUp(screenX, screenY, pointer, button))
+                return true
+        }
+
+        return false
     }
 
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
-        return currentView?.stage?.mouseMoved(screenX, screenY) == true
-                || currentScreen?.mouseMoved(screenX, screenY) == true
+        for (processor in inputProcessors) {
+            if (processor.mouseMoved(screenX, screenY))
+                return true
+        }
+
+        return false
     }
 
     override fun keyTyped(character: Char): Boolean {
-        return currentView?.stage?.keyTyped(character) == true
-                || currentScreen?.keyTyped(character) == true
+        for (processor in inputProcessors) {
+            if (processor.keyTyped(character))
+                return true
+        }
+
+        return false
     }
 
     override fun scrolled(amount: Int): Boolean {
-        return currentView?.stage?.scrolled(amount) == true
-                || currentScreen?.scrolled(amount) == true
+        for (processor in inputProcessors) {
+            if (processor.scrolled(amount))
+                return true
+        }
+
+        return false
     }
 
     override fun keyUp(keycode: Int): Boolean {
-        if (currentView?.stage?.keyUp(keycode) == true || currentScreen?.keyUp(keycode) == true) {
-            return true
+        for (processor in inputProcessors) {
+            if (processor.keyUp(keycode))
+                return true
         }
 
         if (debug && keycode == Input.Keys.R) {
@@ -122,8 +154,12 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
     }
 
     override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
-        return currentView?.stage?.touchDragged(screenX, screenY, pointer) == true
-                || currentScreen?.touchDragged(screenX, screenY, pointer) == true
+        for (processor in inputProcessors) {
+            if (processor.touchDragged(screenX, screenY, pointer))
+                return true
+        }
+
+        return false
     }
 
     override fun keyDown(keycode: Int): Boolean {
@@ -131,18 +167,22 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
             unfocusAll()
         }
 
-        return currentView?.stage?.keyDown(keycode) == true
-                || currentScreen?.keyDown(keycode) == true
+        for (processor in inputProcessors) {
+            if (processor.keyDown(keycode))
+                return true
+        }
+
+        return false
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-        if (currentView?.stage?.touchDown(screenX, screenY, pointer, button) == true) {
-            return true
+        unfocusAll()
+        for (processor in inputProcessors) {
+            if (processor.touchDown(screenX, screenY, pointer, button))
+                return true
         }
 
-        unfocusAll()
-
-        return currentScreen?.touchDown(screenX, screenY, pointer, button) == true
+        return false
     }
 
     fun unfocusAll() {

@@ -47,9 +47,7 @@ class FieldScreen : AbstractScreen() {
     private val cameraSpeed = 10f
 
     override fun keyDown(keycode: Int): Boolean {
-        if (super.keyDown(keycode)) {
-            return true
-        }
+        super.keyDown(keycode)
 
         if (keycode == Input.Keys.W) {
             cameraMovement.y += cameraSpeed
@@ -68,9 +66,7 @@ class FieldScreen : AbstractScreen() {
     }
 
     override fun keyUp(keycode: Int): Boolean {
-        if (super.keyUp(keycode)) {
-            return true
-        }
+        super.keyUp(keycode)
 
         if (keycode == Input.Keys.W) {
             cameraMovement.y -= cameraSpeed
@@ -96,10 +92,7 @@ class FieldScreen : AbstractScreen() {
     }
 
     override fun scrolled(amount: Int): Boolean {
-        if (stage.scrolled(amount)) {
-            return true
-        }
-
+        super.scrolled(amount)
         renderSystem.zoom += amount * 0.2f
         return false
     }

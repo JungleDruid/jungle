@@ -2,7 +2,7 @@
 <!DOCTYPE window SYSTEM "lml.dtd">
 
 <window title="@title">
-    <label width="200" wrap="true">
+    <label width="500" wrap="true">
         Lalalalala lalalalala lalalalalalalalalalala 中文測試
         棒棒
     </label>
