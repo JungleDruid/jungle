@@ -11,15 +11,16 @@ import com.github.czyzby.lml.parser.impl.AbstractLmlView
 import com.github.czyzby.lml.vis.util.VisLml
 import com.kotcrab.vis.ui.VisUI
 import net.natruid.jungle.screens.AbstractScreen
+import net.natruid.jungle.screens.FieldScreen
 import net.natruid.jungle.screens.TestScreen
 import net.natruid.jungle.utils.Bark
-import net.natruid.jungle.utils.DesktopClient
+import net.natruid.jungle.utils.Client
+import net.natruid.jungle.views.AbstractView
 import net.natruid.jungle.views.TestView
 import java.lang.management.ManagementFactory
 
-class Jungle(private val client: DesktopClient?) : ApplicationListener, InputProcessor {
-    var batch: SpriteBatch? = null
-        private set
+class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
+    val batch by lazy { SpriteBatch() }
 
     private var currentScreen: AbstractScreen? = null
     private var currentView: AbstractLmlView? = null
@@ -31,18 +32,14 @@ class Jungle(private val client: DesktopClient?) : ApplicationListener, InputPro
     override fun create() {
         Marsh.load()
 
-        batch = SpriteBatch()
         Gdx.input.inputProcessor = this
 
         VisUI.load(Bark("assets/ui/jungle.json"))
 
         val bundle = Marsh.I18N["assets/locale/UI"]
-        client?.setTitle(bundle["title"])
+        client.setTitle(bundle["title"])
 
-        currentView = TestView()
-        createParser().createView(currentView, currentView?.templateFile)
-
-        setScreen(TestScreen())
+        setScreen(FieldScreen())
     }
 
     override fun render() {
@@ -56,7 +53,7 @@ class Jungle(private val client: DesktopClient?) : ApplicationListener, InputPro
 
     override fun dispose() {
         currentScreen?.dispose()
-        batch?.dispose()
+        batch.dispose()
         VisUI.dispose()
     }
 
@@ -64,6 +61,11 @@ class Jungle(private val client: DesktopClient?) : ApplicationListener, InputPro
         currentScreen?.dispose()
 
         currentScreen = screen
+    }
+
+    private fun setView(view: AbstractView?) {
+        currentView?.dispose()
+        currentView = view
     }
 
     override fun pause() {
@@ -105,13 +107,13 @@ class Jungle(private val client: DesktopClient?) : ApplicationListener, InputPro
         }
 
         if (debug && keycode == Input.Keys.R) {
-            setScreen(TestScreen())
-            if (currentView != null) {
-                currentView?.stage?.clear()
-                createParser().createView(currentView, currentView!!.templateFile)
+            if (currentScreen is TestScreen) {
+                setScreen(FieldScreen())
+                setView(null)
+            } else {
+                setScreen(TestScreen())
+                setView(AbstractView.createView<TestView>())
             }
-
-            client?.resize(1024, 768)
 
             return true
         }
@@ -150,12 +152,9 @@ class Jungle(private val client: DesktopClient?) : ApplicationListener, InputPro
 
     companion object {
         val debug = ManagementFactory.getRuntimeMXBean().inputArguments.toString().indexOf("-agentlib:jdwp") > 0
+        val lmlParser: LmlParser by lazy { VisLml.parser().i18nBundle(Marsh.I18N["assets/locale/UI"]).build() }
 
         var instance: Jungle? = null
             private set
-
-        fun createParser(): LmlParser {
-            return VisLml.parser().i18nBundle(Marsh.I18N["assets/locale/UI"]).build()
-        }
     }
 }

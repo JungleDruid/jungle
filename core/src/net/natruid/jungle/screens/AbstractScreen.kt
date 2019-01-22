@@ -10,7 +10,7 @@ import net.natruid.jungle.systems.RenderSystem
 
 abstract class AbstractScreen : Screen, InputProcessor {
     protected val engine = PooledEngine()
-    protected val renderSystem = RenderSystem(Jungle.instance!!.batch!!)
+    protected val renderSystem = RenderSystem(Jungle.instance!!.batch)
     val stage = Stage(ScreenViewport())
 
     init {
