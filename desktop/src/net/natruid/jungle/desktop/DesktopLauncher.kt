@@ -3,10 +3,12 @@ package net.natruid.jungle.desktop
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
 import net.natruid.jungle.core.Jungle
-import net.natruid.jungle.utils.ResizableClient
+import net.natruid.jungle.utils.DesktopClient
 import org.lwjgl.glfw.GLFW
 
-object DesktopLauncher : ResizableClient {
+object DesktopLauncher : DesktopClient {
+    private var window = 0L
+
     @JvmStatic
     fun main(arg: Array<String>) {
         val config = Lwjgl3ApplicationConfiguration()
@@ -17,12 +19,28 @@ object DesktopLauncher : ResizableClient {
     }
 
     override fun resize(width: Int, height: Int): Boolean {
-        val window = GLFW.glfwGetCurrentContext()
-        if (window > 0) {
+        if (checkWindow()) {
             GLFW.glfwSetWindowSize(window, width, height)
             return true
         }
 
         return false
+    }
+
+    override fun setTitle(title: String): Boolean {
+        if (checkWindow()) {
+            GLFW.glfwSetWindowTitle(window, title)
+            return true
+        }
+
+        return false
+    }
+
+    private fun checkWindow(): Boolean {
+        if (window <= 0L) {
+            window = GLFW.glfwGetCurrentContext()
+        }
+
+        return window > 0L
     }
 }

@@ -6,17 +6,21 @@ import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.utils.I18NBundle
 import com.github.czyzby.lml.parser.LmlParser
 import com.github.czyzby.lml.parser.impl.AbstractLmlView
 import com.github.czyzby.lml.vis.util.VisLml
 import com.kotcrab.vis.ui.VisUI
 import net.natruid.jungle.screens.AbstractScreen
 import net.natruid.jungle.screens.TestScreen
+import net.natruid.jungle.utils.DesktopClient
 import net.natruid.jungle.utils.MySkin
-import net.natruid.jungle.utils.ResizableClient
 import net.natruid.jungle.views.TestView
+import java.io.File
+import java.lang.management.ManagementFactory
+import java.nio.file.Paths
 
-class Jungle(private val client: ResizableClient?) : ApplicationListener, InputProcessor {
+class Jungle(private val client: DesktopClient?) : ApplicationListener, InputProcessor {
     var batch: SpriteBatch? = null
         private set
 
@@ -25,18 +29,26 @@ class Jungle(private val client: ResizableClient?) : ApplicationListener, InputP
 
     init {
         instance = this
+        isDebug = ManagementFactory.getRuntimeMXBean().inputArguments.indexOf("-agentlib:jdwp") > 0
     }
 
     override fun create() {
-        batch = SpriteBatch()
+        println(File(this::class.java.protectionDomain.codeSource.location.toURI()).path)
+        println(Paths.get("").toAbsolutePath().toString())
         Data.load()
-        VisUI.load(MySkin("ui/jungle.json"))
+
+        batch = SpriteBatch()
+        Gdx.input.inputProcessor = this
+
+        VisUI.load(MySkin("assets/ui/jungle.json"))
+
+        val bundle = I18NBundle.createBundle(Gdx.files.internal("assets/locale/UI"))
+        client?.setTitle(bundle["title"])
+
         currentView = TestView()
         createParser().createView(currentView, currentView?.templateFile)
 
         setScreen(TestScreen())
-
-        Gdx.input.inputProcessor = this
     }
 
     override fun render() {
@@ -144,6 +156,9 @@ class Jungle(private val client: ResizableClient?) : ApplicationListener, InputP
 
     companion object {
         var instance: Jungle? = null
+            private set
+
+        var isDebug = false
             private set
 
         fun createParser(): LmlParser {

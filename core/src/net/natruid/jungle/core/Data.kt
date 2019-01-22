@@ -31,7 +31,7 @@ object Data {
     }
 
     fun load() {
-        val jsonFiles = getFiles("data/", "json", true)
+        val jsonFiles = getFiles("assets/data/", "json", true)
         val json = Json()
 
         for (f in jsonFiles) {
@@ -46,7 +46,7 @@ object Data {
     private fun getFiles(path: String, ext: String, recursive: Boolean, list: ArrayList<FileHandle> = ArrayList())
             : List<FileHandle> {
 
-        val dir = Gdx.files.local(path)
+        val dir = Gdx.files.internal(path)
 
         if (!dir.isDirectory) {
             error("[Data] getFiles: $path is not a directory.")
@@ -74,7 +74,7 @@ object Data {
                 "fonts" -> {
                     for (fontDefJson in j) {
                         val def = json.readValue(FontDef::class.java, fontDefJson)
-                        val generator = FreeTypeFontGenerator(Gdx.files.local("fonts/" + def.file))
+                        val generator = FreeTypeFontGenerator(Gdx.files.internal("assets/fonts/" + def.file))
                         val font = generator.generateFont {
                             incremental = true
                             size = def.size

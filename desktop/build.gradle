@@ -23,19 +23,6 @@ task debug(dependsOn: classes, type: JavaExec) {
     debug = true
 }
 
-task dist(type: Jar) {
-    from files(sourceSets.main.output.classesDirs)
-    from files(sourceSets.main.output.resourcesDir)
-    from {configurations.compile.collect {zipTree(it)}}
-//    from files(project.assetsDir as File)
-
-    manifest {
-        attributes 'Main-Class': project.mainClassName
-    }
-}
-
-dist.dependsOn classes
-
 eclipse {
     project {
         name = appName + "-desktop"
@@ -54,16 +41,23 @@ task afterEclipseImport(description: "Post processing after project generation",
     }
 }
 
-task publish {
+jar {
     delete "../publish"
+    archiveName "../../../publish/Jungle-${version}.jar"
+    from {
+        files(sourceSets.main.output.classesDirs)
+        files(sourceSets.main.output.resourcesDir)
+        exclude "assets/"
+        configurations.compile.collect {
+            zipTree(it)
+        }
+    }
+
+    manifest {
+        attributes 'Main-Class': project.mainClassName
+    }
     copy {
         from "${assetsDir}"
         into "../publish"
     }
-    copy {
-        from "build/libs"
-        into "../publish"
-    }
 }
-
-publish.finalizedBy dist

@@ -24,7 +24,7 @@ class TestScreen : AbstractScreen() {
             entity {
                 with<TransformComponent>()
                 with<TextureComponent> {
-                    region = TextureRegion(Texture("badlogic.jpg"))
+                    region = TextureRegion(Texture("assets/badlogic.jpg"))
                 }
             }
             entity {

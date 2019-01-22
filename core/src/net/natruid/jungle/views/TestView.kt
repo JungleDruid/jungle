@@ -9,6 +9,6 @@ class TestView : AbstractView() {
     }
 
     override fun getTemplateFile(): FileHandle {
-        return Gdx.files.local("templates/test.lml")
+        return Gdx.files.internal("assets/templates/test.lml")
     }
 }

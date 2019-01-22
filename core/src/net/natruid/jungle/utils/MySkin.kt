@@ -7,7 +7,7 @@ import net.natruid.jungle.core.Data
 
 class MySkin(skinFile: String) : Skin() {
     init {
-        val file = Gdx.files.local(skinFile)
+        val file = Gdx.files.internal(skinFile)
 
         for (f in Data.getFontDefs()) {
             add(f.name, Data.Fonts[f.name])
