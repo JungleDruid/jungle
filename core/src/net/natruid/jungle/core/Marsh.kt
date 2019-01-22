@@ -20,6 +20,7 @@ object Marsh {
     }
 
     private val fontDefs = ArrayList<FontDef>()
+    private val fontGeneratorMap = HashMap<String, FreeTypeFontGenerator>()
     private var fonts = HashMap<String, BitmapFont>()
 
     object Fonts {
@@ -77,7 +78,13 @@ object Marsh {
                 "fonts" -> {
                     for (fontDefJson in j) {
                         val def = json.readValue(FontDef::class.java, fontDefJson)
-                        val generator = FreeTypeFontGenerator(Scout["assets/fonts/" + def.file])
+                        val fontPath = "assets/fonts/" + def.file
+                        var generator = fontGeneratorMap[fontPath]
+                        if (generator == null) {
+                            generator = FreeTypeFontGenerator(Scout[fontPath])
+                            fontGeneratorMap[fontPath] = generator
+                        }
+
                         val font = generator.generateFont {
                             incremental = true
                             size = def.size
@@ -90,6 +97,7 @@ object Marsh {
                         fontDefs.add(def)
                     }
                 }
+                else -> println("[Warning] Found unknown property ${j.name} in ${file.name()}")
             }
         }
     }

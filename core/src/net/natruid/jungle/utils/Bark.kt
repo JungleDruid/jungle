@@ -1,10 +1,13 @@
+/**
+ * Skin with TTF support
+ */
 package net.natruid.jungle.utils
 
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import net.natruid.jungle.core.Marsh
 
-class MySkin(skinFile: String) : Skin() {
+class Bark(skinFile: String) : Skin() {
     init {
         val file = Scout[skinFile]
 

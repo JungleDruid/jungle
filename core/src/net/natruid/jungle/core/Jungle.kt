@@ -13,8 +13,8 @@ import com.github.czyzby.lml.vis.util.VisLml
 import com.kotcrab.vis.ui.VisUI
 import net.natruid.jungle.screens.AbstractScreen
 import net.natruid.jungle.screens.TestScreen
+import net.natruid.jungle.utils.Bark
 import net.natruid.jungle.utils.DesktopClient
-import net.natruid.jungle.utils.MySkin
 import net.natruid.jungle.utils.Scout
 import net.natruid.jungle.views.TestView
 import java.lang.management.ManagementFactory
@@ -36,7 +36,7 @@ class Jungle(private val client: DesktopClient?) : ApplicationListener, InputPro
         batch = SpriteBatch()
         Gdx.input.inputProcessor = this
 
-        VisUI.load(MySkin("assets/ui/jungle.json"))
+        VisUI.load(Bark("assets/ui/jungle.json"))
 
         val bundle = I18NBundle.createBundle(Scout["assets/locale/UI"])
         client?.setTitle(bundle["title"])

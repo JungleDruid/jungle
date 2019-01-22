@@ -41,9 +41,17 @@ task afterEclipseImport(description: "Post processing after project generation",
     }
 }
 
-jar {
+task zipAssets(type: Zip) {
     delete "../publish"
-    archiveName "../../../publish/Jungle-${version}.jar"
+    from "${assetsDir}"
+    include "**/*"
+    archiveName "assets.zip"
+    destinationDir(file("../publish"))
+}
+
+jar {
+    archiveName "Jungle-${version}.jar"
+    destinationDir(file("../publish"))
     from {
         files(sourceSets.main.output.classesDirs)
         files(sourceSets.main.output.resourcesDir)
@@ -56,8 +64,6 @@ jar {
     manifest {
         attributes 'Main-Class': project.mainClassName
     }
-    copy {
-        from "${assetsDir}"
-        into "../publish"
-    }
 }
+
+jar.dependsOn(zipAssets)
