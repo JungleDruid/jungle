@@ -13,7 +13,7 @@ import ktx.graphics.use
 import net.natruid.jungle.components.LabelComponent
 import net.natruid.jungle.components.TextureComponent
 import net.natruid.jungle.components.TransformComponent
-import net.natruid.jungle.core.Data
+import net.natruid.jungle.core.Marsh
 import net.natruid.jungle.utils.Layer
 import java.lang.Float.max
 import java.lang.Float.min
@@ -77,7 +77,7 @@ class RenderSystem(private val batch: SpriteBatch)
 
         val label = labelMapper[entity]
         if (label != null) {
-            val font = Data.Fonts[label.fontName]
+            val font = Marsh.Fonts[label.fontName]
             glyphLayout.setText(font, label.text, label.color, label.width, label.align, label.width > 0f)
             val originX = glyphLayout.width * transform.pivot.x
             val originY = glyphLayout.height * transform.pivot.y

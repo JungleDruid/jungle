@@ -12,7 +12,8 @@ import ktx.vis.table
 import net.natruid.jungle.components.LabelComponent
 import net.natruid.jungle.components.TextureComponent
 import net.natruid.jungle.components.TransformComponent
-import net.natruid.jungle.core.Data
+import net.natruid.jungle.core.Marsh
+import net.natruid.jungle.utils.Scout
 
 class TestScreen : AbstractScreen() {
     private val cameraSpeed = 10f
@@ -24,7 +25,7 @@ class TestScreen : AbstractScreen() {
             entity {
                 with<TransformComponent>()
                 with<TextureComponent> {
-                    region = TextureRegion(Texture("assets/badlogic.jpg"))
+                    region = TextureRegion(Texture(Scout["assets/badlogic.jpg"]))
                 }
             }
             entity {
@@ -45,7 +46,7 @@ class TestScreen : AbstractScreen() {
 
             label("Big 測試") { l ->
                 l.padRight(20f)
-                style = Label.LabelStyle(Data.Fonts["big"], Color.YELLOW)
+                style = Label.LabelStyle(Marsh.Fonts["big"], Color.YELLOW)
             }
             label("Normal 測試") { l ->
                 l.padRight(20f)

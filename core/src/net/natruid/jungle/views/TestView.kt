@@ -1,7 +1,7 @@
 package net.natruid.jungle.views
 
-import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.files.FileHandle
+import net.natruid.jungle.utils.Scout
 
 class TestView : AbstractView() {
     override fun getViewId(): String {
@@ -9,6 +9,6 @@ class TestView : AbstractView() {
     }
 
     override fun getTemplateFile(): FileHandle {
-        return Gdx.files.internal("assets/templates/test.lml")
+        return Scout["assets/templates/test.lml"]
     }
 }

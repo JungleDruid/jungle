@@ -15,10 +15,9 @@ import net.natruid.jungle.screens.AbstractScreen
 import net.natruid.jungle.screens.TestScreen
 import net.natruid.jungle.utils.DesktopClient
 import net.natruid.jungle.utils.MySkin
+import net.natruid.jungle.utils.Scout
 import net.natruid.jungle.views.TestView
-import java.io.File
 import java.lang.management.ManagementFactory
-import java.nio.file.Paths
 
 class Jungle(private val client: DesktopClient?) : ApplicationListener, InputProcessor {
     var batch: SpriteBatch? = null
@@ -29,20 +28,17 @@ class Jungle(private val client: DesktopClient?) : ApplicationListener, InputPro
 
     init {
         instance = this
-        isDebug = ManagementFactory.getRuntimeMXBean().inputArguments.indexOf("-agentlib:jdwp") > 0
     }
 
     override fun create() {
-        println(File(this::class.java.protectionDomain.codeSource.location.toURI()).path)
-        println(Paths.get("").toAbsolutePath().toString())
-        Data.load()
+        Marsh.load()
 
         batch = SpriteBatch()
         Gdx.input.inputProcessor = this
 
         VisUI.load(MySkin("assets/ui/jungle.json"))
 
-        val bundle = I18NBundle.createBundle(Gdx.files.internal("assets/locale/UI"))
+        val bundle = I18NBundle.createBundle(Scout["assets/locale/UI"])
         client?.setTitle(bundle["title"])
 
         currentView = TestView()
@@ -110,7 +106,7 @@ class Jungle(private val client: DesktopClient?) : ApplicationListener, InputPro
             return true
         }
 
-        if (keycode == Input.Keys.R) {
+        if (debug && keycode == Input.Keys.R) {
             setScreen(TestScreen())
             if (currentView != null) {
                 currentView?.stage?.clear()
@@ -155,10 +151,9 @@ class Jungle(private val client: DesktopClient?) : ApplicationListener, InputPro
     }
 
     companion object {
-        var instance: Jungle? = null
-            private set
+        val debug = ManagementFactory.getRuntimeMXBean().inputArguments.toString().indexOf("-agentlib:jdwp") > 0
 
-        var isDebug = false
+        var instance: Jungle? = null
             private set
 
         fun createParser(): LmlParser {

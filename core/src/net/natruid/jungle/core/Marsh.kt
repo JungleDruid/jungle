@@ -1,6 +1,8 @@
+/**
+ * Data Manager
+ */
 package net.natruid.jungle.core
 
-import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.files.FileHandle
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
@@ -8,8 +10,9 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.utils.Json
 import com.badlogic.gdx.utils.JsonReader
 import ktx.freetype.generateFont
+import net.natruid.jungle.utils.Scout
 
-object Data {
+object Marsh {
     class FontDef {
         val name: String = ""
         val file: String = ""
@@ -46,10 +49,10 @@ object Data {
     private fun getFiles(path: String, ext: String, recursive: Boolean, list: ArrayList<FileHandle> = ArrayList())
             : List<FileHandle> {
 
-        val dir = Gdx.files.internal(path)
+        val dir = Scout[path]
 
         if (!dir.isDirectory) {
-            error("[Data] getFiles: $path is not a directory.")
+            error("[Marsh] getFiles: $path is not a directory.")
         }
 
         for (f in dir.list()) {
@@ -66,7 +69,7 @@ object Data {
     private fun readJson(json: Json, file: FileHandle) {
         val root = JsonReader().parse(file)
         if (!root.isObject) {
-            error("[Data] readJson: ${file.path()} is not a json object.")
+            error("[Marsh] readJson: ${file.path()} is not a json object.")
         }
 
         for (j in root) {
@@ -74,7 +77,7 @@ object Data {
                 "fonts" -> {
                     for (fontDefJson in j) {
                         val def = json.readValue(FontDef::class.java, fontDefJson)
-                        val generator = FreeTypeFontGenerator(Gdx.files.internal("assets/fonts/" + def.file))
+                        val generator = FreeTypeFontGenerator(Scout["assets/fonts/" + def.file])
                         val font = generator.generateFont {
                             incremental = true
                             size = def.size
