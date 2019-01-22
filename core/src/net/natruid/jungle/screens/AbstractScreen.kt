@@ -1,38 +1,25 @@
 package net.natruid.jungle.screens
 
 import com.badlogic.ashley.core.PooledEngine
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.Screen
-import com.badlogic.gdx.scenes.scene2d.Stage
-import com.badlogic.gdx.utils.viewport.ScreenViewport
-import net.natruid.jungle.core.Jungle
-import net.natruid.jungle.systems.RenderSystem
+import com.badlogic.gdx.graphics.OrthographicCamera
 
 abstract class AbstractScreen : Screen, InputProcessor {
     protected val engine = PooledEngine()
-    protected val renderSystem = RenderSystem(Jungle.instance.batch)
-    val stage = Stage(ScreenViewport())
-
-    init {
-        engine.addSystem(renderSystem)
-    }
+    protected val camera = OrthographicCamera(Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
 
     override fun render(delta: Float) {
         engine.update(delta)
-        stage.act(delta)
-        stage.draw()
     }
 
     override fun dispose() {
         engine.removeAllEntities()
         engine.clearPools()
-        stage.dispose()
     }
 
-    override fun resize(width: Int, height: Int) {
-        renderSystem.updateCamera(width, height)
-        stage.viewport.update(width, height, true)
-    }
+    override fun resize(width: Int, height: Int) {}
 
     override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
         return false

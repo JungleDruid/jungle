@@ -2,33 +2,23 @@ package net.natruid.jungle.systems
 
 import com.badlogic.ashley.core.Entity
 import com.badlogic.ashley.systems.SortedIteratingSystem
-import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.Camera
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
-import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import ktx.ashley.allOf
 import ktx.ashley.mapperFor
 import ktx.graphics.use
 import net.natruid.jungle.components.LabelComponent
 import net.natruid.jungle.components.TextureComponent
 import net.natruid.jungle.components.TransformComponent
+import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.core.Marsh
 import net.natruid.jungle.utils.Layer
-import java.lang.Float.max
-import java.lang.Float.min
 
-class RenderSystem(private val batch: SpriteBatch)
+class RenderSystem(private val camera: Camera)
     : SortedIteratingSystem(allOf(TransformComponent::class).get(), ZComparator()) {
 
-    val camera = OrthographicCamera(Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
-    var zoom: Float
-        get() = camera.zoom
-        set(value) {
-            camera.zoom = max(0.2f, min(2f, value))
-            camera.update()
-        }
-
+    private val batch = Jungle.instance.batch
     private val transformMapper = mapperFor<TransformComponent>()
     private val textureMapper = mapperFor<TextureComponent>()
     private val labelMapper = mapperFor<LabelComponent>()
@@ -92,12 +82,6 @@ class RenderSystem(private val batch: SpriteBatch)
         batch.use {
             super.update(deltaTime)
         }
-    }
-
-    fun updateCamera(width: Int, height: Int) {
-        camera.viewportWidth = width.toFloat()
-        camera.viewportHeight = height.toFloat()
-        camera.update()
     }
 
     fun setLayer(vararg layers: Layer) {

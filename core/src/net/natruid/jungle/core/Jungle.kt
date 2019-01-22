@@ -64,8 +64,8 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
 
         currentScreen = screen
         if (currentScreen != null) {
-            inputProcessors.add(currentScreen!!.stage)
             inputProcessors.add(currentScreen!!)
+            currentScreen!!.show()
         }
     }
 
@@ -185,9 +185,16 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
         return false
     }
 
-    fun unfocusAll() {
+    private fun unfocusAll() {
         currentView?.stage?.unfocusAll()
-        currentScreen?.stage?.unfocusAll()
+    }
+
+    fun addInputProcessor(processor: InputProcessor) {
+        inputProcessors.add(processor)
+    }
+
+    fun removeInputProcessor(processor: InputProcessor) {
+        inputProcessors.remove(processor)
     }
 
     companion object {
