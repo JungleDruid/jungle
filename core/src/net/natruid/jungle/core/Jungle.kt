@@ -6,7 +6,6 @@ import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
-import com.badlogic.gdx.utils.I18NBundle
 import com.github.czyzby.lml.parser.LmlParser
 import com.github.czyzby.lml.parser.impl.AbstractLmlView
 import com.github.czyzby.lml.vis.util.VisLml
@@ -15,7 +14,6 @@ import net.natruid.jungle.screens.AbstractScreen
 import net.natruid.jungle.screens.TestScreen
 import net.natruid.jungle.utils.Bark
 import net.natruid.jungle.utils.DesktopClient
-import net.natruid.jungle.utils.Scout
 import net.natruid.jungle.views.TestView
 import java.lang.management.ManagementFactory
 
@@ -38,7 +36,7 @@ class Jungle(private val client: DesktopClient?) : ApplicationListener, InputPro
 
         VisUI.load(Bark("assets/ui/jungle.json"))
 
-        val bundle = I18NBundle.createBundle(Scout["assets/locale/UI"])
+        val bundle = Marsh.I18N["assets/locale/UI"]
         client?.setTitle(bundle["title"])
 
         currentView = TestView()
@@ -157,7 +155,7 @@ class Jungle(private val client: DesktopClient?) : ApplicationListener, InputPro
             private set
 
         fun createParser(): LmlParser {
-            return VisLml.parser().build()
+            return VisLml.parser().i18nBundle(Marsh.I18N["assets/locale/UI"]).build()
         }
     }
 }

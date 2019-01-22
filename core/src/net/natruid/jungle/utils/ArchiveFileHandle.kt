@@ -74,7 +74,9 @@ class ArchiveFileHandle : FileHandle {
     override fun list(): Array<FileHandle> {
         val list = ArrayList<FileHandle>()
         for (f in archive.entries()) {
-            if (f.name.indexOf(archiveEntry!!.name) == 0 && f.name.length > archiveEntry.name.length) {
+            if (f.name.indexOf(archiveEntry!!.name) == 0
+                    && f.name.length > archiveEntry.name.length
+                    && f.name.substring(archiveEntry.name.length + 1, f.name.length - 1).indexOf('/') < 0) {
                 list.add(ArchiveFileHandle(archive, f.name))
             }
         }

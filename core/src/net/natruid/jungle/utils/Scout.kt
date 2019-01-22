@@ -33,15 +33,19 @@ object Scout {
         hasAssetDir = asset.exists() && asset.isDirectory
     }
 
-    operator fun get(path: String): FileHandle {
+    operator fun get(path: String, useZip: Boolean = false): FileHandle {
         return when {
-            hasAssetDir -> {
-                Gdx.files.internal(
-                        when {
-                            assetPath.isEmpty() -> path
-                            else -> assetPath + path
-                        }
-                )
+            hasAssetDir && !useZip -> {
+                val file = Gdx.files.internal(when {
+                    assetPath.isEmpty() || path[0] == '/' || path[1] == ':' -> path
+                    else -> assetPath + path
+                })
+
+                if (file.exists() || file.path().indexOf("assets/locale/") >= 0) {
+                    file
+                } else {
+                    get(path, true)
+                }
             }
             !zipPath.isEmpty() -> {
                 ArchiveFileHandle(ZipFile(zipPath), path)

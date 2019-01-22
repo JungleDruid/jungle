@@ -7,18 +7,13 @@ import com.badlogic.gdx.files.FileHandle
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
+import com.badlogic.gdx.utils.I18NBundle
 import com.badlogic.gdx.utils.Json
 import com.badlogic.gdx.utils.JsonReader
 import ktx.freetype.generateFont
 import net.natruid.jungle.utils.Scout
 
 object Marsh {
-    class FontDef {
-        val name: String = ""
-        val file: String = ""
-        val size: Int = 0
-    }
-
     private val fontDefs = ArrayList<FontDef>()
     private val fontGeneratorMap = HashMap<String, FreeTypeFontGenerator>()
     private var fonts = HashMap<String, BitmapFont>()
@@ -31,6 +26,18 @@ object Marsh {
             }
 
             return fonts[key]!!
+        }
+    }
+
+    private val i18nMap = HashMap<String, I18NBundle>()
+
+    object I18N {
+        operator fun get(key: String): I18NBundle {
+            if (!i18nMap.containsKey(key)) {
+                i18nMap[key] = I18NBundle.createBundle(Scout[key])
+            }
+
+            return i18nMap[key]!!
         }
     }
 
@@ -47,24 +54,35 @@ object Marsh {
         return fontDefs.toList()
     }
 
-    private fun getFiles(path: String, ext: String, recursive: Boolean, list: ArrayList<FileHandle> = ArrayList())
-            : List<FileHandle> {
+    private fun getFiles(path: String, ext: String, recursive: Boolean): List<FileHandle> {
+        val map = getFilesImpl(path, ext, recursive)
+        getFilesImpl(path, ext, recursive, map, true)
 
-        val dir = Scout[path]
+        return map.values.toList()
+    }
+
+    private fun getFilesImpl(
+            path: String,
+            ext: String,
+            recursive: Boolean,
+            map: HashMap<String, FileHandle> = HashMap(),
+            useZip: Boolean = false
+    ): HashMap<String, FileHandle> {
+        val dir = Scout[path, useZip]
 
         if (!dir.isDirectory) {
-            error("[Marsh] getFiles: $path is not a directory.")
+            error("[Error] Marsh getFiles: $path is not a directory.")
         }
 
         for (f in dir.list()) {
             if (f.isDirectory && recursive) {
-                getFiles(f.path(), ext, true, list)
-            } else if (f.extension() == ext) {
-                list.add(f)
+                getFilesImpl(f.path(), ext, true, map, useZip)
+            } else if (f.extension() == ext && !map.containsKey(f.path())) {
+                map[f.path()] = f
             }
         }
 
-        return list
+        return map
     }
 
     private fun readJson(json: Json, file: FileHandle) {
@@ -100,5 +118,11 @@ object Marsh {
                 else -> println("[Warning] Found unknown property ${j.name} in ${file.name()}")
             }
         }
+    }
+
+    class FontDef {
+        val name: String = ""
+        val file: String = ""
+        val size: Int = 0
     }
 }
