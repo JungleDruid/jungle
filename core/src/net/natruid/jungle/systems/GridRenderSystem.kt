@@ -16,12 +16,16 @@ class GridRenderSystem(private val camera: OrthographicCamera) : EntitySystem() 
     private val renderer = ShapeRenderer()
     private val color = Color(0.5f, 0.7f, 0.3f, 0.8f)
 
+    var show = false
+
     init {
         renderer.color = color
         renderer.setAutoShapeType(true)
     }
 
     override fun update(deltaTime: Float) {
+        if (!show) return
+
         super.update(deltaTime)
 
         val pos = camera.position

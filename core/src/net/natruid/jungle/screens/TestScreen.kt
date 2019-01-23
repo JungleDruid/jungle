@@ -22,7 +22,7 @@ class TestScreen : AbstractScreen() {
             entity {
                 with<TransformComponent>()
                 with<TextureComponent> {
-                    region = TextureRegion(Texture(Scout["assets/badlogic.jpg"]))
+                    region = TextureRegion(Texture(Scout["assets/img/test/badlogic.jpg"]))
                 }
             }
             entity {
