@@ -16,6 +16,7 @@ import net.natruid.jungle.screens.TestScreen
 import net.natruid.jungle.utils.Bark
 import net.natruid.jungle.utils.Client
 import net.natruid.jungle.views.AbstractView
+import net.natruid.jungle.views.DebugView
 import net.natruid.jungle.views.TestView
 import java.lang.management.ManagementFactory
 
@@ -25,6 +26,7 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
     private var currentScreen: AbstractScreen? = null
     private var currentView: AbstractLmlView? = null
     private val inputProcessors = ArrayList<InputProcessor>()
+    private var debugView: DebugView? = null
 
     init {
         instance = this
@@ -41,6 +43,7 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
         client.setTitle(bundle["title"])
 
         setScreen(FieldScreen())
+        debugView = AbstractView.createView()
     }
 
     override fun render() {
@@ -50,6 +53,7 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
         val delta = Gdx.graphics.deltaTime
         currentScreen?.render(delta)
         currentView?.render(delta)
+        debugView?.render(delta)
     }
 
     override fun dispose() {
@@ -138,16 +142,22 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
                 return true
         }
 
-        if (debug && keycode == Input.Keys.R) {
-            if (currentScreen is TestScreen) {
-                setScreen(FieldScreen())
-                setView(null)
-            } else {
-                setScreen(TestScreen())
-                setView(AbstractView.createView<TestView>())
-            }
+        if (debug) {
+            if (keycode == Input.Keys.R) {
+                if (currentScreen is TestScreen) {
+                    setScreen(FieldScreen())
+                    setView(null)
+                } else {
+                    setScreen(TestScreen())
+                    setView(AbstractView.createView<TestView>())
+                    debugView = AbstractView.createView()
+                }
 
-            return true
+                return true
+            }
+            if (keycode == Input.Keys.F12) {
+                DebugView.show = !DebugView.show
+            }
         }
 
         return false
