@@ -9,6 +9,7 @@ import net.natruid.jungle.components.LabelComponent
 import net.natruid.jungle.components.TextureComponent
 import net.natruid.jungle.components.TransformComponent
 import net.natruid.jungle.systems.CameraMovementSystem
+import net.natruid.jungle.systems.GridRenderSystem
 import net.natruid.jungle.systems.RenderSystem
 import net.natruid.jungle.utils.Scout
 
@@ -16,6 +17,7 @@ class TestScreen : AbstractScreen() {
     init {
         engine.addSystem(RenderSystem(camera))
         engine.addSystem(CameraMovementSystem(camera))
+        engine.addSystem(GridRenderSystem(camera))
         engine.add {
             entity {
                 with<TransformComponent>()

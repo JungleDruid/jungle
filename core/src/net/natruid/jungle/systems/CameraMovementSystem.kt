@@ -14,7 +14,7 @@ import kotlin.math.min
 class CameraMovementSystem(private val camera: OrthographicCamera) : EntitySystem(0), InputProcessor {
     private val speed = 512f
     private val maxZoom = 2f
-    private val minZoom = 0.2f
+    private val minZoom = 0.25f
     private val zoomStep = minZoom
 
     private var initialized = false
