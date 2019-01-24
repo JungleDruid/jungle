@@ -159,7 +159,7 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
         }
 
         if (debug) {
-            if (keycode == Input.Keys.R) {
+            if (keycode == Input.Keys.F11) {
                 if (currentScreen is TestScreen) {
                     setScreen(FieldScreen())
                     setView(null)
@@ -237,12 +237,11 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
         val debug = ManagementFactory.getRuntimeMXBean().inputArguments.toString().indexOf("-agentlib:jdwp") > 0
         val lmlParser: LmlParser by lazy { VisLml.parser().i18nBundle(Marsh.I18N["assets/locale/UI"]).build() }
 
-        @Suppress("ObjectPropertyName")
-        private var _instance: Jungle? = null
+        private var hInstance: Jungle? = null
         var instance: Jungle
-            get() = _instance!!
+            get() = hInstance!!
             private set(value) {
-                _instance = value
+                hInstance = value
             }
     }
 }
