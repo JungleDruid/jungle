@@ -15,6 +15,7 @@ import net.natruid.jungle.screens.FieldScreen
 import net.natruid.jungle.screens.TestScreen
 import net.natruid.jungle.utils.Bark
 import net.natruid.jungle.utils.Client
+import net.natruid.jungle.utils.Sync
 import net.natruid.jungle.views.AbstractView
 import net.natruid.jungle.views.DebugView
 import net.natruid.jungle.views.TestView
@@ -27,12 +28,17 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
     private var currentView: AbstractLmlView? = null
     private val inputProcessors = ArrayList<InputProcessor>()
     private var debugView: DebugView? = null
+    private var targetFPS = 30
+    private var backgroundFPS = 10
+    private var pauseOnBackground = true
 
     init {
         instance = this
     }
 
     override fun create() {
+        client.init()
+
         Marsh.load()
 
         Gdx.input.inputProcessor = this
@@ -44,6 +50,7 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
 
         setScreen(FieldScreen())
         debugView = AbstractView.createView()
+        Gdx.graphics.setVSync(false)
     }
 
     override fun render() {
@@ -54,6 +61,8 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
         currentScreen?.render(delta)
         currentView?.render(delta)
         debugView?.render(delta)
+
+        Sync.sync(if (client.isFocused()) targetFPS else backgroundFPS)
     }
 
     override fun dispose() {
@@ -89,10 +98,14 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
 
     override fun pause() {
         currentScreen?.pause()
+        currentView?.pause()
+        debugView?.pause()
     }
 
     override fun resume() {
         currentScreen?.resume()
+        currentView?.resume()
+        debugView?.resume()
     }
 
     override fun resize(width: Int, height: Int) {
@@ -206,6 +219,16 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
 
     fun removeInputProcessor(processor: InputProcessor) {
         inputProcessors.remove(processor)
+    }
+
+    fun focusChanged() {
+        if (pauseOnBackground) {
+            if (client.isFocused()) {
+                resume()
+            } else {
+                pause()
+            }
+        }
     }
 
     companion object {

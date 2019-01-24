@@ -8,6 +8,8 @@ import org.lwjgl.glfw.GLFW
 
 object DesktopLauncher : Client {
     private val window by lazy { GLFW.glfwGetCurrentContext() }
+    private val game = Jungle(this)
+    private var focused = false
 
     @JvmStatic
     fun main(arg: Array<String>) {
@@ -15,7 +17,15 @@ object DesktopLauncher : Client {
         config.setTitle("Jungle")
         config.setWindowedMode(1024, 768)
         config.setResizable(false)
-        Lwjgl3Application(Jungle(this), config)
+        Lwjgl3Application(game, config)
+    }
+
+    override fun init(): Boolean {
+        GLFW.glfwSetWindowFocusCallback(window) { _, focused ->
+            this.focused = focused
+            game.focusChanged()
+        }
+        return true
     }
 
     override fun resize(width: Int, height: Int): Boolean {
@@ -26,5 +36,9 @@ object DesktopLauncher : Client {
     override fun setTitle(title: String): Boolean {
         GLFW.glfwSetWindowTitle(window, title)
         return true
+    }
+
+    override fun isFocused(): Boolean {
+        return focused
     }
 }
