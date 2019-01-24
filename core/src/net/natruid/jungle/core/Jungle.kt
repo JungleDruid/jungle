@@ -67,6 +67,8 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
 
     override fun dispose() {
         currentScreen?.dispose()
+        currentView?.dispose()
+        debugView?.dispose()
         batch.dispose()
         VisUI.dispose()
     }

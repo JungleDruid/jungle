@@ -13,7 +13,7 @@ abstract class AbstractView : AbstractLmlView(Stage(ScreenViewport(), Jungle.ins
         inline fun <reified Type : AbstractView> createView() = createView(Type::class.java)
 
         fun <Type : AbstractView> createView(type: Class<Type>): Type {
-            val view = type.newInstance()
+            val view = type.getDeclaredConstructor().newInstance()
             Jungle.lmlParser.createView(view, view.templateFile)
             return view
         }
