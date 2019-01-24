@@ -98,6 +98,7 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
     override fun resize(width: Int, height: Int) {
         currentScreen?.resize(width, height)
         currentView?.resize(width, height, true)
+        debugView?.resize(width, height, true)
     }
 
     override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
