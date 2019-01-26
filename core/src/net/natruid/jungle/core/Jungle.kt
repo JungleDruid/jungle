@@ -31,6 +31,7 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
     private var targetFPS = 30
     private var backgroundFPS = 10
     private var pauseOnBackground = true
+    private var resizing = false
 
     init {
         instance = this
@@ -63,12 +64,16 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
         debugView?.render(delta)
         renderer.end()
 
-        if (targetFPS > 0) {
-            Sync.sync(if (client.isFocused() || backgroundFPS <= 0) {
-                targetFPS
-            } else {
-                backgroundFPS
-            })
+        if (!resizing) {
+            if (targetFPS > 0) {
+                Sync.sync(if (client.isFocused() || backgroundFPS <= 0) {
+                    targetFPS
+                } else {
+                    backgroundFPS
+                })
+            }
+        } else {
+            resizing = false
         }
     }
 
@@ -118,6 +123,7 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
     }
 
     override fun resize(width: Int, height: Int) {
+        resizing = true
         currentScreen?.resize(width, height)
         currentView?.resize(width, height, true)
         debugView?.resize(width, height, true)
