@@ -2,7 +2,10 @@
 <!DOCTYPE table SYSTEM "lml.dtd">
 
 <table fillparent="true" align="topleft">
-    <label id="fpsLabel" style="small" color="green" padleft="5">
-        0
+    <label id="fpsLabel" style="small" color="green" padleft="5" row="true" align="left">
+        FPS: 0
+    </label>
+    <label id="ramLabel" style="small" color="green" padleft="5" row="true" align="left">
+        RAM: 0
     </label>
 </table>
