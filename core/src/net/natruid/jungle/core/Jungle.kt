@@ -5,7 +5,6 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.GL20
-import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.github.czyzby.lml.parser.LmlParser
 import com.github.czyzby.lml.parser.impl.AbstractLmlView
 import com.github.czyzby.lml.vis.util.VisLml
@@ -15,6 +14,7 @@ import net.natruid.jungle.screens.FieldScreen
 import net.natruid.jungle.screens.TestScreen
 import net.natruid.jungle.utils.Bark
 import net.natruid.jungle.utils.Client
+import net.natruid.jungle.utils.RendererHelper
 import net.natruid.jungle.utils.Sync
 import net.natruid.jungle.views.AbstractView
 import net.natruid.jungle.views.DebugView
@@ -22,7 +22,7 @@ import net.natruid.jungle.views.TestView
 import java.lang.management.ManagementFactory
 
 class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
-    val batch by lazy { SpriteBatch() }
+    val renderer by lazy { RendererHelper() }
 
     private var currentScreen: AbstractScreen? = null
     private var currentView: AbstractLmlView? = null
@@ -61,15 +61,22 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
         currentScreen?.render(delta)
         currentView?.render(delta)
         debugView?.render(delta)
+        renderer.end()
 
-        Sync.sync(if (client.isFocused()) targetFPS else backgroundFPS)
+        if (targetFPS > 0) {
+            Sync.sync(if (client.isFocused() || backgroundFPS <= 0) {
+                targetFPS
+            } else {
+                backgroundFPS
+            })
+        }
     }
 
     override fun dispose() {
         currentScreen?.dispose()
         currentView?.dispose()
         debugView?.dispose()
-        batch.dispose()
+        renderer.dispose()
         VisUI.dispose()
     }
 
@@ -173,6 +180,7 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
             }
             if (keycode == Input.Keys.F12) {
                 DebugView.show = !DebugView.show
+                targetFPS = if (DebugView.show) 0 else 30
             }
         }
 

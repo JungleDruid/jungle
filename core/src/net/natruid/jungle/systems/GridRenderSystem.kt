@@ -5,23 +5,18 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import ktx.graphics.use
 import net.natruid.jungle.core.Jungle
+import net.natruid.jungle.utils.RendererHelper
 import kotlin.math.floor
 
 class GridRenderSystem(private val camera: OrthographicCamera) : EntitySystem() {
     private val gridSize = 64f
 
-    private val batch = Jungle.instance.batch
-    private val renderer = ShapeRenderer()
+    private val renderer = Jungle.instance.renderer
+    private val shapeRenderer = renderer.shapeRenderer
     private val color = Color(0.5f, 0.7f, 0.3f, 0.8f)
 
     var show = false
-
-    init {
-        renderer.color = color
-        renderer.setAutoShapeType(true)
-    }
 
     override fun update(deltaTime: Float) {
         if (!show) return
@@ -46,38 +41,35 @@ class GridRenderSystem(private val camera: OrthographicCamera) : EntitySystem() 
         val offsetX = gridSize - pos.x.rem(gridSize)
         val offsetY = gridSize - pos.y.rem(gridSize)
 
-        batch.use {
-            renderer.projectionMatrix = camera.combined
-            renderer.begin()
-            for (i in 0..rows + 1) {
-                renderer.line(
-                        left,
-                        pos.y + i * gridSize + offsetY + halfGrid,
-                        right,
-                        pos.y + i * gridSize + offsetY + halfGrid
-                )
-                renderer.line(
-                        left,
-                        pos.y - i * gridSize + offsetY - halfGrid,
-                        right,
-                        pos.y - i * gridSize + offsetY - halfGrid
-                )
-            }
-            for (i in 0..columns + 1) {
-                renderer.line(
-                        pos.x + i * gridSize + offsetX + halfGrid,
-                        bottom,
-                        pos.x + i * gridSize + offsetX + halfGrid,
-                        top
-                )
-                renderer.line(
-                        pos.x - i * gridSize + offsetX - halfGrid,
-                        bottom,
-                        pos.x - i * gridSize + offsetX - halfGrid,
-                        top
-                )
-            }
-            renderer.end()
+        shapeRenderer.color = color
+        renderer.begin(camera, RendererHelper.Type.ShapeRenderer, ShapeRenderer.ShapeType.Line)
+        for (i in 0..rows + 1) {
+            shapeRenderer.line(
+                    left,
+                    pos.y + i * gridSize + offsetY + halfGrid,
+                    right,
+                    pos.y + i * gridSize + offsetY + halfGrid
+            )
+            shapeRenderer.line(
+                    left,
+                    pos.y - i * gridSize + offsetY - halfGrid,
+                    right,
+                    pos.y - i * gridSize + offsetY - halfGrid
+            )
+        }
+        for (i in 0..columns + 1) {
+            shapeRenderer.line(
+                    pos.x + i * gridSize + offsetX + halfGrid,
+                    bottom,
+                    pos.x + i * gridSize + offsetX + halfGrid,
+                    top
+            )
+            shapeRenderer.line(
+                    pos.x - i * gridSize + offsetX - halfGrid,
+                    bottom,
+                    pos.x - i * gridSize + offsetX - halfGrid,
+                    top
+            )
         }
     }
 }
