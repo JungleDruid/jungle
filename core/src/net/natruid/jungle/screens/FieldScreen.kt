@@ -1,26 +1,24 @@
 package net.natruid.jungle.screens
 
+import com.badlogic.ashley.core.PooledEngine
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import ktx.ashley.add
-import ktx.ashley.entity
-import ktx.math.vec3
 import net.natruid.jungle.components.RectComponent
-import net.natruid.jungle.components.TransformComponent
 import net.natruid.jungle.systems.CameraMovementSystem
 import net.natruid.jungle.systems.GridRenderSystem
 import net.natruid.jungle.systems.RenderSystem
-import java.lang.Math.random
+import net.natruid.jungle.utils.Tiles
 
-class FieldScreen : AbstractScreen() {
+class FieldScreen : AbstractScreen(PooledEngine(400, 3600, 400, 3600)) {
+    private val tiles = Tiles.obtain(engine)
+
     init {
         camera.translate(400f, 300f)
         camera.update()
         engine.addSystem(CameraMovementSystem(camera))
         engine.addSystem(RenderSystem(camera))
         engine.addSystem(GridRenderSystem(camera))
-        generateField()
+        tiles.create(20, 20)
     }
 
     override fun keyUp(keycode: Int): Boolean {
@@ -30,41 +28,16 @@ class FieldScreen : AbstractScreen() {
         }
         if (keycode == Input.Keys.R) {
             engine.removeAllEntities()
-            generateField()
+            tiles.create(20, 20)
+            tiles[0, 0]?.getComponent(RectComponent::class.java)?.color?.set(Color.YELLOW)
             return true
         }
 
         return false
     }
 
-    private fun generateField() {
-        for (x in 0..19) {
-            for (y in 0..19) {
-                val isBlock = random() > 0.8 && x > 0 && y > 0
-                engine.add {
-                    entity {
-                        with<TransformComponent> {
-                            position = vec3(x * 64f, y * 64f)
-                        }
-                        with<RectComponent> {
-                            width = 64f
-                            height = 64f
-                            color = if (!isBlock) Color(
-                                    random().toFloat() * 0.1f + 0.2f,
-                                    random().toFloat() * 0.1f + 0.4f,
-                                    0f,
-                                    1f
-                            ) else Color(
-                                    random().toFloat() * 0.1f,
-                                    0f,
-                                    random().toFloat() * 0.7f + 0.1f,
-                                    1f
-                            )
-                            type = ShapeRenderer.ShapeType.Filled
-                        }
-                    }
-                }
-            }
-        }
+    override fun dispose() {
+        tiles.free()
+        super.dispose()
     }
 }
