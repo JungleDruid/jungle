@@ -7,10 +7,9 @@ import net.natruid.jungle.components.RectComponent
 import net.natruid.jungle.systems.CameraMovementSystem
 import net.natruid.jungle.systems.GridRenderSystem
 import net.natruid.jungle.systems.RenderSystem
-import net.natruid.jungle.utils.Tiles
+import net.natruid.jungle.systems.TileSystem
 
 class FieldScreen : AbstractScreen(PooledEngine(400, 3600, 400, 3600)) {
-    private val tiles = Tiles.obtain(engine)
 
     init {
         camera.translate(400f, 300f)
@@ -18,6 +17,8 @@ class FieldScreen : AbstractScreen(PooledEngine(400, 3600, 400, 3600)) {
         engine.addSystem(CameraMovementSystem(camera))
         engine.addSystem(RenderSystem(camera))
         engine.addSystem(GridRenderSystem(camera))
+        val tiles = TileSystem()
+        engine.addSystem(tiles)
         tiles.create(20, 20)
     }
 
@@ -28,16 +29,12 @@ class FieldScreen : AbstractScreen(PooledEngine(400, 3600, 400, 3600)) {
         }
         if (keycode == Input.Keys.R) {
             engine.removeAllEntities()
+            val tiles = engine.getSystem(TileSystem::class.java)
             tiles.create(20, 20)
-            tiles[0, 0]?.getComponent(RectComponent::class.java)?.color?.set(Color.YELLOW)
+            tiles[2, 4]?.getComponent(RectComponent::class.java)?.color?.set(Color.YELLOW)
             return true
         }
 
         return false
-    }
-
-    override fun dispose() {
-        tiles.free()
-        super.dispose()
     }
 }
