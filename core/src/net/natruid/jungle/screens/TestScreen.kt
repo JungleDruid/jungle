@@ -15,9 +15,9 @@ import net.natruid.jungle.utils.Scout
 
 class TestScreen : AbstractScreen() {
     init {
-        engine.addSystem(RenderSystem(camera))
-        engine.addSystem(CameraMovementSystem(camera))
-        engine.addSystem(GridRenderSystem(camera))
+        engine.addSystem(RenderSystem())
+        engine.addSystem(CameraMovementSystem())
+        engine.addSystem(GridRenderSystem())
         engine.add {
             entity {
                 with<TransformComponent>()

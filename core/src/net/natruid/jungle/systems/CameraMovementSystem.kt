@@ -4,14 +4,14 @@ import com.badlogic.ashley.core.Engine
 import com.badlogic.ashley.core.EntitySystem
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
-import com.badlogic.gdx.graphics.OrthographicCamera
 import ktx.math.times
 import ktx.math.vec2
 import net.natruid.jungle.core.Jungle
 import kotlin.math.max
 import kotlin.math.min
 
-class CameraMovementSystem(private val camera: OrthographicCamera) : EntitySystem(0), InputProcessor {
+class CameraMovementSystem : EntitySystem(0), InputProcessor {
+    private val camera = Jungle.instance.camera
     private val speed = 512f
     private val maxZoom = 2f
     private val minZoom = 0.25f

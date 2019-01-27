@@ -1,14 +1,10 @@
 package net.natruid.jungle.screens
 
 import com.badlogic.ashley.core.PooledEngine
-import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.Screen
-import com.badlogic.gdx.graphics.OrthographicCamera
 
 abstract class AbstractScreen(protected val engine: PooledEngine = PooledEngine()) : Screen, InputProcessor {
-    protected val camera = OrthographicCamera(Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
-
     override fun render(delta: Float) {
         engine.update(delta)
     }
@@ -18,11 +14,7 @@ abstract class AbstractScreen(protected val engine: PooledEngine = PooledEngine(
         engine.clearPools()
     }
 
-    override fun resize(width: Int, height: Int) {
-        camera.viewportWidth = width.toFloat()
-        camera.viewportHeight = height.toFloat()
-        camera.update()
-    }
+    override fun resize(width: Int, height: Int) {}
 
     override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
         return false

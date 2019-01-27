@@ -3,13 +3,13 @@ package net.natruid.jungle.systems
 import com.badlogic.ashley.core.EntitySystem
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.utils.RendererHelper
 import kotlin.math.floor
 
-class GridRenderSystem(private val camera: OrthographicCamera) : EntitySystem() {
+class GridRenderSystem : EntitySystem() {
+    private val camera = Jungle.instance.camera
     private val gridSize = 64f
 
     private val renderer = Jungle.instance.renderer

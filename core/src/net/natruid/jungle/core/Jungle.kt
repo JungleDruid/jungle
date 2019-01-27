@@ -5,6 +5,8 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.GL20
+import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.github.czyzby.lml.parser.LmlParser
 import com.github.czyzby.lml.parser.impl.AbstractLmlView
 import com.github.czyzby.lml.vis.util.VisLml
@@ -23,6 +25,8 @@ import java.lang.management.ManagementFactory
 
 class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
     val renderer by lazy { RendererHelper() }
+    val camera by lazy { OrthographicCamera() }
+    val uiViewport by lazy { ScreenViewport() }
 
     private var currentScreen: AbstractScreen? = null
     private var currentView: AbstractLmlView? = null
@@ -85,7 +89,16 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
         VisUI.dispose()
     }
 
+    fun resetCamera() {
+        camera.zoom = 1f
+        camera.position.setZero()
+        camera.direction.set(0f, 0f, -1f)
+        camera.up.set(0f, 1f, 0f)
+        camera.update()
+    }
+
     private fun setScreen(screen: AbstractScreen) {
+        resetCamera()
         inputProcessors.clear()
         currentScreen?.dispose()
 
@@ -124,9 +137,11 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
 
     override fun resize(width: Int, height: Int) {
         resizing = true
+        camera.viewportWidth = width.toFloat()
+        camera.viewportHeight = height.toFloat()
+        camera.update()
+        uiViewport.update(width, height, true)
         currentScreen?.resize(width, height)
-        currentView?.resize(width, height, true)
-        debugView?.resize(width, height, true)
     }
 
     override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {

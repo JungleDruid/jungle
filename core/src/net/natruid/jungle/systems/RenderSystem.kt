@@ -2,7 +2,6 @@ package net.natruid.jungle.systems
 
 import com.badlogic.ashley.core.Entity
 import com.badlogic.ashley.systems.SortedIteratingSystem
-import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import ktx.ashley.allOf
 import ktx.ashley.mapperFor
@@ -16,7 +15,7 @@ import net.natruid.jungle.core.Marsh
 import net.natruid.jungle.utils.Layer
 import net.natruid.jungle.utils.RendererHelper
 
-class RenderSystem(private val camera: OrthographicCamera)
+class RenderSystem
     : SortedIteratingSystem(
         allOf(TransformComponent::class).oneOf(
                 TextureComponent::class,
@@ -25,7 +24,7 @@ class RenderSystem(private val camera: OrthographicCamera)
         ).get(),
         ZComparator()
 ) {
-
+    private val camera = Jungle.instance.camera
     private val renderer = Jungle.instance.renderer
     private val batch = renderer.batch
     private val shapeRenderer = renderer.shapeRenderer
