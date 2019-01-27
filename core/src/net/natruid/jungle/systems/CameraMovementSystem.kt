@@ -18,7 +18,6 @@ class CameraMovementSystem : EntitySystem(0), InputProcessor {
     private val minZoom = 0.25f
     private val zoomStep = minZoom
 
-    private var initialized = false
     private val velocity = vec2(0f, 0f)
 
     private var zoom
@@ -28,22 +27,17 @@ class CameraMovementSystem : EntitySystem(0), InputProcessor {
             camera.update()
         }
 
-    private fun initialize() {
-        initialized = true
+    override fun addedToEngine(engine: Engine?) {
+        super.addedToEngine(engine)
         Jungle.instance.addInputProcessor(this)
     }
 
     override fun removedFromEngine(engine: Engine?) {
         super.removedFromEngine(engine)
-
         Jungle.instance.removeInputProcessor(this)
     }
 
     override fun update(deltaTime: Float) {
-        if (!initialized) {
-            initialize()
-        }
-
         if (!velocity.isZero) {
             camera.translate(velocity * speed * deltaTime * zoom)
             camera.update()

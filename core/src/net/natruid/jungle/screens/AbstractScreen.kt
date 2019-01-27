@@ -4,6 +4,7 @@ import com.badlogic.ashley.core.PooledEngine
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.Screen
 import net.natruid.jungle.systems.RenderSystem
+import net.natruid.jungle.utils.extensions.removeAllSystems
 
 abstract class AbstractScreen(protected val engine: PooledEngine = PooledEngine()) : Screen, InputProcessor {
     override fun render(delta: Float) {
@@ -12,7 +13,7 @@ abstract class AbstractScreen(protected val engine: PooledEngine = PooledEngine(
 
     override fun dispose() {
         engine.removeAllEntities()
-        engine.clearPools()
+        engine.removeAllSystems()
     }
 
     override fun resize(width: Int, height: Int) {}
