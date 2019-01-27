@@ -2,6 +2,7 @@ package net.natruid.jungle.systems
 
 import com.badlogic.ashley.core.Engine
 import com.badlogic.ashley.core.EntitySystem
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
 import ktx.math.times
@@ -46,6 +47,7 @@ class CameraMovementSystem : EntitySystem(0), InputProcessor {
         if (!velocity.isZero) {
             camera.translate(velocity * speed * deltaTime * zoom)
             camera.update()
+            Jungle.instance.mouseMoved(Gdx.input.x, Gdx.input.y)
         }
 
         super.update(deltaTime)

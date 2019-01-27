@@ -6,6 +6,7 @@ import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.github.czyzby.lml.parser.LmlParser
 import com.github.czyzby.lml.parser.impl.AbstractLmlView
@@ -30,7 +31,7 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
 
     private var currentScreen: AbstractScreen? = null
     private var currentView: AbstractLmlView? = null
-    private val inputProcessors = ArrayList<InputProcessor>()
+    private val inputProcessors = Array<InputProcessor>()
     private var debugView: DebugView? = null
     private var targetFPS = 30
     private var backgroundFPS = 10
@@ -99,7 +100,7 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
 
     private fun setScreen(screen: AbstractScreen) {
         resetCamera()
-        inputProcessors.clear()
+        if (currentScreen != null) inputProcessors.removeValue(currentScreen, true)
         currentScreen?.dispose()
 
         currentScreen = screen
@@ -111,15 +112,15 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
 
     private fun setView(view: AbstractView?) {
         if (currentView != null) {
-            if (inputProcessors.contains(currentView!!.stage)) {
-                inputProcessors.remove(currentView!!.stage)
+            if (inputProcessors.contains(currentView!!.stage, true)) {
+                inputProcessors.removeValue(currentView!!.stage, true)
             }
             currentView?.dispose()
         }
 
         currentView = view
         if (currentView != null) {
-            inputProcessors.add(0, currentView!!.stage)
+            inputProcessors.insert(0, currentView!!.stage)
         }
     }
 
@@ -249,7 +250,7 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
     }
 
     fun removeInputProcessor(processor: InputProcessor) {
-        inputProcessors.remove(processor)
+        inputProcessors.removeValue(processor, true)
     }
 
     fun focusChanged() {
