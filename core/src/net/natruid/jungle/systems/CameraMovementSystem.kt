@@ -20,7 +20,6 @@ class CameraMovementSystem : EntitySystem(0), InputProcessor {
 
     private var initialized = false
     private val velocity = vec2(0f, 0f)
-    private var mouseMoved = false
 
     private var zoom
         get() = camera.zoom
@@ -48,7 +47,7 @@ class CameraMovementSystem : EntitySystem(0), InputProcessor {
         if (!velocity.isZero) {
             camera.translate(velocity * speed * deltaTime * zoom)
             camera.update()
-            if (mouseMoved) Jungle.instance.mouseMoved(Gdx.input.x, Gdx.input.y)
+            if (Jungle.instance.mouseMoved) Jungle.instance.mouseMoved(Gdx.input.x, Gdx.input.y)
         }
 
         super.update(deltaTime)
@@ -105,7 +104,6 @@ class CameraMovementSystem : EntitySystem(0), InputProcessor {
     }
 
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
-        mouseMoved = true
         return false
     }
 

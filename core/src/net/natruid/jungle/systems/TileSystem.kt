@@ -130,7 +130,7 @@ class TileSystem : EntitySystem(), InputProcessor {
         if (!this.checkProcessing()) return false
 
         pointForMouseMoved.set(screenX, screenY)
-        screenToCoord(pointForMouseMoved)
+        if (!screenToCoord(pointForMouseMoved)) pointForMouseMoved.setToNone()
         if (pointForMouseMoved == mouseCoord) return false
         val mouseOnTileTransform = mouseOnTile?.getComponent(TransformComponent::class.java) ?: return false
 
@@ -163,5 +163,10 @@ class TileSystem : EntitySystem(), InputProcessor {
 
     override fun keyDown(keycode: Int): Boolean {
         return false
+    }
+
+    override fun setProcessing(processing: Boolean) {
+        super.setProcessing(processing)
+        if (!processing) mouseOnTile?.getComponent(TransformComponent::class.java)?.visible = false
     }
 }

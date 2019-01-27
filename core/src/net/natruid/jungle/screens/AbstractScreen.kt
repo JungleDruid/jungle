@@ -3,6 +3,7 @@ package net.natruid.jungle.screens
 import com.badlogic.ashley.core.PooledEngine
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.Screen
+import net.natruid.jungle.systems.RenderSystem
 
 abstract class AbstractScreen(protected val engine: PooledEngine = PooledEngine()) : Screen, InputProcessor {
     override fun render(delta: Float) {
@@ -52,7 +53,15 @@ abstract class AbstractScreen(protected val engine: PooledEngine = PooledEngine(
 
     override fun show() {}
 
-    override fun pause() {}
+    override fun pause() {
+        for (system in engine.systems) {
+            if (system !is RenderSystem) system.setProcessing(false)
+        }
+    }
 
-    override fun resume() {}
+    override fun resume() {
+        for (system in engine.systems) {
+            system.setProcessing(true)
+        }
+    }
 }

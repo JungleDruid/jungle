@@ -29,6 +29,9 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
     val camera by lazy { OrthographicCamera() }
     val uiViewport by lazy { ScreenViewport() }
 
+    var mouseMoved = false
+        private set
+
     private var currentScreen: AbstractScreen? = null
     private var currentView: AbstractLmlView? = null
     private val inputProcessors = Array<InputProcessor>()
@@ -121,6 +124,7 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
     }
 
     override fun pause() {
+        mouseMoved = false
         currentScreen?.pause()
         currentView?.pause()
         debugView?.pause()
@@ -151,6 +155,7 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
     }
 
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
+        mouseMoved = true
         for (processor in inputProcessors) {
             if (processor.mouseMoved(screenX, screenY))
                 return true
