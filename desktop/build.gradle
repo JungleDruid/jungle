@@ -20,7 +20,6 @@ task debug(dependsOn: classes, type: JavaExec) {
     standardInput = System.in
     workingDir = project.assetsDir
     ignoreExitValue = true as JavaExecSpec
-    debug = true
 }
 
 eclipse {
@@ -33,7 +32,6 @@ eclipse {
 task afterEclipseImport(description: "Post processing after project generation", group: "IDE") {
     doLast {
         def classpath = new XmlParser().parse(file(".classpath"))
-//    new Node(classpath, "classpathentry", [ kind: 'src', path: 'assets' ])
         def writer = new FileWriter(file(".classpath"))
         def printer = new XmlNodePrinter(new PrintWriter(writer))
         printer.setPreserveWhitespace(true)

@@ -51,7 +51,7 @@ object Scout {
                 ArchiveFileHandle(ZipFile(zipPath), path)
             }
             else -> {
-                error("[Error] Cannot find assets.zip or assets folder.")
+                error("[Error] Cannot find $path in assets.zip or assets folder.")
             }
         }
     }

@@ -10,13 +10,18 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.utils.I18NBundle
 import com.badlogic.gdx.utils.Json
 import com.badlogic.gdx.utils.JsonReader
+import com.badlogic.gdx.utils.ObjectMap
+import ktx.collections.GdxArray
+import ktx.collections.PooledList
+import ktx.collections.set
+import ktx.collections.toGdxList
 import ktx.freetype.generateFont
 import net.natruid.jungle.utils.Scout
 
 object Marsh {
-    private val fontDefs = ArrayList<FontDef>()
-    private val fontGeneratorMap = HashMap<String, FreeTypeFontGenerator>()
-    private var fonts = HashMap<String, BitmapFont>()
+    private val fontDefs = GdxArray<FontDef>()
+    private val fontGeneratorMap = ObjectMap<String, FreeTypeFontGenerator>()
+    private var fonts = ObjectMap<String, BitmapFont>()
 
     object Fonts {
         operator fun get(key: String): BitmapFont {
@@ -33,7 +38,7 @@ object Marsh {
         }
     }
 
-    private val i18nMap = HashMap<String, I18NBundle>()
+    private val i18nMap = ObjectMap<String, I18NBundle>()
 
     object I18N {
         operator fun get(key: String): I18NBundle {
@@ -57,24 +62,27 @@ object Marsh {
         }
     }
 
-    fun getFontDefs(): List<FontDef> {
-        return fontDefs.toList()
+    fun getFontDefs(): PooledList<FontDef> {
+        return fontDefs.toGdxList()
     }
 
-    private fun getFiles(path: String, ext: String, recursive: Boolean): List<FileHandle> {
+    private fun getFiles(path: String, ext: String, recursive: Boolean): PooledList<FileHandle> {
         val map = getFilesImpl(path, ext, recursive)
-        getFilesImpl(path, ext, recursive, map, true)
+        try {
+            getFilesImpl(path, ext, recursive, map, true)
+        } catch (e: Exception) {
+        }
 
-        return map.values.toList()
+        return map.values().toGdxList()
     }
 
     private fun getFilesImpl(
             path: String,
             ext: String,
             recursive: Boolean,
-            map: HashMap<String, FileHandle> = HashMap(),
+            map: ObjectMap<String, FileHandle> = ObjectMap(),
             useZip: Boolean = false
-    ): HashMap<String, FileHandle> {
+    ): ObjectMap<String, FileHandle> {
         val dir = Scout[path, useZip]
 
         if (!dir.isDirectory) {
