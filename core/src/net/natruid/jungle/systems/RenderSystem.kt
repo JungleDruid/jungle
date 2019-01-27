@@ -51,10 +51,8 @@ class RenderSystem
             return
         }
 
-        val texture = textureMapper[entity]
-        if (texture?.region != null) {
-            val region = texture.region!!
-
+        val region = textureMapper[entity]?.region
+        if (region != null) {
             val width = region.regionWidth.toFloat()
             val height = region.regionHeight.toFloat()
 

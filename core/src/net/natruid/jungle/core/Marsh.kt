@@ -20,12 +20,16 @@ object Marsh {
 
     object Fonts {
         operator fun get(key: String): BitmapFont {
-            if (!fonts.containsKey(key)) {
+            var font = fonts[key]
+            if (font == null) {
                 println("[Warning] Cannot find font name: $key")
-                return fonts["normal"]!!
+                font = fonts["normal"]
+                if (font == null) {
+                    error("[Error] Cannot find fallback font: normal")
+                }
             }
 
-            return fonts[key]!!
+            return font
         }
     }
 
@@ -33,11 +37,14 @@ object Marsh {
 
     object I18N {
         operator fun get(key: String): I18NBundle {
-            if (!i18nMap.containsKey(key)) {
-                i18nMap[key] = I18NBundle.createBundle(Scout[key])
+            var ret = i18nMap[key]
+            if (ret == null) {
+                ret = I18NBundle.createBundle(Scout[key])
+                ret ?: error("[Error] Cannot find bundle $key")
+                i18nMap[key] = ret
             }
 
-            return i18nMap[key]!!
+            return ret
         }
     }
 

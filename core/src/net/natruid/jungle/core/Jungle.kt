@@ -104,23 +104,21 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
         currentScreen?.dispose()
 
         currentScreen = screen
-        if (currentScreen != null) {
-            inputProcessors.add(currentScreen!!)
-            currentScreen!!.show()
-        }
+        val s = currentScreen ?: return
+        inputProcessors.add(s)
+        s.show()
     }
 
     private fun setView(view: AbstractView?) {
-        if (currentView != null) {
-            if (inputProcessors.contains(currentView!!.stage, true)) {
-                inputProcessors.removeValue(currentView!!.stage, true)
-            }
-            currentView?.dispose()
+        val v = currentView
+        if (v != null) {
+            inputProcessors.removeValue(v.stage, true)
+            v.dispose()
         }
 
         currentView = view
-        if (currentView != null) {
-            inputProcessors.insert(0, currentView!!.stage)
+        if (view != null) {
+            inputProcessors.insert(0, view.stage)
         }
     }
 
