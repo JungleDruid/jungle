@@ -9,7 +9,6 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.MathUtils.random
 import com.badlogic.gdx.math.Vector3
-import com.badlogic.gdx.utils.Pools
 import ktx.ashley.add
 import ktx.ashley.allOf
 import ktx.ashley.entity
@@ -26,7 +25,7 @@ class TileSystem : EntitySystem(), InputProcessor {
 
     private val family = allOf(TileComponent::class, TransformComponent::class).get()
     private var tiles: ImmutableArray<Entity>? = null
-    private var mouseCoord: Point? = null
+    private val mouseCoord: Point = Point(false)
     private var mouseOnTile: Entity? = null
 
     var columns = 0
@@ -77,20 +76,10 @@ class TileSystem : EntitySystem(), InputProcessor {
                         with<RectComponent> {
                             width = tileSize.toFloat()
                             height = tileSize.toFloat()
-                            color = if (!isBlock) {
-                                Pools.obtain(Color::class.java).set(
-                                        random() * 0.1f + 0.2f,
-                                        random() * 0.1f + 0.4f,
-                                        0f,
-                                        1f
-                                )
+                            if (!isBlock) {
+                                color.set(random() * 0.1f + 0.2f, random() * 0.1f + 0.4f, 0f, 1f)
                             } else {
-                                Pools.obtain(Color::class.java).set(
-                                        random() * 0.1f,
-                                        0f,
-                                        random() * 0.7f + 0.1f,
-                                        1f
-                                )
+                                color.set(random() * 0.1f, 0f, random() * 0.7f + 0.1f, 1f)
                             }
                             type = ShapeRenderer.ShapeType.Filled
                         }
@@ -107,24 +96,25 @@ class TileSystem : EntitySystem(), InputProcessor {
                 with<RectComponent> {
                     width = tileSize.toFloat()
                     height = tileSize.toFloat()
-                    color = Color.YELLOW
+                    color.set(Color.YELLOW)
                 }
             }
         }
     }
 
-    private fun screenToCoord(screenX: Int, screenY: Int): Point? {
-        if (columns == 0) return null
+    private val vecForProjection = Vector3()
+    private fun screenToCoord(screenCoord: Point): Boolean {
+        if (columns == 0) return false
 
         val camera = Jungle.instance.camera
-        val pos = Pools.obtain(Vector3::class.java).set(screenX.toFloat(), screenY.toFloat(), 0f)
-        camera.unproject(pos)
-        val x = pos.x.roundToInt() + halfTileSize
-        val y = pos.y.roundToInt() + halfTileSize
-        Pools.free(pos)
-        if (x < 0 || x > columns * tileSize || y < 0 || y > rows * tileSize) return null
+        vecForProjection.set(screenCoord.x.toFloat(), screenCoord.y.toFloat(), 0f)
+        camera.unproject(vecForProjection)
+        val x = vecForProjection.x.roundToInt() + halfTileSize
+        val y = vecForProjection.y.roundToInt() + halfTileSize
+        if (x < 0 || x > columns * tileSize || y < 0 || y > rows * tileSize) return false
 
-        return Point(x / tileSize, y / tileSize)
+        screenCoord.set(x / tileSize, y / tileSize)
+        return true
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
@@ -135,15 +125,17 @@ class TileSystem : EntitySystem(), InputProcessor {
         return false
     }
 
+    private val pointForMouseMoved = Point(false)
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
         if (!this.checkProcessing()) return false
 
-        val pos = screenToCoord(screenX, screenY)
-        if (pos == mouseCoord) return false
+        pointForMouseMoved.set(screenX, screenY)
+        screenToCoord(pointForMouseMoved)
+        if (pointForMouseMoved == mouseCoord) return false
         val mouseOnTileTransform = mouseOnTile?.getComponent(TransformComponent::class.java) ?: return false
 
-        mouseCoord = pos
-        if (pos == null) {
+        mouseCoord.set(pointForMouseMoved)
+        if (!mouseCoord.hasValue) {
             mouseOnTileTransform.visible = false
             return false
         }

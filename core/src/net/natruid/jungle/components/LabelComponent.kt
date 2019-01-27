@@ -8,14 +8,14 @@ import com.badlogic.gdx.utils.Pool
 class LabelComponent : Component, Pool.Poolable {
     var text = ""
     var fontName = "normal"
-    var color = Color.WHITE!!
+    val color = Color(Color.WHITE)
     var width = 0f
     var align = Align.topLeft
 
     override fun reset() {
         text = ""
         fontName = "normal"
-        color = Color.WHITE!!
+        color.set(Color.WHITE)
         width = 0f
         align = Align.topLeft
     }

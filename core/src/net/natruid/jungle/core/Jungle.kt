@@ -70,12 +70,10 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
         renderer.end()
 
         if (!resizing) {
-            if (targetFPS > 0) {
-                Sync.sync(if (client.isFocused() || backgroundFPS <= 0) {
-                    targetFPS
-                } else {
-                    backgroundFPS
-                })
+            if (client.isFocused() || backgroundFPS == 0) {
+                if (targetFPS > 0) Sync.sync(targetFPS)
+            } else {
+                Sync.sync(backgroundFPS)
             }
         } else {
             resizing = false

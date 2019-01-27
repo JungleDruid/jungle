@@ -9,14 +9,14 @@ import com.badlogic.gdx.utils.Pools
 class RectComponent : Component, Pool.Poolable {
     var width = 0f
     var height = 0f
-    var color = Color.WHITE!!
+    val color = Color(Color.WHITE)
     var type = ShapeRenderer.ShapeType.Line
 
     override fun reset() {
         width = 0f
         height = 0f
         Pools.free(color)
-        color = Color.WHITE
+        color.set(Color.WHITE)
         type = ShapeRenderer.ShapeType.Line
     }
 }
