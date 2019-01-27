@@ -4,6 +4,7 @@ import com.badlogic.ashley.core.Engine
 import com.badlogic.ashley.core.Entity
 import com.badlogic.ashley.core.EntitySystem
 import com.badlogic.ashley.utils.ImmutableArray
+import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
@@ -13,21 +14,15 @@ import ktx.ashley.add
 import ktx.ashley.allOf
 import ktx.ashley.entity
 import net.natruid.jungle.components.RectComponent
+import net.natruid.jungle.components.RenderableComponent
 import net.natruid.jungle.components.TileComponent
 import net.natruid.jungle.components.TransformComponent
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.utils.Point
+import net.natruid.jungle.utils.RendererHelper
 import kotlin.math.roundToInt
 
 class TileSystem : EntitySystem(), InputProcessor {
-    private val tileSize = 64
-    private val halfTileSize = tileSize / 2
-
-    private val family = allOf(TileComponent::class, TransformComponent::class).get()
-    private var tiles: ImmutableArray<Entity>? = null
-    private val mouseCoord: Point = Point(false)
-    private var mouseOnTile: Entity? = null
-
     var columns = 0
         private set
     val rows: Int
@@ -35,6 +30,21 @@ class TileSystem : EntitySystem(), InputProcessor {
             val t = tiles ?: return 0
             return t.size() / columns
         }
+
+    private val tileSize = 64
+    private val halfTileSize = tileSize / 2
+
+    private val family = allOf(TileComponent::class, TransformComponent::class).get()
+    private var tiles: ImmutableArray<Entity>? = null
+    private val mouseCoord: Point = Point(false)
+    private var mouseOnTile: Entity? = null
+    private var mouseOnTileTransform: TransformComponent? = null
+    private var gridRenderer: Entity? = null
+    private val renderer = Jungle.instance.renderer
+    private val shapeRenderer = renderer.shapeRenderer
+    private val camera = Jungle.instance.camera
+    private val gridColor = Color(0.5f, 0.7f, 0.3f, 0.8f)
+    private val gridRenderCallback: ((TransformComponent) -> Unit) = { renderGrid() }
 
     operator fun get(x: Int, y: Int): Entity? {
         val t = tiles ?: return null
@@ -48,14 +58,9 @@ class TileSystem : EntitySystem(), InputProcessor {
         return get(coord.x, coord.y)
     }
 
-    override fun addedToEngine(engine: Engine?) {
-        super.addedToEngine(engine)
-        Jungle.instance.addInputProcessor(this)
-    }
-
     override fun removedFromEngine(engine: Engine?) {
-        super.removedFromEngine(engine)
-        Jungle.instance.removeInputProcessor(this)
+        columns = 0
+        tiles = null
     }
 
     fun create(columns: Int, rows: Int) {
@@ -89,8 +94,16 @@ class TileSystem : EntitySystem(), InputProcessor {
         }
         tiles = e.getEntitiesFor(family)
         e.add {
-            mouseOnTile = entity {
+            gridRenderer = entity {
                 with<TransformComponent> {
+                    visible = false
+                }
+                with<RenderableComponent> {
+                    renderCallback = this@TileSystem.gridRenderCallback
+                }
+            }
+            mouseOnTile = entity {
+                mouseOnTileTransform = with {
                     visible = false
                 }
                 with<RectComponent> {
@@ -99,6 +112,33 @@ class TileSystem : EntitySystem(), InputProcessor {
                     color.set(Color.YELLOW)
                 }
             }
+        }
+    }
+
+    private fun renderGrid() {
+        if (columns <= 0) return
+
+        renderer.begin(camera, RendererHelper.Type.ShapeRenderer, ShapeRenderer.ShapeType.Line)
+        shapeRenderer.color = gridColor
+        val origin = (-halfTileSize).toFloat()
+        val right = (-halfTileSize + columns * tileSize).toFloat()
+        val top = (-halfTileSize + rows * tileSize).toFloat()
+
+        for (i in 0..columns) {
+            shapeRenderer.line(
+                    origin + i * tileSize,
+                    origin,
+                    origin + i * tileSize,
+                    top
+            )
+        }
+        for (i in 0..rows) {
+            shapeRenderer.line(
+                    origin,
+                    origin + i * tileSize,
+                    right,
+                    origin + i * tileSize
+            )
         }
     }
 
@@ -132,16 +172,15 @@ class TileSystem : EntitySystem(), InputProcessor {
         pointForMouseMoved.set(screenX, screenY)
         if (!screenToCoord(pointForMouseMoved)) pointForMouseMoved.setToNone()
         if (pointForMouseMoved == mouseCoord) return false
-        val mouseOnTileTransform = mouseOnTile?.getComponent(TransformComponent::class.java) ?: return false
+        val mott = mouseOnTileTransform ?: return false
 
         mouseCoord.set(pointForMouseMoved)
         if (!mouseCoord.hasValue) {
-            mouseOnTileTransform.visible = false
+            mott.visible = false
             return false
         }
-        mouseOnTileTransform.visible = true
-        val tile = get(mouseCoord)?.getComponent(TransformComponent::class.java) ?: return false
-        mouseOnTileTransform.position.set(tile.position)
+        mott.visible = true
+        mott.position.set((mouseCoord.x * tileSize).toFloat(), (mouseCoord.y * tileSize).toFloat(), 0f)
         return false
     }
 
@@ -154,6 +193,12 @@ class TileSystem : EntitySystem(), InputProcessor {
     }
 
     override fun keyUp(keycode: Int): Boolean {
+        if (keycode == Input.Keys.APOSTROPHE) {
+            val gt = gridRenderer?.getComponent(TransformComponent::class.java)
+            if (gt != null) {
+                gt.visible = !gt.visible
+            }
+        }
         return false
     }
 

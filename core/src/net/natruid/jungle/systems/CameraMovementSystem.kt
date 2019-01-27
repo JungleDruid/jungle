@@ -1,6 +1,5 @@
 package net.natruid.jungle.systems
 
-import com.badlogic.ashley.core.Engine
 import com.badlogic.ashley.core.EntitySystem
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
@@ -26,16 +25,6 @@ class CameraMovementSystem : EntitySystem(0), InputProcessor {
             camera.zoom = max(minZoom, min(maxZoom, value))
             camera.update()
         }
-
-    override fun addedToEngine(engine: Engine?) {
-        super.addedToEngine(engine)
-        Jungle.instance.addInputProcessor(this)
-    }
-
-    override fun removedFromEngine(engine: Engine?) {
-        super.removedFromEngine(engine)
-        Jungle.instance.removeInputProcessor(this)
-    }
 
     override fun update(deltaTime: Float) {
         if (!velocity.isZero) {

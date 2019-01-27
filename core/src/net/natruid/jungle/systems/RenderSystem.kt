@@ -6,10 +6,7 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import ktx.ashley.allOf
 import ktx.ashley.mapperFor
 import ktx.ashley.oneOf
-import net.natruid.jungle.components.LabelComponent
-import net.natruid.jungle.components.RectComponent
-import net.natruid.jungle.components.TextureComponent
-import net.natruid.jungle.components.TransformComponent
+import net.natruid.jungle.components.*
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.core.Marsh
 import net.natruid.jungle.utils.Layer
@@ -20,7 +17,8 @@ class RenderSystem
         allOf(TransformComponent::class).oneOf(
                 TextureComponent::class,
                 LabelComponent::class,
-                RectComponent::class
+                RectComponent::class,
+                RenderableComponent::class
         ).get(),
         ZComparator()
 ) {
@@ -32,6 +30,7 @@ class RenderSystem
     private val textureMapper = mapperFor<TextureComponent>()
     private val labelMapper = mapperFor<LabelComponent>()
     private val rectMapper = mapperFor<RectComponent>()
+    private val renderableMapper = mapperFor<RenderableComponent>()
     private val glyphLayout = GlyphLayout()
     private var layer = Layer.DEFAULT.value
 
@@ -106,6 +105,8 @@ class RenderSystem
             )
             return
         }
+
+        renderableMapper[entity]?.render(transform)
     }
 
     fun setLayer(vararg layers: Layer) {

@@ -19,34 +19,74 @@ abstract class AbstractScreen(protected val engine: PooledEngine = PooledEngine(
     override fun resize(width: Int, height: Int) {}
 
     override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
+        for (system in engine.systems) {
+            if (system is InputProcessor && system.checkProcessing()) {
+                system.touchUp(screenX, screenY, pointer, button)
+            }
+        }
         return false
     }
 
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
+        for (system in engine.systems) {
+            if (system is InputProcessor && system.checkProcessing()) {
+                system.mouseMoved(screenX, screenY)
+            }
+        }
         return false
     }
 
     override fun keyTyped(character: Char): Boolean {
+        for (system in engine.systems) {
+            if (system is InputProcessor && system.checkProcessing()) {
+                system.keyTyped(character)
+            }
+        }
         return false
     }
 
     override fun scrolled(amount: Int): Boolean {
+        for (system in engine.systems) {
+            if (system is InputProcessor && system.checkProcessing()) {
+                system.scrolled(amount)
+            }
+        }
         return false
     }
 
     override fun keyUp(keycode: Int): Boolean {
+        for (system in engine.systems) {
+            if (system is InputProcessor && system.checkProcessing()) {
+                system.keyUp(keycode)
+            }
+        }
         return false
     }
 
     override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
+        for (system in engine.systems) {
+            if (system is InputProcessor && system.checkProcessing()) {
+                system.touchDragged(screenX, screenY, pointer)
+            }
+        }
         return false
     }
 
     override fun keyDown(keycode: Int): Boolean {
+        for (system in engine.systems) {
+            if (system is InputProcessor && system.checkProcessing()) {
+                system.keyDown(keycode)
+            }
+        }
         return false
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
+        for (system in engine.systems) {
+            if (system is InputProcessor && system.checkProcessing()) {
+                system.touchDown(screenX, screenY, pointer, button)
+            }
+        }
         return false
     }
 

@@ -21,7 +21,6 @@ data class Point(var x: Int, var y: Int) {
     }
 
     override fun equals(other: Any?): Boolean {
-        if (this.hashCode() == other.hashCode()) return true
         if (other is Point) {
             return x == other.x && y == other.y
         }
@@ -32,6 +31,10 @@ data class Point(var x: Int, var y: Int) {
         var result = x
         result = 31 * result + y
         return result
+    }
+
+    override fun toString(): String {
+        return "($x, $y)"
     }
 
     operator fun plusAssign(other: Point) {
