@@ -27,10 +27,6 @@ class RenderSystem
     private val batch = renderer.batch
     private val shapeRenderer = renderer.shapeRenderer
     private val transformMapper = mapperFor<TransformComponent>()
-    private val textureMapper = mapperFor<TextureComponent>()
-    private val labelMapper = mapperFor<LabelComponent>()
-    private val rectMapper = mapperFor<RectComponent>()
-    private val renderableMapper = mapperFor<RenderableComponent>()
     private val glyphLayout = GlyphLayout()
     private var layer = Layer.DEFAULT.value
 
@@ -44,69 +40,68 @@ class RenderSystem
     }
 
     override fun processEntity(entity: Entity?, deltaTime: Float) {
+        if (entity == null) return
+
         val transform = transformMapper[entity]
 
         if (!transform.visible || transform.layer.value.and(layer) == 0) {
             return
         }
 
-        val region = textureMapper[entity]?.region
-        if (region != null) {
-            val width = region.regionWidth.toFloat()
-            val height = region.regionHeight.toFloat()
+        for (component in entity.components) {
+            when (component) {
+                is TextureComponent -> {
+                    component.region?.let { region ->
+                        val width = region.regionWidth.toFloat()
+                        val height = region.regionHeight.toFloat()
 
-            val originX = width * transform.pivot.x
-            val originY = height * transform.pivot.y
+                        val originX = width * transform.pivot.x
+                        val originY = height * transform.pivot.y
 
-            renderer.begin(camera, RendererHelper.Type.SpriteBatch)
-            batch.draw(
-                    region,
-                    transform.position.x - originX,
-                    transform.position.y - originY,
-                    originX,
-                    originY,
-                    width,
-                    height,
-                    transform.scale.x,
-                    transform.scale.y,
-                    transform.rotation
-            )
-            return
+                        renderer.begin(camera, RendererHelper.Type.SpriteBatch)
+                        batch.draw(
+                                region,
+                                transform.position.x - originX,
+                                transform.position.y - originY,
+                                originX,
+                                originY,
+                                width,
+                                height,
+                                transform.scale.x,
+                                transform.scale.y,
+                                transform.rotation
+                        )
+                    }
+                }
+                is LabelComponent -> {
+                    val font = Marsh.Fonts[component.fontName]
+                    glyphLayout.setText(font, component.text, component.color, component.width, component.align, component.width > 0f)
+                    val originX = glyphLayout.width * transform.pivot.x
+                    val originY = glyphLayout.height * transform.pivot.y
+                    renderer.begin(camera, RendererHelper.Type.SpriteBatch)
+                    font.draw(batch, glyphLayout, transform.position.x - originX, transform.position.y - originY)
+                }
+                is RectComponent -> {
+                    val originX = component.width * transform.pivot.x
+                    val originY = component.height * transform.pivot.y
+
+                    renderer.begin(camera, RendererHelper.Type.ShapeRenderer, component.type)
+                    shapeRenderer.color = component.color
+                    shapeRenderer.rect(
+                            transform.position.x - originX,
+                            transform.position.y - originY,
+                            originX,
+                            originY,
+                            component.width,
+                            component.height,
+                            transform.scale.x,
+                            transform.scale.y,
+                            transform.rotation
+                    )
+                }
+                is RenderableComponent -> component.render(transform)
+            }
         }
-
-        val label = labelMapper[entity]
-        if (label != null) {
-            val font = Marsh.Fonts[label.fontName]
-            glyphLayout.setText(font, label.text, label.color, label.width, label.align, label.width > 0f)
-            val originX = glyphLayout.width * transform.pivot.x
-            val originY = glyphLayout.height * transform.pivot.y
-            renderer.begin(camera, RendererHelper.Type.SpriteBatch)
-            font.draw(batch, glyphLayout, transform.position.x - originX, transform.position.y - originY)
-            return
-        }
-
-        val rect = rectMapper[entity]
-        if (rect != null) {
-            val originX = rect.width * transform.pivot.x
-            val originY = rect.height * transform.pivot.y
-
-            renderer.begin(camera, RendererHelper.Type.ShapeRenderer, rect.type)
-            shapeRenderer.color = rect.color
-            shapeRenderer.rect(
-                    transform.position.x - originX,
-                    transform.position.y - originY,
-                    originX,
-                    originY,
-                    rect.width,
-                    rect.height,
-                    transform.scale.x,
-                    transform.scale.y,
-                    transform.rotation
-            )
-            return
-        }
-
-        renderableMapper[entity]?.render(transform)
     }
 
     fun setLayer(vararg layers: Layer) {

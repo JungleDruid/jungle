@@ -3,7 +3,6 @@ package net.natruid.jungle.systems
 import com.badlogic.ashley.core.Engine
 import com.badlogic.ashley.core.Entity
 import com.badlogic.ashley.core.EntitySystem
-import com.badlogic.ashley.utils.ImmutableArray
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.Color
@@ -13,30 +12,42 @@ import com.badlogic.gdx.math.Vector3
 import ktx.ashley.add
 import ktx.ashley.allOf
 import ktx.ashley.entity
-import net.natruid.jungle.components.RectComponent
-import net.natruid.jungle.components.RenderableComponent
-import net.natruid.jungle.components.TileComponent
-import net.natruid.jungle.components.TransformComponent
+import ktx.collections.GdxArray
+import net.natruid.jungle.components.*
 import net.natruid.jungle.core.Jungle
-import net.natruid.jungle.utils.Point
-import net.natruid.jungle.utils.RendererHelper
+import net.natruid.jungle.utils.*
+import java.text.DecimalFormat
 import kotlin.math.roundToInt
 
 class TileSystem : EntitySystem(), InputProcessor {
+    companion object {
+        private val adjacent = arrayOf(
+                ImmutablePoint(Point(1, 0)),
+                ImmutablePoint(Point(0, 1)),
+                ImmutablePoint(Point(-1, 0)),
+                ImmutablePoint(Point(0, -1))
+        )
+        private val diagonals = arrayOf(
+                ImmutablePoint(Point(1, 1)),
+                ImmutablePoint(Point(-1, 1)),
+                ImmutablePoint(Point(-1, -1)),
+                ImmutablePoint(Point(1, -1))
+        )
+    }
+
     var columns = 0
         private set
     val rows: Int
         get() {
-            val t = tiles ?: return 0
-            return t.size() / columns
+            return tiles.size / columns
         }
 
     private val tileSize = 64
     private val halfTileSize = tileSize / 2
 
     private val family = allOf(TileComponent::class, TransformComponent::class).get()
-    private var tiles: ImmutableArray<Entity>? = null
-    private val mouseCoord: Point = Point(false)
+    private var tiles: GdxArray<TileComponent> = GdxArray(1600)
+    private val mouseCoord: Point = Point()
     private var mouseOnTile: Entity? = null
     private var mouseOnTileTransform: TransformComponent? = null
     private var gridRenderer: Entity? = null
@@ -46,34 +57,63 @@ class TileSystem : EntitySystem(), InputProcessor {
     private val gridColor = Color(0.5f, 0.7f, 0.3f, 0.8f)
     private val gridRenderCallback: ((TransformComponent) -> Unit) = { renderGrid() }
 
-    operator fun get(x: Int, y: Int): Entity? {
-        val t = tiles ?: return null
+    operator fun get(x: Int, y: Int): TileComponent? {
+        if (x < 0 || y < 0 || x >= columns || y >= columns) return null
         val index = y * columns + x
-        if (index < 0 || index >= t.size()) return null
-        return t[index]
+        if (index < 0 || index >= tiles.size) return null
+        return tiles[index]
     }
 
-    operator fun get(coord: Point?): Entity? {
+    operator fun get(coord: Point?): TileComponent? {
         if (coord == null) return null
         return get(coord.x, coord.y)
     }
 
-    override fun removedFromEngine(engine: Engine?) {
-        columns = 0
-        tiles = null
+    fun getEntity(x: Int, y: Int): Entity? {
+        if (columns == 0) return null
+        val e = engine?.getEntitiesFor(family) ?: return null
+        val index = y * columns + x
+        if (index < 0 || index >= e.size()) return null
+        return e[index]
+    }
+
+    fun getEntity(tile: TileComponent): Entity? {
+        return getEntity(tile.x, tile.y)
+    }
+
+    fun getPosition(tile: TileComponent): Vector3? {
+        return getEntity(tile)?.getComponent(TransformComponent::class.java)?.position
+    }
+
+    private val gdxArrayForNeighbors = GdxArray<TileComponent>(8)
+    fun neighbors(x: Int, y: Int, diagonal: Boolean = false): Array<TileComponent> {
+        gdxArrayForNeighbors.clear()
+        val p = Point.obtain()
+        for (point in if (!diagonal) adjacent else diagonals) {
+            p.set(x, y)
+            p += point
+            val tile = get(p) ?: continue
+            gdxArrayForNeighbors.add(tile)
+        }
+        p.free()
+        return gdxArrayForNeighbors.toArray(TileComponent::class.java)
     }
 
     fun create(columns: Int, rows: Int) {
         val e = engine ?: return
+        clean()
         this.columns = columns
         for (y in 0 until rows) {
             for (x in 0 until columns) {
                 val isBlock = random() > 0.8 && x > 0 && y > 0
                 e.add {
                     entity {
-                        with<TileComponent> {
+                        val tile = with<TileComponent> {
+                            this.x = x
+                            this.y = y
                             walkable = !isBlock
                         }
+                        tiles.add(tile)
                         with<TransformComponent> {
                             position.x = x * tileSize.toFloat()
                             position.y = y * tileSize.toFloat()
@@ -92,7 +132,6 @@ class TileSystem : EntitySystem(), InputProcessor {
                 }
             }
         }
-        tiles = e.getEntitiesFor(family)
         e.add {
             gridRenderer = entity {
                 with<TransformComponent> {
@@ -105,6 +144,7 @@ class TileSystem : EntitySystem(), InputProcessor {
             mouseOnTile = entity {
                 mouseOnTileTransform = with {
                     visible = false
+                    position.z = 10f
                 }
                 with<RectComponent> {
                     width = tileSize.toFloat()
@@ -157,15 +197,55 @@ class TileSystem : EntitySystem(), InputProcessor {
         return true
     }
 
+    private val pathEntities = GdxArray<Entity>()
+    private var pathResult: GdxArray<PathNode>? = null
+    private val formatter = DecimalFormat("#.#")
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
+        val tile = get(mouseCoord.x, mouseCoord.y)
+        if (tile != null) {
+            cancelPath()
+            pathResult = Pathfinder.area(this, tile, 5f)
+            pathResult?.let { result ->
+                for (p in result) {
+                    p.tile?.let { tile ->
+                        engine.add {
+                            val e = entity {
+                                with<TransformComponent> {
+                                    position.set(getPosition(tile))
+                                }
+                                with<RectComponent> {
+                                    color.set(Color.GREEN)
+                                    width = tileSize.toFloat()
+                                    height = tileSize.toFloat()
+                                }
+                                with<LabelComponent> {
+                                    text = formatter.format(p.length)
+                                }
+                            }
+                            pathEntities.add(e)
+                        }
+                    }
+                }
+                return true
+            }
+        }
         return false
+    }
+
+    private fun cancelPath() {
+        for (pathEntity in pathEntities) {
+            engine.removeEntity(pathEntity)
+        }
+        pathEntities.clear()
+        pathResult?.let { Pathfinder.freeResult(it) }
+        pathResult = null
     }
 
     override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
         return false
     }
 
-    private val pointForMouseMoved = Point(false)
+    private val pointForMouseMoved = Point()
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
         if (!this.checkProcessing()) return false
 
@@ -180,7 +260,7 @@ class TileSystem : EntitySystem(), InputProcessor {
             return false
         }
         mott.visible = true
-        mott.position.set((mouseCoord.x * tileSize).toFloat(), (mouseCoord.y * tileSize).toFloat(), 0f)
+        mott.position.set((mouseCoord.x * tileSize).toFloat(), (mouseCoord.y * tileSize).toFloat(), 10f)
         return false
     }
 
@@ -212,6 +292,18 @@ class TileSystem : EntitySystem(), InputProcessor {
 
     override fun setProcessing(processing: Boolean) {
         super.setProcessing(processing)
-        if (!processing) mouseOnTile?.getComponent(TransformComponent::class.java)?.visible = false
+        if (!processing) mouseOnTileTransform?.visible = false
+    }
+
+    override fun removedFromEngine(engine: Engine?) {
+        super.removedFromEngine(engine)
+        clean()
+    }
+
+    private fun clean() {
+        columns = 0
+        tiles.clear()
+        pathEntities.clear()
+        pathResult = null
     }
 }

@@ -1,8 +1,30 @@
 package net.natruid.jungle.utils
 
-data class Point(var x: Int, var y: Int) {
+import com.badlogic.gdx.utils.Pool
 
-    constructor(hasValue: Boolean) : this(if (hasValue) 0 else Int.MIN_VALUE, if (hasValue) 0 else Int.MIN_VALUE)
+data class Point(var x: Int, var y: Int) : Pool.Poolable {
+    companion object {
+        private val pool by lazy {
+            object : Pool<Point>() {
+                override fun newObject(): Point {
+                    return Point()
+                }
+            }
+        }
+
+        fun obtain(): Point {
+            return pool.obtain()
+        }
+
+        fun obtain(x: Int, y: Int): Point {
+            val ret = pool.obtain()
+            ret.x = x
+            ret.y = y
+            return ret
+        }
+    }
+
+    constructor() : this(Int.MIN_VALUE, Int.MIN_VALUE)
 
     fun set(x: Int, y: Int) {
         this.x = x
@@ -55,5 +77,33 @@ data class Point(var x: Int, var y: Int) {
     operator fun divAssign(other: Point) {
         this.x /= other.x
         this.y /= other.y
+    }
+
+    operator fun plusAssign(other: ImmutablePoint) {
+        this.x += other.x
+        this.y += other.y
+    }
+
+    operator fun minusAssign(other: ImmutablePoint) {
+        this.x -= other.x
+        this.y -= other.y
+    }
+
+    operator fun timesAssign(other: ImmutablePoint) {
+        this.x *= other.x
+        this.y *= other.y
+    }
+
+    operator fun divAssign(other: ImmutablePoint) {
+        this.x /= other.x
+        this.y /= other.y
+    }
+
+    override fun reset() {
+        setToNone()
+    }
+
+    fun free() {
+        pool.free(this)
     }
 }
