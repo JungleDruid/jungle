@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.MathUtils.random
 import com.badlogic.gdx.math.Vector3
+import com.badlogic.gdx.utils.Align
 import ktx.ashley.add
 import ktx.ashley.allOf
 import ktx.ashley.entity
@@ -222,6 +223,7 @@ class TileSystem : EntitySystem(), InputProcessor {
                                 }
                                 with<LabelComponent> {
                                     text = formatter.format(p.length)
+                                    align = Align.center
                                 }
                             }
                             pathEntities.add(e)

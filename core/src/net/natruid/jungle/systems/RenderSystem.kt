@@ -3,6 +3,7 @@ package net.natruid.jungle.systems
 import com.badlogic.ashley.core.Entity
 import com.badlogic.ashley.systems.SortedIteratingSystem
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
+import com.badlogic.gdx.utils.Align
 import ktx.ashley.allOf
 import ktx.ashley.mapperFor
 import ktx.ashley.oneOf
@@ -75,11 +76,19 @@ class RenderSystem
                 }
                 is LabelComponent -> {
                     val font = Marsh.Fonts[component.fontName]
-                    glyphLayout.setText(font, component.text, component.color, component.width, component.align, component.width > 0f)
-                    val originX = glyphLayout.width * transform.pivot.x
-                    val originY = glyphLayout.height * transform.pivot.y
+                    val hAlign = when {
+                        component.align == Align.top -> Align.center
+                        component.align == Align.bottom -> Align.center
+                        else -> component.align
+                    }
+                    glyphLayout.setText(font, component.text, component.color, component.width, hAlign, component.width > 0f)
+                    val offsetY: Float = when {
+                        component.align.and(Align.top) != 0 -> 0f
+                        component.align.and(Align.bottom) != 0 -> glyphLayout.height
+                        else -> glyphLayout.height * transform.pivot.y
+                    }
                     renderer.begin(camera, RendererHelper.Type.SpriteBatch)
-                    font.draw(batch, glyphLayout, transform.position.x - originX, transform.position.y - originY)
+                    font.draw(batch, glyphLayout, transform.position.x, transform.position.y + offsetY)
                 }
                 is RectComponent -> {
                     val originX = component.width * transform.pivot.x
