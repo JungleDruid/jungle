@@ -1,6 +1,8 @@
 package net.natruid.jungle.utils
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
@@ -29,6 +31,10 @@ class RendererHelper : Disposable {
             }
             Type.ShapeRenderer -> {
                 shapeRenderer.projectionMatrix = camera.combined
+                Gdx.gl.let {
+                    it.glEnable(GL20.GL_BLEND)
+                    it.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+                }
                 shapeRenderer.begin(shapeType)
                 this.shapeType = shapeType
             }
@@ -43,7 +49,10 @@ class RendererHelper : Disposable {
     fun end() {
         when (current) {
             Type.SpriteBatch -> batch.end()
-            Type.ShapeRenderer -> shapeRenderer.end()
+            Type.ShapeRenderer -> {
+                shapeRenderer.end()
+                Gdx.gl.glDisable(GL20.GL_BLEND)
+            }
             else -> {
                 return
             }

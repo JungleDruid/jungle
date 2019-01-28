@@ -149,7 +149,8 @@ class TileSystem : EntitySystem(), InputProcessor {
                 with<RectComponent> {
                     width = tileSize.toFloat()
                     height = tileSize.toFloat()
-                    color.set(Color.YELLOW)
+                    type = ShapeRenderer.ShapeType.Filled
+                    color.set(Color.YELLOW).a = 0.4f
                 }
             }
         }
@@ -214,9 +215,10 @@ class TileSystem : EntitySystem(), InputProcessor {
                                     position.set(getPosition(tile))
                                 }
                                 with<RectComponent> {
-                                    color.set(Color.GREEN)
                                     width = tileSize.toFloat()
                                     height = tileSize.toFloat()
+                                    type = ShapeRenderer.ShapeType.Filled
+                                    color.set(Color.CYAN).a = 0.3f
                                 }
                                 with<LabelComponent> {
                                     text = formatter.format(p.length)
