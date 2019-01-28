@@ -199,15 +199,15 @@ class TileSystem : EntitySystem(), InputProcessor {
         return true
     }
 
-    private val pathEntities = GdxArray<Entity>()
-    private var pathResult: GdxArray<PathNode>? = null
+    private val moveAreaEntities = GdxArray<Entity>()
+    private var moveAreaResult: GdxArray<PathNode>? = null
     private val formatter = DecimalFormat("#.#")
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
         val tile = get(mouseCoord.x, mouseCoord.y)
         if (tile != null) {
-            cancelPath()
-            pathResult = Pathfinder.area(this, tile, 5f)
-            pathResult?.let { result ->
+            cancelMoveArea()
+            moveAreaResult = Pathfinder.area(this, tile, 5f)
+            moveAreaResult?.let { result ->
                 for (p in result) {
                     p.tile?.let { tile ->
                         engine.add {
@@ -226,7 +226,7 @@ class TileSystem : EntitySystem(), InputProcessor {
                                     align = Align.center
                                 }
                             }
-                            pathEntities.add(e)
+                            moveAreaEntities.add(e)
                         }
                     }
                 }
@@ -236,13 +236,14 @@ class TileSystem : EntitySystem(), InputProcessor {
         return false
     }
 
-    private fun cancelPath() {
-        for (pathEntity in pathEntities) {
-            engine.removeEntity(pathEntity)
+    private fun cancelMoveArea() {
+        for (entity in moveAreaEntities) {
+            engine.removeEntity(entity)
         }
-        pathEntities.clear()
-        pathResult?.let { Pathfinder.freeResult(it) }
-        pathResult = null
+        moveAreaEntities.clear()
+        Pathfinder.freeResult(moveAreaResult)
+        moveAreaResult = null
+        cancelPath()
     }
 
     override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
@@ -250,6 +251,7 @@ class TileSystem : EntitySystem(), InputProcessor {
     }
 
     private val pointForMouseMoved = Point()
+    private val pathEntities = GdxArray<Entity>()
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
         if (!this.checkProcessing()) return false
 
@@ -258,6 +260,7 @@ class TileSystem : EntitySystem(), InputProcessor {
         if (pointForMouseMoved == mouseCoord) return false
         val mott = mouseOnTileTransform ?: return false
 
+        cancelPath()
         mouseCoord.set(pointForMouseMoved)
         if (!mouseCoord.hasValue) {
             mott.visible = false
@@ -265,7 +268,39 @@ class TileSystem : EntitySystem(), InputProcessor {
         }
         mott.visible = true
         mott.position.set((mouseCoord.x * tileSize).toFloat(), (mouseCoord.y * tileSize).toFloat(), 10f)
+        moveAreaResult?.let { result ->
+            for (node in result) {
+                if (mouseCoord.x == node.tile!!.x && mouseCoord.y == node.tile!!.y) {
+                    engine.add {
+                        var prevNode = node
+                        while (prevNode != null) {
+                            val e = entity {
+                                with<TransformComponent> {
+                                    position.set(getPosition(prevNode.tile!!))
+                                }
+                                with<RectComponent> {
+                                    width = tileSize.toFloat()
+                                    height = tileSize.toFloat()
+                                    type = ShapeRenderer.ShapeType.Filled
+                                    color.set(Color.CYAN).a = 0.3f
+                                }
+                            }
+                            pathEntities.add(e)
+                            prevNode = prevNode.prev
+                        }
+                    }
+                    break
+                }
+            }
+        }
         return false
+    }
+
+    private fun cancelPath() {
+        for (entity in pathEntities) {
+            engine.removeEntity(entity)
+        }
+        pathEntities.clear()
     }
 
     override fun keyTyped(character: Char): Boolean {
@@ -307,7 +342,9 @@ class TileSystem : EntitySystem(), InputProcessor {
     private fun clean() {
         columns = 0
         tiles.clear()
+        moveAreaEntities.clear()
         pathEntities.clear()
-        pathResult = null
+        Pathfinder.freeResult(moveAreaResult)
+        moveAreaResult = null
     }
 }

@@ -30,7 +30,8 @@ class Pathfinder : Pool.Poolable {
             return ret
         }
 
-        fun freeResult(result: GdxArray<PathNode>) {
+        fun freeResult(result: GdxArray<PathNode>?) {
+            if (result == null) return
             PathNode.pool.freeAll(result)
             result.clear()
             resultPool.free(result)
@@ -38,19 +39,24 @@ class Pathfinder : Pool.Poolable {
     }
 
     private val frontier = Queue<TileComponent>()
-    private val visited = ObjectMap<TileComponent, Float>()
+    private val visited = ObjectMap<TileComponent, PathNode>()
+    private var locked = false
     val result: GdxArray<PathNode>
         get() {
+            if (locked) {
+                error("[Error] Pathfinder - Cannot obtain the result more than once.")
+            }
+            locked = true
             val ret = resultPool.obtain()
-            for (entry in visited) {
-                ret.add(PathNode.obtain(entry.key, entry.value))
+            for (node in visited.values()) {
+                ret.add(node)
             }
             return ret
         }
 
     private fun init(from: TileComponent) {
         frontier.addLast(from)
-        visited[from] = 0f
+        visited[from] = PathNode.obtain(from, 0f)
     }
 
     private val walkables = GdxArray<Boolean>(4)
@@ -59,7 +65,7 @@ class Pathfinder : Pool.Poolable {
         init(from)
         while (!frontier.isEmpty) {
             val current = frontier.removeFirst()
-            val steps = visited[current]
+            val node = visited[current]
             for (next in tiles.neighbors(current.x, current.y)) {
                 if (diagonal) {
                     val size = walkables.size
@@ -71,22 +77,34 @@ class Pathfinder : Pool.Poolable {
                     }
                     walkables.add(next.walkable)
                 }
-                if (!next.walkable || steps + 1 > length) continue
+                val nextLength = node.length + 1
+                if (!next.walkable || nextLength > length) continue
                 val v = visited.get(next)
-                if (v == null || v > steps + 1) {
+                if (v == null || v.length > nextLength) {
                     frontier.addLast(next)
-                    visited[next] = steps + 1
+                    if (v == null) {
+                        visited[next] = PathNode.obtain(next, nextLength, node)
+                    } else {
+                        v.length = nextLength
+                        v.prev = node
+                    }
                 }
             }
             if (diagonal) {
                 if (walkableDiagonals.size > 0) {
                     for (next in tiles.neighbors(current.x, current.y, true)) {
                         if (walkableDiagonals.size == 0) break
-                        if (!walkableDiagonals.removeFirst() || !next.walkable || steps + 1.5f > length) continue
+                        val nextLength = node.length + 1.5f
+                        if (!walkableDiagonals.removeFirst() || !next.walkable || nextLength > length) continue
                         val v = visited.get(next)
-                        if (v == null || v > steps + 1.5f) {
+                        if (v == null || v.length > nextLength) {
                             frontier.addLast(next)
-                            visited[next] = steps + 1.5f
+                            if (v == null) {
+                                visited[next] = PathNode.obtain(next, nextLength, node)
+                            } else {
+                                v.length = nextLength
+                                v.prev = node
+                            }
                         }
                     }
                 }
@@ -98,7 +116,13 @@ class Pathfinder : Pool.Poolable {
 
     override fun reset() {
         frontier.clear()
+        if (!locked) {
+            for (node in visited.values()) {
+                node.free()
+            }
+        }
         visited.clear()
+        locked = false
     }
 
     fun free() {
