@@ -9,27 +9,27 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Disposable
 
 class RendererHelper : Disposable {
-    enum class Type { None, SpriteBatch, ShapeRenderer }
+    enum class Type { NONE, SPRITE_BATCH, SHAPE_RENDERER }
 
     val batch = SpriteBatch()
     val shapeRenderer = ShapeRenderer()
 
-    private var current = Type.None
+    private var current = Type.NONE
     private var shapeType = ShapeRenderer.ShapeType.Line
 
     fun begin(camera: OrthographicCamera, rendererType: Type, shapeType: ShapeRenderer.ShapeType = ShapeRenderer.ShapeType.Line) {
-        if (current == rendererType && (rendererType != Type.ShapeRenderer || this.shapeType == shapeType)) return
+        if (current == rendererType && (rendererType != Type.SHAPE_RENDERER || this.shapeType == shapeType)) return
 
         end()
 
         when (rendererType) {
-            Type.SpriteBatch -> {
+            Type.SPRITE_BATCH -> {
                 batch.color = Color.WHITE
                 batch.projectionMatrix = camera.combined
                 batch.enableBlending()
                 batch.begin()
             }
-            Type.ShapeRenderer -> {
+            Type.SHAPE_RENDERER -> {
                 shapeRenderer.projectionMatrix = camera.combined
                 Gdx.gl.let {
                     it.glEnable(GL20.GL_BLEND)
@@ -48,8 +48,8 @@ class RendererHelper : Disposable {
 
     fun end() {
         when (current) {
-            Type.SpriteBatch -> batch.end()
-            Type.ShapeRenderer -> {
+            Type.SPRITE_BATCH -> batch.end()
+            Type.SHAPE_RENDERER -> {
                 shapeRenderer.end()
                 Gdx.gl.glDisable(GL20.GL_BLEND)
             }
@@ -58,7 +58,7 @@ class RendererHelper : Disposable {
             }
         }
 
-        current = Type.None
+        current = Type.NONE
     }
 
     override fun dispose() {

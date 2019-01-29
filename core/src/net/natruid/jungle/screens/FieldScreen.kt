@@ -2,18 +2,29 @@ package net.natruid.jungle.screens
 
 import com.badlogic.ashley.core.PooledEngine
 import com.badlogic.gdx.Input
+import net.natruid.jungle.components.UnitComponent
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.systems.CameraMovementSystem
 import net.natruid.jungle.systems.RenderSystem
 import net.natruid.jungle.systems.TileSystem
+import net.natruid.jungle.systems.UnitManagementSystem
 
 class FieldScreen : AbstractScreen(PooledEngine(400, 3600, 400, 3600)) {
     init {
         engine.addSystem(CameraMovementSystem())
         engine.addSystem(RenderSystem())
-        val tiles = TileSystem()
-        engine.addSystem(tiles)
-        tiles.create(20, 20)
+        TileSystem().let {
+            engine.addSystem(it)
+            it.create(20, 20)
+        }
+        UnitManagementSystem().let {
+            engine.addSystem(it)
+            engine.createComponent(UnitComponent::class.java).let { unit ->
+                unit.faction = UnitComponent.Faction.PLAYER
+                unit.speed = 6f
+                it.addUnit(unit)
+            }
+        }
     }
 
     override fun show() {
@@ -27,8 +38,15 @@ class FieldScreen : AbstractScreen(PooledEngine(400, 3600, 400, 3600)) {
         super.keyUp(keycode)
         if (keycode == Input.Keys.R) {
             engine.removeAllEntities()
-            val tiles = engine.getSystem(TileSystem::class.java)
-            tiles.create(20, 20)
+            engine.getSystem(TileSystem::class.java).create(20, 20)
+            engine.getSystem(UnitManagementSystem::class.java).let {
+                it.clean()
+                engine.createComponent(UnitComponent::class.java).let { unit ->
+                    unit.faction = UnitComponent.Faction.PLAYER
+                    unit.speed = 6f
+                    it.addUnit(unit)
+                }
+            }
             return true
         }
 

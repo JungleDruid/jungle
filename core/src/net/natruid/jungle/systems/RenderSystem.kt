@@ -19,6 +19,7 @@ class RenderSystem
                 TextureComponent::class,
                 LabelComponent::class,
                 RectComponent::class,
+                CircleComponent::class,
                 RenderableComponent::class
         ).get(),
         ZComparator()
@@ -59,7 +60,7 @@ class RenderSystem
                         val originX = width * transform.pivot.x
                         val originY = height * transform.pivot.y
 
-                        renderer.begin(camera, RendererHelper.Type.SpriteBatch)
+                        renderer.begin(camera, RendererHelper.Type.SPRITE_BATCH)
                         batch.draw(
                                 region,
                                 transform.position.x - originX,
@@ -87,14 +88,14 @@ class RenderSystem
                         component.align.and(Align.bottom) != 0 -> glyphLayout.height
                         else -> glyphLayout.height * transform.pivot.y
                     }
-                    renderer.begin(camera, RendererHelper.Type.SpriteBatch)
+                    renderer.begin(camera, RendererHelper.Type.SPRITE_BATCH)
                     font.draw(batch, glyphLayout, transform.position.x, transform.position.y + offsetY)
                 }
                 is RectComponent -> {
                     val originX = component.width * transform.pivot.x
                     val originY = component.height * transform.pivot.y
 
-                    renderer.begin(camera, RendererHelper.Type.ShapeRenderer, component.type)
+                    renderer.begin(camera, RendererHelper.Type.SHAPE_RENDERER, component.type)
                     shapeRenderer.color = component.color
                     shapeRenderer.rect(
                             transform.position.x - originX,
@@ -106,6 +107,16 @@ class RenderSystem
                             transform.scale.x,
                             transform.scale.y,
                             transform.rotation
+                    )
+                }
+                is CircleComponent -> {
+                    renderer.begin(camera, RendererHelper.Type.SHAPE_RENDERER, component.type)
+                    shapeRenderer.color = component.color
+                    shapeRenderer.circle(
+                            transform.position.x,
+                            transform.position.y,
+                            component.radius,
+                            1.coerceAtLeast((8 * Math.cbrt(component.radius.toDouble()) / camera.zoom).toInt())
                     )
                 }
                 is RenderableComponent -> component.render(transform)
