@@ -36,10 +36,11 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
     private var currentView: AbstractLmlView? = null
     private val inputProcessors = Array<InputProcessor>()
     private var debugView: DebugView? = null
-    private var targetFPS = 30
+    private var targetFPS = 60
     private var backgroundFPS = 10
     private var pauseOnBackground = true
     private var resizing = false
+    private var vSync = true
 
     init {
         instance = this
@@ -59,7 +60,7 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
 
         setScreen(FieldScreen())
         debugView = AbstractView.createView()
-        Gdx.graphics.setVSync(false)
+        Gdx.graphics.setVSync(vSync)
     }
 
     override fun render() {
@@ -73,10 +74,9 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
         renderer.end()
 
         if (!resizing) {
-            if (client.isFocused() || backgroundFPS == 0) {
-                if (targetFPS > 0) Sync.sync(targetFPS)
-            } else {
-                Sync.sync(backgroundFPS)
+            val f = if (client.isFocused() || backgroundFPS == 0) targetFPS else backgroundFPS
+            if (f > 0 && (f < 60 || !vSync)) {
+                Sync.sync(f)
             }
         } else {
             resizing = false
@@ -201,9 +201,14 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
 
                 return true
             }
+            if (keycode == Input.Keys.F10) {
+                Runtime.getRuntime().gc()
+            }
             if (keycode == Input.Keys.F12) {
                 DebugView.show = !DebugView.show
-                targetFPS = if (DebugView.show) 0 else 30
+                targetFPS = if (DebugView.show) 0 else 60
+                vSync = !DebugView.show
+                Gdx.graphics.setVSync(vSync)
             }
         }
 
