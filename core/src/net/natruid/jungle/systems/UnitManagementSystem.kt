@@ -105,13 +105,13 @@ class UnitManagementSystem : SortedIteratingSystem(
         val tile = tiles!![unit.coord]
         if (tile != null) {
             hideMoveArea()
-            var pathIndicator = areaIndicators[unit]
-            if (pathIndicator == null) {
-                pathIndicator = AreaIndicator(engine, Pathfinder.area(tiles!!, tile, unit.speed))
-                areaIndicators[unit] = pathIndicator
+            var areaIndicator = areaIndicators[unit]
+            if (areaIndicator == null) {
+                areaIndicator = AreaIndicator(engine, Pathfinder.area(tiles!!, tile, unit.speed))
+                areaIndicators[unit] = areaIndicator
             }
-            pathIndicator.show()
-            currentMoveArea = pathIndicator
+            areaIndicator.show()
+            currentMoveArea = areaIndicator
         }
     }
 
@@ -149,8 +149,19 @@ class UnitManagementSystem : SortedIteratingSystem(
                 val dest = path[path.size - 1]
                 u.coord = dest.coord
                 areaIndicators.remove(u)!!.clear()
+                selectedUnit = null
+            } else if (selectedUnit != null) {
+                val u = selectedUnit!!
+                areaIndicators.remove(u)?.clear()
+                val areaIndicator = AreaIndicator(
+                        engine,
+                        Pathfinder.path(tiles!!, tiles!![u.coord]!!, tiles!![mouseCoord]!!)
+                )
+                areaIndicators[u] = areaIndicator
+                areaIndicator.show()
+                areaIndicator.showPathTo(mouseCoord)
+                currentMoveArea = areaIndicator
             }
-            selectedUnit = null
         }
 
         return false

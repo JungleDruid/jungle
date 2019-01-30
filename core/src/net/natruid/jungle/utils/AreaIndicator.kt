@@ -16,7 +16,7 @@ import net.natruid.jungle.systems.TileSystem
 import net.natruid.jungle.systems.TileSystem.Companion.tileSize
 import java.text.DecimalFormat
 
-class AreaIndicator(private var engine: Engine, private var pathFinderResult: ArrayList<PathNode>) {
+class AreaIndicator(private var engine: Engine, private var pathFinderResult: Collection<PathNode>) {
     companion object {
         private val formatter = DecimalFormat("#.#")
     }
@@ -36,7 +36,7 @@ class AreaIndicator(private var engine: Engine, private var pathFinderResult: Ar
             }
         } else {
             for (p in pathFinderResult) {
-                p.tile?.let { tile ->
+                p.tile.let { tile ->
                     engine.add {
                         val e = entity {
                             with<TransformComponent> {
@@ -49,7 +49,7 @@ class AreaIndicator(private var engine: Engine, private var pathFinderResult: Ar
                                 color = moveAreaColor
                             }
                             with<LabelComponent> {
-                                text = formatter.format(p.length)
+                                text = formatter.format(p.cost)
                                 align = Align.center
                             }
                         }
@@ -74,7 +74,7 @@ class AreaIndicator(private var engine: Engine, private var pathFinderResult: Ar
 
     private fun getPathQueue(coord: Point): Queue<TileComponent>? {
         for (node in pathFinderResult) {
-            if (coord == node.tile!!.coord) {
+            if (coord == node.tile.coord) {
                 pathQueue.clear()
                 var prevNode: PathNode? = node
                 while (prevNode != null) {
