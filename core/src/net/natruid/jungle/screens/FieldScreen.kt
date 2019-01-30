@@ -1,12 +1,11 @@
 package net.natruid.jungle.screens
 
-import com.badlogic.ashley.core.PooledEngine
 import com.badlogic.gdx.Input
 import net.natruid.jungle.components.UnitComponent
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.systems.*
 
-class FieldScreen : AbstractScreen(PooledEngine(400, 3600, 400, 3600)) {
+class FieldScreen : AbstractScreen() {
     init {
         engine.addSystem(CameraMovementSystem())
         engine.addSystem(RenderSystem())
@@ -16,11 +15,7 @@ class FieldScreen : AbstractScreen(PooledEngine(400, 3600, 400, 3600)) {
         }
         UnitManagementSystem().let {
             engine.addSystem(it)
-            engine.createComponent(UnitComponent::class.java).let { unit ->
-                unit.faction = UnitComponent.Faction.PLAYER
-                unit.speed = 6f
-                it.addUnit(unit)
-            }
+            it.addUnit(UnitComponent(faction = UnitComponent.Faction.PLAYER, speed = 6f))
         }
         engine.addSystem(PathFollowingSystem())
     }
@@ -39,11 +34,7 @@ class FieldScreen : AbstractScreen(PooledEngine(400, 3600, 400, 3600)) {
             engine.getSystem(TileSystem::class.java).create(20, 20)
             engine.getSystem(UnitManagementSystem::class.java).let {
                 it.clean()
-                engine.createComponent(UnitComponent::class.java).let { unit ->
-                    unit.faction = UnitComponent.Faction.PLAYER
-                    unit.speed = 6f
-                    it.addUnit(unit)
-                }
+                it.addUnit(UnitComponent(faction = UnitComponent.Faction.PLAYER, speed = 6f))
             }
             return true
         }

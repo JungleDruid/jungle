@@ -10,18 +10,16 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.utils.I18NBundle
 import com.badlogic.gdx.utils.Json
 import com.badlogic.gdx.utils.JsonReader
-import com.badlogic.gdx.utils.ObjectMap
-import ktx.collections.GdxArray
 import ktx.collections.PooledList
-import ktx.collections.set
 import ktx.collections.toGdxList
 import ktx.freetype.generateFont
 import net.natruid.jungle.utils.Scout
+import kotlin.collections.set
 
 object Marsh {
-    private val fontDefs = GdxArray<FontDef>()
-    private val fontGeneratorMap = ObjectMap<String, FreeTypeFontGenerator>()
-    private var fonts = ObjectMap<String, BitmapFont>()
+    private val fontDefs = ArrayList<FontDef>()
+    private val fontGeneratorMap = HashMap<String, FreeTypeFontGenerator>()
+    private var fonts = HashMap<String, BitmapFont>()
 
     object Fonts {
         operator fun get(key: String): BitmapFont {
@@ -38,7 +36,7 @@ object Marsh {
         }
     }
 
-    private val i18nMap = ObjectMap<String, I18NBundle>()
+    private val i18nMap = HashMap<String, I18NBundle>()
 
     object I18N {
         operator fun get(key: String): I18NBundle {
@@ -73,16 +71,16 @@ object Marsh {
         } catch (e: Exception) {
         }
 
-        return map.values().toGdxList()
+        return map.values.toGdxList()
     }
 
     private fun getFilesImpl(
             path: String,
             ext: String,
             recursive: Boolean,
-            map: ObjectMap<String, FileHandle> = ObjectMap(),
+            map: HashMap<String, FileHandle> = HashMap(),
             useZip: Boolean = false
-    ): ObjectMap<String, FileHandle> {
+    ): HashMap<String, FileHandle> {
         val dir = Scout[path, useZip]
 
         if (!dir.isDirectory) {

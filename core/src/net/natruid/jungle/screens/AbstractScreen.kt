@@ -1,12 +1,12 @@
 package net.natruid.jungle.screens
 
-import com.badlogic.ashley.core.PooledEngine
+import com.badlogic.ashley.core.Engine
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.Screen
 import net.natruid.jungle.systems.RenderSystem
 import net.natruid.jungle.utils.extensions.removeAllSystems
 
-abstract class AbstractScreen(protected val engine: PooledEngine = PooledEngine()) : Screen, InputProcessor {
+abstract class AbstractScreen(protected val engine: Engine = Engine()) : Screen, InputProcessor {
     override fun render(delta: Float) {
         engine.update(delta)
     }

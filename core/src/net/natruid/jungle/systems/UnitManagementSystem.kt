@@ -6,10 +6,8 @@ import com.badlogic.ashley.systems.SortedIteratingSystem
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import com.badlogic.gdx.utils.ObjectMap
 import ktx.ashley.allOf
 import ktx.ashley.mapperFor
-import ktx.collections.set
 import net.natruid.jungle.components.CircleComponent
 import net.natruid.jungle.components.PathFollowerComponent
 import net.natruid.jungle.components.TransformComponent
@@ -17,6 +15,7 @@ import net.natruid.jungle.components.UnitComponent
 import net.natruid.jungle.utils.AreaIndicator
 import net.natruid.jungle.utils.Pathfinder
 import net.natruid.jungle.utils.Point
+import kotlin.collections.set
 
 class UnitManagementSystem : SortedIteratingSystem(
         allOf(TransformComponent::class, UnitComponent::class).get(),
@@ -37,13 +36,13 @@ class UnitManagementSystem : SortedIteratingSystem(
 
     private val unitMapper = mapperFor<UnitComponent>()
     private var tiles: TileSystem? = null
-    private val areaIndicators = ObjectMap<UnitComponent, AreaIndicator>()
+    private val areaIndicators = HashMap<UnitComponent, AreaIndicator>()
     private var currentMoveArea: AreaIndicator? = null
     private var selectedUnit: UnitComponent? = null
 
     fun clean() {
-        areaIndicators.values().forEach {
-            it.free()
+        areaIndicators.values.forEach {
+            it.clear()
         }
         areaIndicators.clear()
         currentMoveArea = null
@@ -65,12 +64,12 @@ class UnitManagementSystem : SortedIteratingSystem(
 
     override fun processEntity(entity: Entity?, deltaTime: Float) {}
 
-    fun getUnit(x: Int, y: Int): UnitComponent? {
-        if (!tiles!!.isCoordValid(x, y)) return null
+    fun getUnit(coord: Point): UnitComponent? {
+        if (!tiles!!.isCoordValid(coord)) return null
 
         for (entity in entities) {
             val unit = unitMapper[entity]
-            if (unit.x == x && unit.y == y) return unit
+            if (unit.coord == coord) return unit
         }
 
         return null
@@ -85,34 +84,30 @@ class UnitManagementSystem : SortedIteratingSystem(
     }
 
     fun addUnit(unit: UnitComponent): Entity {
-        val tile = tiles!![unit.x, unit.y]!!
-        val entity = engine.createEntity()
-        engine.createComponent(TransformComponent::class.java).let {
-            it.position.set(tiles!!.getPosition(tile))
-            entity.add(it)
-        }
+        val tile = tiles!![unit.coord]!!
+        val entity = Entity()
+        entity.add(TransformComponent(tiles!!.getPosition(tile)!!))
         entity.add(unit)
-        engine.createComponent(CircleComponent::class.java).let {
-            it.radius = TileSystem.tileSize / 2f - 10f
-            it.type = ShapeRenderer.ShapeType.Filled
-            when (unit.faction) {
-                UnitComponent.Faction.NONE -> it.color.set(Color.GRAY)
-                UnitComponent.Faction.PLAYER -> it.color.set(Color.BLUE)
-                UnitComponent.Faction.ENEMY -> it.color.set(Color.RED)
-            }
-            entity.add(it)
-        }
+        entity.add(CircleComponent(
+                TileSystem.tileSize / 2f - 10f,
+                when (unit.faction) {
+                    UnitComponent.Faction.NONE -> Color.GRAY
+                    UnitComponent.Faction.PLAYER -> Color.BLUE
+                    UnitComponent.Faction.ENEMY -> Color.RED
+                },
+                ShapeRenderer.ShapeType.Filled
+        ))
         engine.addEntity(entity)
         return entity
     }
 
     private fun showMoveArea(unit: UnitComponent) {
-        val tile = tiles!![unit.x, unit.y]
+        val tile = tiles!![unit.coord]
         if (tile != null) {
             hideMoveArea()
             var pathIndicator = areaIndicators[unit]
             if (pathIndicator == null) {
-                pathIndicator = AreaIndicator.obtain(engine, Pathfinder.area(tiles!!, tile, unit.speed))
+                pathIndicator = AreaIndicator(engine, Pathfinder.area(tiles!!, tile, unit.speed))
                 areaIndicators[unit] = pathIndicator
             }
             pathIndicator.show()
@@ -129,10 +124,9 @@ class UnitManagementSystem : SortedIteratingSystem(
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-        val mouseCoord = tiles!!.mouseCoord
-        if (!mouseCoord.hasValue) return false
+        val mouseCoord = tiles!!.mouseCoord ?: return false
 
-        val unit = getUnit(mouseCoord.x, mouseCoord.y)
+        val unit = getUnit(mouseCoord)
         if (unit != null) {
             when (unit.faction) {
                 UnitComponent.Faction.NONE -> {
@@ -145,20 +139,16 @@ class UnitManagementSystem : SortedIteratingSystem(
                 }
             }
         } else {
-            val path = currentMoveArea?.getPathTo(mouseCoord.x, mouseCoord.y)
+            val path = currentMoveArea?.getPathTo(mouseCoord)
             hideMoveArea()
             if (path != null) {
                 val u = selectedUnit!!
                 val entity = getUnitEntity(u)!!
-                val pathFollower = engine.createComponent(PathFollowerComponent::class.java)
-                pathFollower.setPath(path, tiles!!)
+                val pathFollower = PathFollowerComponent(path, tiles!!)
                 entity.add(pathFollower)
                 val dest = path[path.size - 1]
-                entity.getComponent(UnitComponent::class.java).let {
-                    it.x = dest.x
-                    it.y = dest.y
-                }
-                areaIndicators.remove(u).free()
+                u.coord = dest.coord
+                areaIndicators.remove(u)!!.clear()
             }
             selectedUnit = null
         }
@@ -170,13 +160,13 @@ class UnitManagementSystem : SortedIteratingSystem(
         return false
     }
 
-    private val lastCoord = Point()
+    private var lastCoord: Point? = null
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
         val mouseCoord = tiles!!.mouseCoord
         if (lastCoord != mouseCoord) {
             currentMoveArea?.clearPath()
-            currentMoveArea?.showPathTo(mouseCoord.x, mouseCoord.y)
-            lastCoord.set(mouseCoord)
+            if (mouseCoord != null) currentMoveArea?.showPathTo(mouseCoord)
+            lastCoord = mouseCoord
         }
         return false
     }

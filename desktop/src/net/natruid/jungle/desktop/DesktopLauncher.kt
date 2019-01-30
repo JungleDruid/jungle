@@ -6,13 +6,12 @@ import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.utils.Client
 import org.lwjgl.glfw.GLFW
 
-object DesktopLauncher : Client {
+class DesktopLauncher : Client {
     private val window by lazy { GLFW.glfwGetCurrentContext() }
     private val game = Jungle(this)
     private var focused = false
 
-    @JvmStatic
-    fun main(arg: Array<String>) {
+    init {
         val config = Lwjgl3ApplicationConfiguration()
         config.setTitle("Jungle")
         config.setWindowedMode(1024, 768)

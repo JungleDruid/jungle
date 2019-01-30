@@ -3,7 +3,7 @@ apply plugin: "java"
 sourceCompatibility = JavaVersion.VERSION_1_8
 sourceSets.main.java.srcDirs = [ "src/" ]
 
-project.ext.mainClassName = "net.natruid.jungle.desktop.DesktopLauncher"
+project.ext.mainClassName = "net.natruid.jungle.desktop.MainKt"
 project.ext.assetsDir = new File("../core/assets")
 
 task run(dependsOn: classes, type: JavaExec) {

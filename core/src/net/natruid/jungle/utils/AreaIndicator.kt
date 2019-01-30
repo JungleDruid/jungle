@@ -5,12 +5,9 @@ import com.badlogic.ashley.core.Entity
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Align
-import com.badlogic.gdx.utils.Pool
-import com.badlogic.gdx.utils.Pools
 import com.badlogic.gdx.utils.Queue
 import ktx.ashley.add
 import ktx.ashley.entity
-import ktx.collections.GdxArray
 import net.natruid.jungle.components.LabelComponent
 import net.natruid.jungle.components.RectComponent
 import net.natruid.jungle.components.TileComponent
@@ -19,34 +16,18 @@ import net.natruid.jungle.systems.TileSystem
 import net.natruid.jungle.systems.TileSystem.Companion.tileSize
 import java.text.DecimalFormat
 
-class AreaIndicator : Pool.Poolable {
+class AreaIndicator(private var engine: Engine, private var pathFinderResult: ArrayList<PathNode>) {
     companion object {
         private val formatter = DecimalFormat("#.#")
-
-        fun obtain(engine: Engine, pathFinderResult: GdxArray<PathNode>): AreaIndicator {
-            val ret = Pools.obtain(AreaIndicator::class.java)
-            ret.engine = engine
-            ret.areaResult = pathFinderResult
-            return ret
-        }
     }
 
-    private var engine: Engine? = null
-    private var areaResult: GdxArray<PathNode>? = null
-    private val entities = GdxArray<Entity>()
-    private val pathEntities = GdxArray<Entity>()
+    private val entities = ArrayList<Entity>()
+    private val pathEntities = ArrayList<Entity>()
     private var shown: Boolean = false
-
-    fun setup(engine: Engine, pathResult: GdxArray<PathNode>) {
-        reset()
-        this.engine = engine
-        this.areaResult = pathResult
-    }
+    private val moveAreaColor = Color(0f, 1f, 1f, .3f)
 
     fun show() {
         if (shown) return
-        val engine = engine ?: return
-        val result = areaResult ?: return
         val tiles = engine.getSystem(TileSystem::class.java) ?: return
 
         if (entities.size > 0) {
@@ -54,18 +35,18 @@ class AreaIndicator : Pool.Poolable {
                 it.getComponent(TransformComponent::class.java)?.visible = true
             }
         } else {
-            for (p in result) {
+            for (p in pathFinderResult) {
                 p.tile?.let { tile ->
                     engine.add {
                         val e = entity {
                             with<TransformComponent> {
-                                position.set(tiles.getPosition(tile))
+                                position = tiles.getPosition(tile)!!
                             }
                             with<RectComponent> {
                                 width = TileSystem.tileSize.toFloat()
                                 height = tileSize.toFloat()
                                 type = ShapeRenderer.ShapeType.Filled
-                                color.set(Color.CYAN).a = 0.3f
+                                color = moveAreaColor
                             }
                             with<LabelComponent> {
                                 text = formatter.format(p.length)
@@ -91,12 +72,11 @@ class AreaIndicator : Pool.Poolable {
 
     private val pathQueue = Queue<TileComponent>()
 
-    private fun getPathQueue(x: Int, y: Int): Queue<TileComponent>? {
-        val result = areaResult ?: return null
-        for (node in result) {
-            if (x == node.tile!!.x && y == node.tile!!.y) {
+    private fun getPathQueue(coord: Point): Queue<TileComponent>? {
+        for (node in pathFinderResult) {
+            if (coord == node.tile!!.coord) {
                 pathQueue.clear()
-                var prevNode = node
+                var prevNode: PathNode? = node
                 while (prevNode != null) {
                     pathQueue.addFirst(prevNode.tile)
                     prevNode = prevNode.prev
@@ -108,29 +88,29 @@ class AreaIndicator : Pool.Poolable {
         return null
     }
 
-    fun getPathTo(x: Int, y: Int): Array<TileComponent>? {
-        val queue = getPathQueue(x, y) ?: return null
+    fun getPathTo(coord: Point): Array<TileComponent>? {
+        val queue = getPathQueue(coord) ?: return null
 
         return Array(queue.size) {
             queue.removeFirst()
         }
     }
 
-    fun showPathTo(x: Int, y: Int): Boolean {
-        val tiles = engine!!.getSystem(TileSystem::class.java)!!
-        val queue = getPathQueue(x, y) ?: return false
+    fun showPathTo(coord: Point): Boolean {
+        val tiles = engine.getSystem(TileSystem::class.java)!!
+        val queue = getPathQueue(coord) ?: return false
         while (!queue.isEmpty) {
-            engine!!.add {
+            engine.add {
                 val tile = queue.removeFirst()
                 val e = entity {
                     with<TransformComponent> {
-                        position.set(tiles.getPosition(tile))
+                        position = tiles.getPosition(tile)!!
                     }
                     with<RectComponent> {
                         width = tileSize.toFloat()
                         height = tileSize.toFloat()
                         type = ShapeRenderer.ShapeType.Filled
-                        color.set(Color.CYAN).a = 0.3f
+                        color = moveAreaColor
                     }
                 }
                 pathEntities.add(e)
@@ -141,26 +121,19 @@ class AreaIndicator : Pool.Poolable {
 
     fun clearPath() {
         for (entity in pathEntities) {
-            engine!!.removeEntity(entity)
+            engine.removeEntity(entity)
         }
         pathEntities.clear()
     }
 
-    override fun reset() {
-        if (engine != null && entities.size > 0) {
+    fun clear() {
+        if (entities.size > 0) {
             entities.forEach { entity ->
-                engine!!.removeEntity(entity)
+                engine.removeEntity(entity)
             }
             entities.clear()
         }
         clearPath()
-        Pathfinder.freeResult(this.areaResult)
-        engine = null
-        areaResult = null
         shown = false
-    }
-
-    fun free() {
-        Pools.free(this)
     }
 }

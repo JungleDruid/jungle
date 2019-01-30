@@ -1,20 +1,10 @@
 package net.natruid.jungle.components
 
 import com.badlogic.ashley.core.Component
-import com.badlogic.gdx.utils.Pool
+import net.natruid.jungle.utils.Point
 
-class TileComponent : Component, Pool.Poolable {
-    var x = 0
-    var y = 0
-    var walkable = true
-
-    override fun reset() {
-        x = 0
-        y = 0
-        walkable = true
-    }
-
+class TileComponent(var coord: Point = Point(), var walkable: Boolean = true) : Component {
     override fun toString(): String {
-        return "($x, $y)"
+        return coord.toString()
     }
 }

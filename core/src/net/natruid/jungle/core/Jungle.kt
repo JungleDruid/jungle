@@ -91,7 +91,7 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
         VisUI.dispose()
     }
 
-    fun resetCamera() {
+    private fun resetCamera() {
         camera.zoom = 1f
         camera.position.setZero()
         camera.direction.set(0f, 0f, -1f)
@@ -201,14 +201,16 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
 
                 return true
             }
+            if (keycode == Input.Keys.F9) {
+                vSync = !vSync
+                targetFPS = if (vSync) 60 else 0
+                Gdx.graphics.setVSync(vSync)
+            }
             if (keycode == Input.Keys.F10) {
                 Runtime.getRuntime().gc()
             }
             if (keycode == Input.Keys.F12) {
                 DebugView.show = !DebugView.show
-                targetFPS = if (DebugView.show) 0 else 60
-                vSync = !DebugView.show
-                Gdx.graphics.setVSync(vSync)
             }
         }
 
@@ -249,14 +251,6 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
 
     private fun unfocusAll() {
         currentView?.stage?.unfocusAll()
-    }
-
-    fun addInputProcessor(processor: InputProcessor) {
-        inputProcessors.add(processor)
-    }
-
-    fun removeInputProcessor(processor: InputProcessor) {
-        inputProcessors.removeValue(processor, true)
     }
 
     fun focusChanged() {

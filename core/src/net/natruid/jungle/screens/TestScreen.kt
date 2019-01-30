@@ -27,7 +27,7 @@ class TestScreen : AbstractScreen() {
                 with<TransformComponent>()
                 with<LabelComponent> {
                     text = "測試 test with a long text abcdefghijklmnopqrstuvwxyz"
-                    color.set(Color.RED)
+                    color = Color.RED
                     width = 300f
                 }
             }

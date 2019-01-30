@@ -1,7 +1,6 @@
 package net.natruid.jungle.utils
 
 import com.badlogic.gdx.Files.FileType
-import com.badlogic.gdx.assets.loaders.FileHandleResolver
 import com.badlogic.gdx.files.FileHandle
 import com.badlogic.gdx.utils.GdxRuntimeException
 import java.io.File
@@ -82,11 +81,5 @@ class ArchiveFileHandle : FileHandle {
         }
 
         return list.toTypedArray()
-    }
-
-    class ArchiveFileHandleResolver(private val archive: ZipFile) : FileHandleResolver {
-        override fun resolve(fileName: String): FileHandle {
-            return ArchiveFileHandle(archive, fileName)
-        }
     }
 }

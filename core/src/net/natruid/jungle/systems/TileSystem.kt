@@ -12,7 +12,7 @@ import com.badlogic.gdx.math.Vector3
 import ktx.ashley.add
 import ktx.ashley.allOf
 import ktx.ashley.entity
-import ktx.collections.GdxArray
+import ktx.math.vec3
 import net.natruid.jungle.components.RectComponent
 import net.natruid.jungle.components.RenderableComponent
 import net.natruid.jungle.components.TileComponent
@@ -41,18 +41,14 @@ class TileSystem : EntitySystem(), InputProcessor {
         )
     }
 
-    var columns = 0
-        private set
-    val rows: Int
-        get() {
-            return tiles.size / columns
-        }
-    val mouseCoord: Point = Point()
+    private var columns = 0
+    private var rows = 0
+    var mouseCoord: Point? = null
 
     private val halfTileSize = tileSize / 2
 
     private val family = allOf(TileComponent::class, TransformComponent::class).get()
-    private var tiles: GdxArray<TileComponent> = GdxArray(1600)
+    private val tiles by lazy { ArrayList<TileComponent>(columns * rows) }
     private var mouseOnTile: Entity? = null
     private var mouseOnTileTransform: TransformComponent? = null
     private var gridRenderer: Entity? = null
@@ -61,6 +57,7 @@ class TileSystem : EntitySystem(), InputProcessor {
     private val camera = Jungle.instance.camera
     private val gridColor = Color(0.5f, 0.7f, 0.3f, 0.8f)
     private val gridRenderCallback: ((TransformComponent) -> Unit) = { renderGrid() }
+    private val mouseOnTileColor = Color(1f, 1f, 0f, 0.4f)
 
     operator fun get(x: Int, y: Int): TileComponent? {
         if (!isCoordValid(x, y)) return null
@@ -78,62 +75,57 @@ class TileSystem : EntitySystem(), InputProcessor {
         return x >= 0 && y >= 0 && x < columns && y < rows
     }
 
-    fun getEntity(x: Int, y: Int): Entity? {
-        if (columns == 0) return null
-        val e = engine?.getEntitiesFor(family) ?: return null
-        val index = y * columns + x
-        if (index < 0 || index >= e.size()) return null
-        return e[index]
+    fun isCoordValid(coord: Point?): Boolean {
+        if (coord == null) return false
+        return coord.x >= 0 && coord.y >= 0 && coord.x < columns && coord.y < rows
     }
 
     fun getEntity(tile: TileComponent): Entity? {
-        return getEntity(tile.x, tile.y)
+        if (columns == 0) return null
+        val e = engine?.getEntitiesFor(family) ?: return null
+        val index = tile.coord.y * columns + tile.coord.x
+        if (index < 0 || index >= e.size()) return null
+        return e[index]
     }
 
     fun getPosition(tile: TileComponent): Vector3? {
         return getEntity(tile)?.getComponent(TransformComponent::class.java)?.position
     }
 
-    private val gdxArrayForNeighbors = GdxArray<TileComponent>(8)
-    fun neighbors(x: Int, y: Int, diagonal: Boolean = false): Array<TileComponent> {
-        gdxArrayForNeighbors.clear()
-        val p = Point.obtain()
-        for (point in if (!diagonal) adjacent else diagonals) {
-            p.set(x, y)
-            p += point
-            val tile = get(p) ?: continue
-            gdxArrayForNeighbors.add(tile)
+    fun neighbors(coord: Point, diagonal: Boolean = false): Array<TileComponent?> {
+        val array = Array<TileComponent?>(4) { null }
+        for ((count, point) in (if (!diagonal) adjacent else diagonals).withIndex()) {
+            val tile = get(coord + point)
+            array[count] = tile
         }
-        p.free()
-        return gdxArrayForNeighbors.toArray(TileComponent::class.java)
+        return array
     }
 
     fun create(columns: Int, rows: Int) {
         val e = engine ?: return
         clean()
         this.columns = columns
+        this.rows = rows
         for (y in 0 until rows) {
             for (x in 0 until columns) {
                 val isBlock = random() > 0.8 && x > 0 && y > 0
                 e.add {
                     entity {
                         val tile = with<TileComponent> {
-                            this.x = x
-                            this.y = y
+                            coord = Point(x, y)
                             walkable = !isBlock
                         }
                         tiles.add(tile)
                         with<TransformComponent> {
-                            position.x = x * tileSize.toFloat()
-                            position.y = y * tileSize.toFloat()
+                            position = vec3(x * tileSize.toFloat(), y * tileSize.toFloat())
                         }
                         with<RectComponent> {
                             width = tileSize.toFloat()
                             height = tileSize.toFloat()
-                            if (!isBlock) {
-                                color.set(random() * 0.1f + 0.2f, random() * 0.1f + 0.4f, 0f, 1f)
+                            color = if (!isBlock) {
+                                Color(random() * 0.1f + 0.2f, random() * 0.1f + 0.4f, 0f, 1f)
                             } else {
-                                color.set(random() * 0.1f, 0f, random() * 0.7f + 0.1f, 1f)
+                                Color(random() * 0.1f, 0f, random() * 0.7f + 0.1f, 1f)
                             }
                             type = ShapeRenderer.ShapeType.Filled
                         }
@@ -159,7 +151,7 @@ class TileSystem : EntitySystem(), InputProcessor {
                     width = tileSize.toFloat()
                     height = tileSize.toFloat()
                     type = ShapeRenderer.ShapeType.Filled
-                    color.set(Color.YELLOW).a = 0.4f
+                    color = mouseOnTileColor
                 }
             }
         }
@@ -192,19 +184,21 @@ class TileSystem : EntitySystem(), InputProcessor {
         }
     }
 
-    private val vecForProjection = Vector3()
-    private fun screenToCoord(screenCoord: Point): Boolean {
-        if (columns == 0) return false
+    private fun screenToCoord(screenX: Int, screenY: Int): Point? {
+        if (columns == 0) return null
 
         val camera = Jungle.instance.camera
-        vecForProjection.set(screenCoord.x.toFloat(), screenCoord.y.toFloat(), 0f)
-        camera.unproject(vecForProjection)
-        val x = vecForProjection.x.roundToInt() + halfTileSize
-        val y = vecForProjection.y.roundToInt() + halfTileSize
-        if (x < 0 || x > columns * tileSize || y < 0 || y > rows * tileSize) return false
+        val projection = vec3(screenX.toFloat(), screenY.toFloat(), 0f)
+        camera.unproject(projection)
+        val x = projection.x.roundToInt() + halfTileSize
+        val y = projection.y.roundToInt() + halfTileSize
+        if (x < 0 || x > columns * tileSize || y < 0 || y > rows * tileSize) return null
 
-        screenCoord.set(x / tileSize, y / tileSize)
-        return true
+        return Point(x / tileSize, y / tileSize)
+    }
+
+    private fun screenToCoord(screenCoord: Point): Point? {
+        return screenToCoord(screenCoord.x, screenCoord.y)
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
@@ -215,22 +209,20 @@ class TileSystem : EntitySystem(), InputProcessor {
         return false
     }
 
-    private val pointForMouseMoved = Point()
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
         if (!this.checkProcessing()) return false
 
-        pointForMouseMoved.set(screenX, screenY)
-        if (!screenToCoord(pointForMouseMoved)) pointForMouseMoved.setToNone()
-        if (pointForMouseMoved == mouseCoord) return false
+        val currentCoord = screenToCoord(Point(screenX, screenY))
+        if (currentCoord == mouseCoord) return false
         val mott = mouseOnTileTransform ?: return false
 
-        mouseCoord.set(pointForMouseMoved)
-        if (!mouseCoord.hasValue) {
+        mouseCoord = currentCoord
+        if (mouseCoord == null) {
             mott.visible = false
             return false
         }
         mott.visible = true
-        mott.position.set((mouseCoord.x * tileSize).toFloat(), (mouseCoord.y * tileSize).toFloat(), 10f)
+        mott.position = vec3((mouseCoord!!.x * tileSize).toFloat(), (mouseCoord!!.y * tileSize).toFloat(), 10f)
         return false
     }
 
