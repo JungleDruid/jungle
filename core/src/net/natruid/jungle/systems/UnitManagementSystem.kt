@@ -11,6 +11,7 @@ import ktx.ashley.allOf
 import ktx.ashley.mapperFor
 import ktx.collections.set
 import net.natruid.jungle.components.CircleComponent
+import net.natruid.jungle.components.PathFollowerComponent
 import net.natruid.jungle.components.TransformComponent
 import net.natruid.jungle.components.UnitComponent
 import net.natruid.jungle.utils.AreaIndicator
@@ -149,12 +150,14 @@ class UnitManagementSystem : SortedIteratingSystem(
             if (path != null) {
                 val u = selectedUnit!!
                 val entity = getUnitEntity(u)!!
+                val pathFollower = engine.createComponent(PathFollowerComponent::class.java)
+                pathFollower.setPath(path, tiles!!)
+                entity.add(pathFollower)
                 val dest = path[path.size - 1]
                 entity.getComponent(UnitComponent::class.java).let {
                     it.x = dest.x
                     it.y = dest.y
                 }
-                entity.getComponent(TransformComponent::class.java).position.set(tiles!!.getPosition(dest))
                 areaIndicators.remove(u).free()
             }
             selectedUnit = null

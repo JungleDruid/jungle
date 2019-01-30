@@ -4,10 +4,7 @@ import com.badlogic.ashley.core.PooledEngine
 import com.badlogic.gdx.Input
 import net.natruid.jungle.components.UnitComponent
 import net.natruid.jungle.core.Jungle
-import net.natruid.jungle.systems.CameraMovementSystem
-import net.natruid.jungle.systems.RenderSystem
-import net.natruid.jungle.systems.TileSystem
-import net.natruid.jungle.systems.UnitManagementSystem
+import net.natruid.jungle.systems.*
 
 class FieldScreen : AbstractScreen(PooledEngine(400, 3600, 400, 3600)) {
     init {
@@ -25,6 +22,7 @@ class FieldScreen : AbstractScreen(PooledEngine(400, 3600, 400, 3600)) {
                 it.addUnit(unit)
             }
         }
+        engine.addSystem(PathFollowingSystem())
     }
 
     override fun show() {
