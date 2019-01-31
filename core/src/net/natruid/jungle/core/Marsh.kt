@@ -10,8 +10,6 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.utils.I18NBundle
 import com.badlogic.gdx.utils.Json
 import com.badlogic.gdx.utils.JsonReader
-import ktx.collections.PooledList
-import ktx.collections.toGdxList
 import ktx.freetype.generateFont
 import net.natruid.jungle.utils.Scout
 import kotlin.collections.set
@@ -60,18 +58,18 @@ object Marsh {
         }
     }
 
-    fun getFontDefs(): PooledList<FontDef> {
-        return fontDefs.toGdxList()
+    fun getFontDefs(): Array<FontDef> {
+        return fontDefs.toTypedArray()
     }
 
-    private fun getFiles(path: String, ext: String, recursive: Boolean): PooledList<FileHandle> {
+    private fun getFiles(path: String, ext: String, recursive: Boolean): Array<FileHandle> {
         val map = getFilesImpl(path, ext, recursive)
         try {
             getFilesImpl(path, ext, recursive, map, true)
         } catch (e: Exception) {
         }
 
-        return map.values.toGdxList()
+        return map.values.toTypedArray()
     }
 
     private fun getFilesImpl(

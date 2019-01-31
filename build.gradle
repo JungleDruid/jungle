@@ -72,7 +72,6 @@ project(":core") {
         compile group: "io.github.libktx", name: "ktx-actors", version: "$ktxVersion"
         compile group: "io.github.libktx", name: "ktx-vis", version: "$ktxVersion"
         compile group: "io.github.libktx", name: "ktx-i18n", version: "$ktxVersion"
-        compile group: "io.github.libktx", name: "ktx-collections", version: "$ktxVersion"
         compile "com.kotcrab.vis:vis-ui:$visuiVersion"
         compile "com.github.czyzby:gdx-lml-vis:$gdxLmlVersion"
     }
