@@ -67,7 +67,7 @@ class Pathfinder(private val tiles: TileSystem) {
                 }
                 var priority = nextCost
                 if (goal != null) {
-                    priority += heuristic(goal.coord, next.coord)
+                    priority += heuristic(goal.coord, next.coord, if (diagonal) .5f else 0f)
                 }
                 frontier.add(node, priority)
             }
@@ -91,8 +91,8 @@ class Pathfinder(private val tiles: TileSystem) {
         return visited.values
     }
 
-    private fun heuristic(a: Point, b: Point): Float {
-        return (Math.abs(a.x - b.x) + Math.abs(a.y - b.y)).toFloat()
+    private fun heuristic(a: Point, b: Point, f: Float): Float {
+        return (Math.abs(a.x - b.x) + Math.abs(a.y - b.y)).toFloat() + f
     }
 
     fun path(

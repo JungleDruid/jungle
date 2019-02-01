@@ -192,7 +192,7 @@ class TileSystem : EntitySystem(), InputProcessor {
         camera.unproject(projection)
         val x = projection.x.roundToInt() + halfTileSize
         val y = projection.y.roundToInt() + halfTileSize
-        if (x < 0 || x > columns * tileSize || y < 0 || y > rows * tileSize) return null
+        if (x < 0 || x >= columns * tileSize || y < 0 || y >= rows * tileSize) return null
 
         return Point(x / tileSize, y / tileSize)
     }
