@@ -101,6 +101,14 @@ class UnitManagementSystem : SortedIteratingSystem(
         return entity
     }
 
+    fun moveUnit(unit: UnitComponent, goal: Point) {
+        if (!tiles!!.isCoordValid(goal)) return
+        val path = Pathfinder.path(tiles!!, tiles!![unit.coord]!!, tiles!![goal]!!) ?: return
+        val entity = getUnitEntity(unit) ?: return
+        entity.add(PathFollowerComponent(path, tiles!!))
+        unit.coord = goal
+    }
+
     private fun showMoveArea(unit: UnitComponent) {
         val tile = tiles!![unit.coord]
         if (tile != null) {
@@ -153,14 +161,8 @@ class UnitManagementSystem : SortedIteratingSystem(
             } else if (selectedUnit != null) {
                 val u = selectedUnit!!
                 areaIndicators.remove(u)?.clear()
-                val areaIndicator = AreaIndicator(
-                        engine,
-                        Pathfinder.path(tiles!!, tiles!![u.coord]!!, tiles!![mouseCoord]!!)
-                )
-                areaIndicators[u] = areaIndicator
-                areaIndicator.show()
-                areaIndicator.showPathTo(mouseCoord)
-                currentMoveArea = areaIndicator
+                moveUnit(u, mouseCoord)
+                selectedUnit = null
             }
         }
 

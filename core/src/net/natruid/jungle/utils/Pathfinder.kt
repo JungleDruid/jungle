@@ -12,8 +12,24 @@ class Pathfinder(private val tiles: TileSystem) {
             return Pathfinder(tiles).area(from, maxCost)
         }
 
-        fun path(tiles: TileSystem, from: TileComponent, goal: TileComponent): Collection<PathNode> {
+        fun path(tiles: TileSystem, from: TileComponent, goal: TileComponent): Array<TileComponent>? {
             return Pathfinder(tiles).path(from, goal)
+        }
+
+        fun extractPath(pathNodes: Collection<PathNode>, goal: Point): Array<TileComponent>? {
+            for (node in pathNodes) {
+                if (goal == node.tile.coord) {
+                    val path = ArrayList<TileComponent>()
+                    var prevNode: PathNode? = node
+                    while (prevNode != null) {
+                        path.add(prevNode.tile)
+                        prevNode = prevNode.prev
+                    }
+                    path.reverse()
+                    return path.toTypedArray()
+                }
+            }
+            return null
         }
     }
 
@@ -99,13 +115,13 @@ class Pathfinder(private val tiles: TileSystem) {
             from: TileComponent,
             goal: TileComponent,
             diagonal: Boolean = true
-    ): Collection<PathNode> {
+    ): Array<TileComponent>? {
         init(from)
         while (!frontier.isEmpty) {
             val current = frontier.pop()
-            if (searchNeighbors(current, goal = goal)) return visited.values
-            if (diagonal && searchNeighbors(current, true, goal = goal)) return visited.values
+            if (searchNeighbors(current, goal = goal)) return extractPath(visited.values, goal.coord)!!
+            if (diagonal && searchNeighbors(current, true, goal = goal)) return extractPath(visited.values, goal.coord)!!
         }
-        return visited.values
+        return null
     }
 }
