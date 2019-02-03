@@ -7,7 +7,6 @@ import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import com.badlogic.gdx.math.MathUtils.random
 import com.badlogic.gdx.math.Vector3
 import ktx.ashley.add
 import ktx.ashley.allOf
@@ -19,6 +18,7 @@ import net.natruid.jungle.components.TileComponent
 import net.natruid.jungle.components.TransformComponent
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.utils.ImmutablePoint
+import net.natruid.jungle.utils.MapGenerator
 import net.natruid.jungle.utils.Point
 import net.natruid.jungle.utils.RendererHelper
 import kotlin.math.roundToInt
@@ -102,30 +102,29 @@ class TileSystem : EntitySystem(), InputProcessor {
     }
 
     fun create(columns: Int, rows: Int) {
-        val e = engine ?: return
+        val engine = engine ?: return
         clean()
         this.columns = columns
         this.rows = rows
+        val map = MapGenerator(columns, rows).get()
         for (y in 0 until rows) {
             for (x in 0 until columns) {
-                val isBlock = random() > 0.8 && x > 0 && y > 0
-                e.add {
+                engine.add {
                     entity {
-                        val tile = with<TileComponent> {
-                            coord = Point(x, y)
-                            walkable = !isBlock
-                        }
+                        val tile = map[x][y]
                         tiles.add(tile)
+                        entity.add(tile)
                         with<TransformComponent> {
                             position = vec3(x * tileSize.toFloat(), y * tileSize.toFloat())
                         }
                         with<RectComponent> {
                             width = tileSize.toFloat()
                             height = tileSize.toFloat()
-                            color = if (!isBlock) {
-                                Color(random() * 0.1f + 0.2f, random() * 0.1f + 0.4f, 0f, 1f)
-                            } else {
-                                Color(random() * 0.1f, 0f, random() * 0.7f + 0.1f, 1f)
+                            color = when (tile.terrainType) {
+                                TileComponent.TerrainType.NONE -> Color.BROWN
+                                TileComponent.TerrainType.DIRT -> Color.BROWN
+                                TileComponent.TerrainType.GRASS -> Color.GREEN
+                                TileComponent.TerrainType.ROAD -> Color.GRAY
                             }
                             type = ShapeRenderer.ShapeType.Filled
                         }
@@ -133,7 +132,7 @@ class TileSystem : EntitySystem(), InputProcessor {
                 }
             }
         }
-        e.add {
+        engine.add {
             gridRenderer = entity {
                 with<TransformComponent> {
                     visible = false
