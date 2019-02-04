@@ -143,10 +143,10 @@ class TileSystem : EntitySystem(), InputProcessor {
         engine.add {
             gridRenderer = entity {
                 with<TransformComponent> {
-                    visible = false
+                    visible = gridRenderer?.getComponent(TransformComponent::class.java)?.visible ?: false
                 }
                 with<RenderableComponent> {
-                    renderCallback = this@TileSystem.gridRenderCallback
+                    renderCallback = gridRenderCallback
                 }
             }
             mouseOnTile = entity {
@@ -168,11 +168,29 @@ class TileSystem : EntitySystem(), InputProcessor {
         if (columns <= 0) return
 
         renderer.begin(camera, RendererHelper.Type.SHAPE_RENDERER, ShapeRenderer.ShapeType.Line)
-        shapeRenderer.color = gridColor
         val origin = (-halfTileSize).toFloat()
         val right = (-halfTileSize + columns * tileSize).toFloat()
         val top = (-halfTileSize + rows * tileSize).toFloat()
 
+        val shadowOffset = 1 * camera.zoom
+        shapeRenderer.color = Color.DARK_GRAY
+        for (i in 0..columns) {
+            shapeRenderer.line(
+                    origin + i * tileSize + shadowOffset,
+                    origin - shadowOffset,
+                    origin + i * tileSize + shadowOffset,
+                    top - shadowOffset
+            )
+        }
+        for (i in 0..rows) {
+            shapeRenderer.line(
+                    origin + shadowOffset,
+                    origin + i * tileSize - shadowOffset,
+                    right + shadowOffset,
+                    origin + i * tileSize - shadowOffset
+            )
+        }
+        shapeRenderer.color = gridColor
         for (i in 0..columns) {
             shapeRenderer.line(
                     origin + i * tileSize,
