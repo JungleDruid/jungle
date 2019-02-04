@@ -7,32 +7,61 @@ class MapGenerator(private val columns: Int, private val rows: Int) {
     private val map = Array(columns) { x -> Array(rows) { y -> TileComponent(Point(x, y)) } }
     private val random = RandomXS128()
 
-    private fun createRoad() {
-        val range = rows / 2
-        var y = random.nextInt(range) + (rows - range) / 2
-        var width = random.nextInt(3) + 1
-        for (x in 0 until columns) {
-            for (i in 0 until width) {
-                map[x][y + i - width / 2].terrainType = TileComponent.TerrainType.ROAD
+    private fun createLine(
+            terrainType: TileComponent.TerrainType = TileComponent.TerrainType.ROAD,
+            minWidth: Int = 1,
+            maxWidth: Int = 3,
+            vertical: Boolean = random.nextBoolean(),
+            fork: Boolean = false
+    ) {
+        val ref = if (vertical) columns else rows
+        val length = if (vertical) rows else columns
+        val startRange = ref / 2
+        var wMid = random.nextInt(startRange) + (ref - startRange) / 2
+        var width = random.nextInt(maxWidth - minWidth) + minWidth
+        var mutateChance = 0L
+        var lRange: IntProgression = 0 until length
+        if (random.nextBoolean()) lRange = lRange.reversed()
+        for (l in lRange) {
+            if (fork) {
+                if (vertical && map[wMid][l].terrainType == terrainType
+                        || !vertical && map[l][wMid].terrainType == terrainType)
+                    break
             }
-            if (random.nextLong(100) >= 90L) {
+            for (w in 0 until width) {
+                if (vertical)
+                    map[wMid + w - width / 2][l].terrainType = terrainType
+                else
+                    map[l][wMid + w - width / 2].terrainType = terrainType
+            }
+            if (random.nextLong(100) >= 100L - mutateChance) {
+                mutateChance = 0
                 if (random.nextBoolean()) {
-                    if (y < rows - 1) {
-                        y += 1
-                        map[x][y + width / 2 - 1 + width.rem(2)].terrainType = TileComponent.TerrainType.ROAD
+                    if (random.nextBoolean()) {
+                        if (wMid < ref - 1) {
+                            wMid += 1
+                            if (vertical)
+                                map[wMid + width / 2 - 1 + width.rem(2)][l].terrainType = terrainType
+                            else
+                                map[l][wMid + width / 2 - 1 + width.rem(2)].terrainType = terrainType
+                        }
+                    } else {
+                        if (wMid > 0) {
+                            wMid -= 1
+                            if (vertical)
+                                map[wMid - width / 2][l].terrainType = terrainType
+                            else
+                                map[l][wMid - width / 2].terrainType = terrainType
+                        }
                     }
                 } else {
-                    if (y > 0) {
-                        y -= 1
-                        map[x][y - width / 2].terrainType = TileComponent.TerrainType.ROAD
+                    width += when {
+                        width == maxWidth -> -1
+                        width == minWidth || random.nextBoolean() -> 1
+                        else -> -1
                     }
                 }
-                y = y.coerceIn(0, rows - 1)
-            }
-            if (random.nextLong(100) >= 95L) {
-                width += if (random.nextBoolean()) 1 else -1
-                width = width.coerceIn(1, 3)
-            }
+            } else mutateChance += 2L
         }
     }
 
@@ -55,7 +84,9 @@ class MapGenerator(private val columns: Int, private val rows: Int) {
         repeat(random.nextInt(5)) {
             createRect(TileComponent.TerrainType.WATER, 5, 5)
         }
-        createRoad()
+        val vertical = random.nextBoolean()
+        createLine(TileComponent.TerrainType.WATER, vertical = vertical)
+        createLine(vertical = !vertical)
         return map
     }
 }
