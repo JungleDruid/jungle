@@ -123,7 +123,8 @@ class TileSystem : EntitySystem(), InputProcessor {
                             color = when (tile.terrainType) {
                                 TileComponent.TerrainType.NONE -> Color.BROWN
                                 TileComponent.TerrainType.DIRT -> Color.BROWN
-                                TileComponent.TerrainType.GRASS -> Color.GREEN
+                                TileComponent.TerrainType.GRASS -> Color.OLIVE
+                                TileComponent.TerrainType.WATER -> Color.BLUE
                                 TileComponent.TerrainType.ROAD -> Color.GRAY
                             }
                             type = ShapeRenderer.ShapeType.Filled

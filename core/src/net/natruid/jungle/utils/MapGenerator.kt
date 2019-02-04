@@ -36,7 +36,25 @@ class MapGenerator(private val columns: Int, private val rows: Int) {
         }
     }
 
+    private fun createRect(terrainType: TileComponent.TerrainType, maxWidth: Int = columns, maxHeight: Int = rows) {
+        val left = random.nextInt(columns)
+        val right = random.nextInt(columns - left).coerceAtMost(maxWidth - 1) + left
+        val bottom = random.nextInt(rows)
+        val top = random.nextInt(rows - bottom).coerceAtMost(maxHeight - 1) + bottom
+        for (x in left..right) {
+            for (y in bottom..top) {
+                map[x][y].terrainType = terrainType
+            }
+        }
+    }
+
     fun get(): Array<Array<TileComponent>> {
+        repeat(random.nextInt(200) + 100) {
+            createRect(TileComponent.TerrainType.fromByte((random.nextLong(2) + 1).toByte())!!)
+        }
+        repeat(random.nextInt(5)) {
+            createRect(TileComponent.TerrainType.WATER, 5, 5)
+        }
         createRoad()
         return map
     }

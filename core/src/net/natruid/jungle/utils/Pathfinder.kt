@@ -66,7 +66,12 @@ class Pathfinder(private val tiles: TileSystem) {
                 walkables.add(next != null && next.walkable)
             }
             var cost = if (!diagonal) 1f else 1.5f
-            if (next?.terrainType == TileComponent.TerrainType.ROAD) cost /= 2
+            when (next?.terrainType) {
+                TileComponent.TerrainType.WATER -> cost *= 3
+                TileComponent.TerrainType.ROAD -> cost /= 2
+                else -> {
+                }
+            }
             val nextCost = current.cost + cost
             if (
                     diagonal && !walkableDiagonals.removeFirst()

@@ -92,7 +92,7 @@ class UnitManagementSystem : SortedIteratingSystem(
                 TileSystem.tileSize / 2f - 10f,
                 when (unit.faction) {
                     UnitComponent.Faction.NONE -> Color.GRAY
-                    UnitComponent.Faction.PLAYER -> Color.BLUE
+                    UnitComponent.Faction.PLAYER -> Color.CYAN
                     UnitComponent.Faction.ENEMY -> Color.RED
                 },
                 ShapeRenderer.ShapeType.Filled
