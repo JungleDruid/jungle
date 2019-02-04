@@ -29,6 +29,8 @@ class RenderSystem
     private val batch = renderer.batch
     private val shapeRenderer = renderer.shapeRenderer
     private val transformMapper = mapperFor<TransformComponent>()
+    private val shaderMapper = mapperFor<ShaderComponent>()
+    private val shaderDefault = ShaderComponent()
     private val glyphLayout = GlyphLayout()
     private var layer = Layer.DEFAULT.value
 
@@ -50,6 +52,8 @@ class RenderSystem
             return
         }
 
+        val shader = shaderMapper[entity] ?: shaderDefault
+
         for (component in entity.components) {
             when (component) {
                 is TextureComponent -> {
@@ -60,7 +64,8 @@ class RenderSystem
                         val originX = width * transform.pivot.x
                         val originY = height * transform.pivot.y
 
-                        renderer.begin(camera, RendererHelper.Type.SPRITE_BATCH)
+                        renderer.begin(camera, RendererHelper.Type.SPRITE_BATCH, shaderProgram = shader.shader)
+                        batch.setBlendFunction(shader.blendSrcFunc, shader.blendDstFunc)
                         batch.draw(
                                 region,
                                 transform.position.x - originX,
@@ -88,8 +93,10 @@ class RenderSystem
                         component.align.and(Align.bottom) != 0 -> glyphLayout.height
                         else -> glyphLayout.height * transform.pivot.y
                     }
-                    renderer.begin(camera, RendererHelper.Type.SPRITE_BATCH)
+                    renderer.begin(camera, RendererHelper.Type.SPRITE_BATCH, shaderProgram = shader.shader)
+                    batch.setBlendFunction(shader.blendSrcFunc, shader.blendDstFunc)
                     font.draw(batch, glyphLayout, transform.position.x, transform.position.y + offsetY)
+                    batch.enableBlending()
                 }
                 is RectComponent -> {
                     val originX = component.width * transform.pivot.x

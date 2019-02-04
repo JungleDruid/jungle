@@ -6,21 +6,19 @@ import com.badlogic.ashley.core.EntitySystem
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.GL20
+import com.badlogic.gdx.graphics.Texture
+import com.badlogic.gdx.graphics.g2d.TextureRegion
+import com.badlogic.gdx.graphics.glutils.ShaderProgram
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Vector3
 import ktx.ashley.add
 import ktx.ashley.allOf
 import ktx.ashley.entity
 import ktx.math.vec3
-import net.natruid.jungle.components.RectComponent
-import net.natruid.jungle.components.RenderableComponent
-import net.natruid.jungle.components.TileComponent
-import net.natruid.jungle.components.TransformComponent
+import net.natruid.jungle.components.*
 import net.natruid.jungle.core.Jungle
-import net.natruid.jungle.utils.ImmutablePoint
-import net.natruid.jungle.utils.MapGenerator
-import net.natruid.jungle.utils.Point
-import net.natruid.jungle.utils.RendererHelper
+import net.natruid.jungle.utils.*
 import kotlin.math.roundToInt
 
 class TileSystem : EntitySystem(), InputProcessor {
@@ -58,6 +56,9 @@ class TileSystem : EntitySystem(), InputProcessor {
     private val gridColor = Color(0.5f, 0.7f, 0.3f, 0.8f)
     private val gridRenderCallback: ((TransformComponent) -> Unit) = { renderGrid() }
     private val mouseOnTileColor = Color(1f, 1f, 0f, 0.4f)
+    private val tileShaderProgram by lazy {
+        ShaderProgram(Scout["assets/shaders/vertex.glsl"], Scout["assets/shaders/fragment.glsl"])
+    }
 
     operator fun get(x: Int, y: Int): TileComponent? {
         if (!isCoordValid(x, y)) return null
@@ -101,6 +102,11 @@ class TileSystem : EntitySystem(), InputProcessor {
         return array
     }
 
+    private val dirtTexture = TextureRegion(Texture(Scout["assets/img/tiles/dirt.png"]))
+    private val grassTexture = TextureRegion(Texture(Scout["assets/img/tiles/grass.png"]))
+    private val roadTexture = TextureRegion(Texture(Scout["assets/img/tiles/road.png"]))
+    private val waterTexture = TextureRegion(Texture(Scout["assets/img/tiles/water.png"]))
+
     fun create(columns: Int, rows: Int) {
         val engine = engine ?: return
         clean()
@@ -117,17 +123,18 @@ class TileSystem : EntitySystem(), InputProcessor {
                         with<TransformComponent> {
                             position = vec3(x * tileSize.toFloat(), y * tileSize.toFloat())
                         }
-                        with<RectComponent> {
-                            width = tileSize.toFloat()
-                            height = tileSize.toFloat()
-                            color = when (tile.terrainType) {
-                                TileComponent.TerrainType.NONE -> Color.BROWN
-                                TileComponent.TerrainType.DIRT -> Color.BROWN
-                                TileComponent.TerrainType.GRASS -> Color.OLIVE
-                                TileComponent.TerrainType.WATER -> Color.BLUE
-                                TileComponent.TerrainType.ROAD -> Color.GRAY
+                        with<TextureComponent> {
+                            region = when (tile.terrainType) {
+                                TileComponent.TerrainType.NONE -> dirtTexture
+                                TileComponent.TerrainType.DIRT -> dirtTexture
+                                TileComponent.TerrainType.GRASS -> grassTexture
+                                TileComponent.TerrainType.WATER -> waterTexture
+                                TileComponent.TerrainType.ROAD -> roadTexture
                             }
-                            type = ShapeRenderer.ShapeType.Filled
+                        }
+                        with<ShaderComponent> {
+                            shader = tileShaderProgram
+                            blendDstFunc = GL20.GL_ONE
                         }
                     }
                 }
