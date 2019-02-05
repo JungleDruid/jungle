@@ -64,6 +64,7 @@ class RenderSystem
                         val originX = width * transform.pivot.x
                         val originY = height * transform.pivot.y
 
+                        region.flip(region.isFlipX != component.flipX, region.isFlipY != component.flipY)
                         renderer.begin(camera, RendererHelper.Type.SPRITE_BATCH, shaderProgram = shader.shader)
                         batch.setBlendFunction(shader.blendSrcFunc, shader.blendDstFunc)
                         batch.draw(

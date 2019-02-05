@@ -5,7 +5,7 @@ import net.natruid.jungle.components.TileComponent
 
 class MapGenerator(private val columns: Int, private val rows: Int) {
     private val map = Array(columns) { x -> Array(rows) { y -> TileComponent(Point(x, y)) } }
-    private val random = RandomXS128()
+    val random = RandomXS128()
 
     private fun createLine(
             terrainType: TileComponent.TerrainType = TileComponent.TerrainType.ROAD,

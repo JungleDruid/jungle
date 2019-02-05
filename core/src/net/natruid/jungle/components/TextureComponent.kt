@@ -10,4 +10,6 @@ class TextureComponent : Component {
             field = texture
             field?.texture?.setFilter(Linear, Linear)
         }
+    var flipX: Boolean = false
+    var flipY: Boolean = false
 }

@@ -3,6 +3,7 @@ package net.natruid.jungle.systems
 import com.badlogic.ashley.core.Engine
 import com.badlogic.ashley.core.Entity
 import com.badlogic.ashley.core.EntitySystem
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.Color
@@ -56,8 +57,19 @@ class TileSystem : EntitySystem(), InputProcessor {
     private val gridColor = Color(0.5f, 0.7f, 0.3f, 0.8f)
     private val gridRenderCallback: ((TransformComponent) -> Unit) = { renderGrid() }
     private val mouseOnTileColor = Color(1f, 1f, 0f, 0.4f)
-    private val tileShaderProgram by lazy {
-        ShaderProgram(Scout["assets/shaders/vertex.glsl"], Scout["assets/shaders/fragment.glsl"])
+    private val tileShaderComponent by lazy {
+        ShaderComponent(
+                ShaderProgram(Scout["assets/shaders/vertex.glsl"], Scout["assets/shaders/fragment.glsl"]),
+                GL20.GL_SRC_ALPHA,
+                GL20.GL_ONE
+        )
+    }
+    private val waterTileShaderComponent by lazy {
+        ShaderComponent(
+                ShaderProgram(Scout["assets/shaders/vertex.glsl"], Scout["assets/shaders/fragment.glsl"]),
+                GL20.GL_SRC_ALPHA,
+                GL20.GL_ONE
+        )
     }
 
     operator fun get(x: Int, y: Int): TileComponent? {
@@ -112,7 +124,8 @@ class TileSystem : EntitySystem(), InputProcessor {
         clean()
         this.columns = columns
         this.rows = rows
-        val map = MapGenerator(columns, rows).get()
+        val generator = MapGenerator(columns, rows)
+        val map = generator.get()
         for (y in 0 until rows) {
             for (x in 0 until columns) {
                 engine.add {
@@ -132,10 +145,10 @@ class TileSystem : EntitySystem(), InputProcessor {
                                 TileComponent.TerrainType.ROAD -> roadTexture
                             }
                         }
-                        with<ShaderComponent> {
-                            shader = tileShaderProgram
-                            blendDstFunc = GL20.GL_ONE
-                        }
+                        if (tile.terrainType == TileComponent.TerrainType.WATER)
+                            entity.add(waterTileShaderComponent)
+                        else
+                            entity.add(tileShaderComponent)
                     }
                 }
             }
@@ -290,5 +303,24 @@ class TileSystem : EntitySystem(), InputProcessor {
     private fun clean() {
         columns = 0
         tiles.clear()
+    }
+
+    private var time = 0f
+    override fun update(deltaTime: Float) {
+        super.update(deltaTime)
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
+            tileShaderComponent.shader = ShaderProgram(Scout["assets/shaders/vertex.glsl"], Scout["assets/shaders/fragment.glsl"])
+            waterTileShaderComponent.shader = ShaderProgram(Scout["assets/shaders/vertex.glsl"], Scout["assets/shaders/fragment.glsl"])
+        }
+
+        time += deltaTime
+        try {
+            waterTileShaderComponent.shader.let {
+                it.begin()
+                it.setUniformf("time", time)
+                it.end()
+            }
+        } catch (e: Exception) {
+        }
     }
 }
