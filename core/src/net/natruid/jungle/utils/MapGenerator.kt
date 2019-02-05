@@ -8,11 +8,11 @@ class MapGenerator(private val columns: Int, private val rows: Int) {
     val random = RandomXS128()
 
     private fun createLine(
-            terrainType: TileComponent.TerrainType = TileComponent.TerrainType.ROAD,
-            minWidth: Int = 1,
-            maxWidth: Int = 3,
-            vertical: Boolean = random.nextBoolean(),
-            fork: Boolean = false
+        terrainType: TileComponent.TerrainType = TileComponent.TerrainType.ROAD,
+        minWidth: Int = 1,
+        maxWidth: Int = 3,
+        vertical: Boolean = random.nextBoolean(),
+        fork: Boolean = false
     ) {
         val ref = if (vertical) columns else rows
         val length = if (vertical) rows else columns
@@ -25,7 +25,7 @@ class MapGenerator(private val columns: Int, private val rows: Int) {
         for (l in lRange) {
             if (fork) {
                 if (vertical && map[wMid][l].terrainType == terrainType
-                        || !vertical && map[l][wMid].terrainType == terrainType)
+                    || !vertical && map[l][wMid].terrainType == terrainType)
                     break
             }
             for (w in 0 until width) {

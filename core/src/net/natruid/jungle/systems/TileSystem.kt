@@ -27,16 +27,16 @@ class TileSystem : EntitySystem(), InputProcessor {
         const val tileSize = 64
 
         private val adjacent = arrayOf(
-                ImmutablePoint(Point(1, 0)),
-                ImmutablePoint(Point(0, 1)),
-                ImmutablePoint(Point(-1, 0)),
-                ImmutablePoint(Point(0, -1))
+            ImmutablePoint(Point(1, 0)),
+            ImmutablePoint(Point(0, 1)),
+            ImmutablePoint(Point(-1, 0)),
+            ImmutablePoint(Point(0, -1))
         )
         private val diagonals = arrayOf(
-                ImmutablePoint(Point(1, 1)),
-                ImmutablePoint(Point(-1, 1)),
-                ImmutablePoint(Point(-1, -1)),
-                ImmutablePoint(Point(1, -1))
+            ImmutablePoint(Point(1, 1)),
+            ImmutablePoint(Point(-1, 1)),
+            ImmutablePoint(Point(-1, -1)),
+            ImmutablePoint(Point(1, -1))
         )
     }
 
@@ -59,16 +59,16 @@ class TileSystem : EntitySystem(), InputProcessor {
     private val mouseOnTileColor = Color(1f, 1f, 0f, 0.4f)
     private val tileShaderComponent by lazy {
         ShaderComponent(
-                ShaderProgram(Scout["assets/shaders/vertex.glsl"], Scout["assets/shaders/fragment.glsl"]),
-                GL20.GL_SRC_ALPHA,
-                GL20.GL_ONE
+            ShaderProgram(Scout["assets/shaders/vertex.glsl"], Scout["assets/shaders/fragment.glsl"]),
+            GL20.GL_SRC_ALPHA,
+            GL20.GL_ONE
         )
     }
     private val waterTileShaderComponent by lazy {
         ShaderComponent(
-                ShaderProgram(Scout["assets/shaders/vertex.glsl"], Scout["assets/shaders/fragment.glsl"]),
-                GL20.GL_SRC_ALPHA,
-                GL20.GL_ONE
+            ShaderProgram(Scout["assets/shaders/vertex.glsl"], Scout["assets/shaders/fragment.glsl"]),
+            GL20.GL_SRC_ALPHA,
+            GL20.GL_ONE
         )
     }
 
@@ -152,10 +152,10 @@ class TileSystem : EntitySystem(), InputProcessor {
                                 else -> {
                                     val gb = .8f + generator.random.nextFloat() * .2f
                                     Color(
-                                            (gb + .2f).coerceAtMost(1f),
-                                            gb,
-                                            gb,
-                                            1f
+                                        (gb + .2f).coerceAtMost(1f),
+                                        gb,
+                                        gb,
+                                        1f
                                     )
                                 }
                             }
@@ -204,35 +204,35 @@ class TileSystem : EntitySystem(), InputProcessor {
         shapeRenderer.color = Color.DARK_GRAY
         for (i in 0..columns) {
             shapeRenderer.line(
-                    origin + i * tileSize + shadowOffset,
-                    origin - shadowOffset,
-                    origin + i * tileSize + shadowOffset,
-                    top - shadowOffset
+                origin + i * tileSize + shadowOffset,
+                origin - shadowOffset,
+                origin + i * tileSize + shadowOffset,
+                top - shadowOffset
             )
         }
         for (i in 0..rows) {
             shapeRenderer.line(
-                    origin + shadowOffset,
-                    origin + i * tileSize - shadowOffset,
-                    right + shadowOffset,
-                    origin + i * tileSize - shadowOffset
+                origin + shadowOffset,
+                origin + i * tileSize - shadowOffset,
+                right + shadowOffset,
+                origin + i * tileSize - shadowOffset
             )
         }
         shapeRenderer.color = gridColor
         for (i in 0..columns) {
             shapeRenderer.line(
-                    origin + i * tileSize,
-                    origin,
-                    origin + i * tileSize,
-                    top
+                origin + i * tileSize,
+                origin,
+                origin + i * tileSize,
+                top
             )
         }
         for (i in 0..rows) {
             shapeRenderer.line(
-                    origin,
-                    origin + i * tileSize,
-                    right,
-                    origin + i * tileSize
+                origin,
+                origin + i * tileSize,
+                right,
+                origin + i * tileSize
             )
         }
     }

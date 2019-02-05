@@ -44,10 +44,10 @@ class Pathfinder(private val tiles: TileSystem) {
     }
 
     private fun searchNeighbors(
-            current: PathNode,
-            diagonal: Boolean = false,
-            maxCost: Float? = null,
-            goal: TileComponent? = null
+        current: PathNode,
+        diagonal: Boolean = false,
+        maxCost: Float? = null,
+        goal: TileComponent? = null
     ): Boolean {
         if (!diagonal) {
             walkables.clear()
@@ -74,9 +74,9 @@ class Pathfinder(private val tiles: TileSystem) {
             }
             val nextCost = current.cost + cost
             if (
-                    diagonal && !walkableDiagonals.removeFirst()
-                    || next == null || !next.walkable
-                    || maxCost != null && nextCost > maxCost
+                diagonal && !walkableDiagonals.removeFirst()
+                || next == null || !next.walkable
+                || maxCost != null && nextCost > maxCost
             ) continue
             val nextNode = this.visited[next]
             if (nextNode == null || nextNode.cost > nextCost) {
@@ -101,9 +101,9 @@ class Pathfinder(private val tiles: TileSystem) {
     private val walkables = ArrayList<Boolean>(4)
     private val walkableDiagonals = Queue<Boolean>(4)
     fun area(
-            from: TileComponent,
-            maxCost: Float,
-            diagonal: Boolean = true
+        from: TileComponent,
+        maxCost: Float,
+        diagonal: Boolean = true
     ): Collection<PathNode> {
         init(from)
         while (!frontier.isEmpty) {
@@ -119,9 +119,9 @@ class Pathfinder(private val tiles: TileSystem) {
     }
 
     fun path(
-            from: TileComponent,
-            goal: TileComponent,
-            diagonal: Boolean = true
+        from: TileComponent,
+        goal: TileComponent,
+        diagonal: Boolean = true
     ): Array<TileComponent>? {
         init(from)
         while (!frontier.isEmpty) {

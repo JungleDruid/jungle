@@ -15,14 +15,14 @@ import net.natruid.jungle.utils.RendererHelper
 
 class RenderSystem
     : SortedIteratingSystem(
-        allOf(TransformComponent::class).oneOf(
-                TextureComponent::class,
-                LabelComponent::class,
-                RectComponent::class,
-                CircleComponent::class,
-                RenderableComponent::class
-        ).get(),
-        ZComparator()
+    allOf(TransformComponent::class).oneOf(
+        TextureComponent::class,
+        LabelComponent::class,
+        RectComponent::class,
+        CircleComponent::class,
+        RenderableComponent::class
+    ).get(),
+    ZComparator()
 ) {
     private val camera = Jungle.instance.camera
     private val renderer = Jungle.instance.renderer
@@ -69,16 +69,16 @@ class RenderSystem
                         batch.setBlendFunction(shader.blendSrcFunc, shader.blendDstFunc)
                         batch.color = component.color
                         batch.draw(
-                                region,
-                                transform.position.x - originX,
-                                transform.position.y - originY,
-                                originX,
-                                originY,
-                                width,
-                                height,
-                                transform.scale.x,
-                                transform.scale.y,
-                                transform.rotation
+                            region,
+                            transform.position.x - originX,
+                            transform.position.y - originY,
+                            originX,
+                            originY,
+                            width,
+                            height,
+                            transform.scale.x,
+                            transform.scale.y,
+                            transform.rotation
                         )
                     }
                 }
@@ -107,25 +107,25 @@ class RenderSystem
                     renderer.begin(camera, RendererHelper.Type.SHAPE_RENDERER, component.type)
                     shapeRenderer.color = component.color
                     shapeRenderer.rect(
-                            transform.position.x - originX,
-                            transform.position.y - originY,
-                            originX,
-                            originY,
-                            component.width,
-                            component.height,
-                            transform.scale.x,
-                            transform.scale.y,
-                            transform.rotation
+                        transform.position.x - originX,
+                        transform.position.y - originY,
+                        originX,
+                        originY,
+                        component.width,
+                        component.height,
+                        transform.scale.x,
+                        transform.scale.y,
+                        transform.rotation
                     )
                 }
                 is CircleComponent -> {
                     renderer.begin(camera, RendererHelper.Type.SHAPE_RENDERER, component.type)
                     shapeRenderer.color = component.color
                     shapeRenderer.circle(
-                            transform.position.x,
-                            transform.position.y,
-                            component.radius,
-                            1.coerceAtLeast((8 * Math.cbrt(component.radius.toDouble()) / camera.zoom).toInt())
+                        transform.position.x,
+                        transform.position.y,
+                        component.radius,
+                        1.coerceAtLeast((8 * Math.cbrt(component.radius.toDouble()) / camera.zoom).toInt())
                     )
                 }
                 is RenderableComponent -> component.render(transform)

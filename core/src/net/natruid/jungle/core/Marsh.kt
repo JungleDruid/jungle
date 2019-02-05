@@ -73,11 +73,11 @@ object Marsh {
     }
 
     private fun getFilesImpl(
-            path: String,
-            ext: String,
-            recursive: Boolean,
-            map: HashMap<String, FileHandle> = HashMap(),
-            useZip: Boolean = false
+        path: String,
+        ext: String,
+        recursive: Boolean,
+        map: HashMap<String, FileHandle> = HashMap(),
+        useZip: Boolean = false
     ): HashMap<String, FileHandle> {
         val dir = Scout[path, useZip]
 

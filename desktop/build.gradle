@@ -1,7 +1,7 @@
 apply plugin: "java"
 
 sourceCompatibility = JavaVersion.VERSION_1_8
-sourceSets.main.java.srcDirs = [ "src/" ]
+sourceSets.main.java.srcDirs = ["src/"]
 
 project.ext.mainClassName = "net.natruid.jungle.desktop.MainKt"
 project.ext.assetsDir = new File("../core/assets")

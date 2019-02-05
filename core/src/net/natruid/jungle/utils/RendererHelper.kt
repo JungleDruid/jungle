@@ -20,10 +20,10 @@ class RendererHelper : Disposable {
     private var shapeType = ShapeRenderer.ShapeType.Line
 
     fun begin(
-            camera: OrthographicCamera,
-            rendererType: Type,
-            shapeType: ShapeRenderer.ShapeType = ShapeRenderer.ShapeType.Line,
-            shaderProgram: ShaderProgram = ShaderComponent.defaultShader
+        camera: OrthographicCamera,
+        rendererType: Type,
+        shapeType: ShapeRenderer.ShapeType = ShapeRenderer.ShapeType.Line,
+        shaderProgram: ShaderProgram = ShaderComponent.defaultShader
     ) {
         if (rendererType == Type.SPRITE_BATCH && batch.shader != shaderProgram) batch.shader = shaderProgram
         if (current == rendererType && (rendererType != Type.SHAPE_RENDERER || this.shapeType == shapeType)) return

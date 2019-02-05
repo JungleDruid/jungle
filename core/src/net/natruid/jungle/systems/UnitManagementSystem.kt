@@ -18,8 +18,8 @@ import net.natruid.jungle.utils.Point
 import kotlin.collections.set
 
 class UnitManagementSystem : SortedIteratingSystem(
-        allOf(TransformComponent::class, UnitComponent::class).get(),
-        FactionComparator()
+    allOf(TransformComponent::class, UnitComponent::class).get(),
+    FactionComparator()
 ), InputProcessor {
     class FactionComparator : Comparator<Entity> {
         private val unitMapper = mapperFor<UnitComponent>()
@@ -89,13 +89,13 @@ class UnitManagementSystem : SortedIteratingSystem(
         entity.add(TransformComponent(tiles!!.getPosition(tile)!!))
         entity.add(unit)
         entity.add(CircleComponent(
-                TileSystem.tileSize / 2f - 10f,
-                when (unit.faction) {
-                    UnitComponent.Faction.NONE -> Color.GRAY
-                    UnitComponent.Faction.PLAYER -> Color.CYAN
-                    UnitComponent.Faction.ENEMY -> Color.RED
-                },
-                ShapeRenderer.ShapeType.Filled
+            TileSystem.tileSize / 2f - 10f,
+            when (unit.faction) {
+                UnitComponent.Faction.NONE -> Color.GRAY
+                UnitComponent.Faction.PLAYER -> Color.CYAN
+                UnitComponent.Faction.ENEMY -> Color.RED
+            },
+            ShapeRenderer.ShapeType.Filled
         ))
         engine.addEntity(entity)
         return entity
