@@ -67,6 +67,7 @@ class RenderSystem
                         region.flip(region.isFlipX != component.flipX, region.isFlipY != component.flipY)
                         renderer.begin(camera, RendererHelper.Type.SPRITE_BATCH, shaderProgram = shader.shader)
                         batch.setBlendFunction(shader.blendSrcFunc, shader.blendDstFunc)
+                        batch.color = component.color
                         batch.draw(
                                 region,
                                 transform.position.x - originX,

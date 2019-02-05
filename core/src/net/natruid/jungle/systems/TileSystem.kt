@@ -144,6 +144,21 @@ class TileSystem : EntitySystem(), InputProcessor {
                                 TileComponent.TerrainType.WATER -> waterTexture
                                 TileComponent.TerrainType.ROAD -> roadTexture
                             }
+                            color = when (tile.terrainType) {
+                                TileComponent.TerrainType.WATER ->
+                                    Color(1f, 1f, 1f, .7f)
+                                TileComponent.TerrainType.ROAD ->
+                                    Color(1f, 1f, 1f, .93f + generator.random.nextFloat() * .07f)
+                                else -> {
+                                    val gb = .8f + generator.random.nextFloat() * .2f
+                                    Color(
+                                            (gb + .2f).coerceAtMost(1f),
+                                            gb,
+                                            gb,
+                                            1f
+                                    )
+                                }
+                            }
                         }
                         if (tile.terrainType == TileComponent.TerrainType.WATER)
                             entity.add(waterTileShaderComponent)

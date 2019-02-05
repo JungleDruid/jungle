@@ -23,7 +23,7 @@ class AreaIndicator(private var engine: Engine, private var pathFinderResult: Co
     private val areaEntities = ArrayList<Entity>()
     private val pathEntities = ArrayList<Entity>()
     private var shown: Boolean = false
-    private val moveAreaColor = Color(0f, 1f, 1f, .3f)
+    private val moveAreaColor = Color(0f, 1f, 1f, .4f)
 
     fun show() {
         if (shown) return
@@ -50,6 +50,7 @@ class AreaIndicator(private var engine: Engine, private var pathFinderResult: Co
                             with<LabelComponent> {
                                 text = formatter.format(p.cost)
                                 align = Align.center
+                                fontName = "big"
                             }
                         }
                         areaEntities.add(e)

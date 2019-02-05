@@ -59,6 +59,7 @@ class RendererHelper : Disposable {
             Type.SPRITE_BATCH -> {
                 batch.end()
                 batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+                batch.color = Color.WHITE
                 if (batch.shader != ShaderComponent.defaultShader) batch.shader = ShaderComponent.defaultShader
             }
             Type.SHAPE_RENDERER -> {
