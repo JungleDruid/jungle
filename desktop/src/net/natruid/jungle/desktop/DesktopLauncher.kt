@@ -24,6 +24,7 @@ class DesktopLauncher : Client {
             this.focused = focused
             game.focusChanged()
         }
+        focused = GLFW.glfwGetWindowAttrib(window, GLFW.GLFW_FOCUSED) == GLFW.GLFW_TRUE
         return true
     }
 

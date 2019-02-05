@@ -15,7 +15,8 @@ class ArchiveFileHandle : FileHandle {
 
     constructor(archive: ZipFile, file: File) : super(file, FileType.Classpath) {
         this.archive = archive
-        archiveEntry = this.archive.getEntry(file.path)
+        val n = file.path.replace('\\', '/')
+        archiveEntry = this.archive.getEntry(n)
     }
 
     constructor(archive: ZipFile, fileName: String) : super(fileName.replace('\\', '/'), FileType.Classpath) {
@@ -31,7 +32,8 @@ class ArchiveFileHandle : FileHandle {
     override fun sibling(name: String): FileHandle {
         val n = name.replace('\\', '/')
         if (file.path.isEmpty()) throw GdxRuntimeException("Cannot get the sibling of the root.")
-        return ArchiveFileHandle(archive, File(file.parent, n))
+        val parent = file.parent.replace('\\', '/')
+        return ArchiveFileHandle(archive, File(parent, n))
     }
 
     override fun parent(): FileHandle {
