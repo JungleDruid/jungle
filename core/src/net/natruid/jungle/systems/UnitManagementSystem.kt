@@ -1,13 +1,10 @@
 package net.natruid.jungle.systems
 
-import com.badlogic.ashley.core.Engine
-import com.badlogic.ashley.core.Entity
-import com.badlogic.ashley.systems.SortedIteratingSystem
+import com.artemis.Aspect
+import com.artemis.ComponentMapper
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import ktx.ashley.allOf
-import ktx.ashley.mapperFor
 import net.natruid.jungle.components.CircleComponent
 import net.natruid.jungle.components.PathFollowerComponent
 import net.natruid.jungle.components.TransformComponent
@@ -15,27 +12,29 @@ import net.natruid.jungle.components.UnitComponent
 import net.natruid.jungle.utils.AreaIndicator
 import net.natruid.jungle.utils.Pathfinder
 import net.natruid.jungle.utils.Point
+import net.natruid.jungle.utils.extensions.first
+import net.natruid.jungle.utils.extensions.firstObject
 import kotlin.collections.set
 
 class UnitManagementSystem : SortedIteratingSystem(
-    allOf(TransformComponent::class, UnitComponent::class).get(),
-    FactionComparator()
+    Aspect.all(TransformComponent::class.java, UnitComponent::class.java)
 ), InputProcessor {
-    class FactionComparator : Comparator<Entity> {
-        private val unitMapper = mapperFor<UnitComponent>()
-        override fun compare(p0: Entity?, p1: Entity?): Int {
-            val f0 = unitMapper[p0].faction.value
-            val f1 = unitMapper[p1].faction.value
-            return when {
+    override val comparator: Comparator<in Int>
+        get() = Comparator { p0, p1 ->
+            val f0 = mUnit[p0].faction.value
+            val f1 = mUnit[p1].faction.value
+            when {
                 f0 < f1 -> 1
                 f0 > f1 -> -1
                 else -> 0
             }
         }
-    }
 
-    private val unitMapper = mapperFor<UnitComponent>()
-    private var tiles: TileSystem? = null
+    private lateinit var mUnit: ComponentMapper<UnitComponent>
+    private lateinit var mTransform: ComponentMapper<TransformComponent>
+    private lateinit var mCircle: ComponentMapper<CircleComponent>
+    private lateinit var mPathFollower: ComponentMapper<PathFollowerComponent>
+    private lateinit var tiles: TileSystem
     private val areaIndicators = HashMap<UnitComponent, AreaIndicator>()
     private var currentMoveArea: AreaIndicator? = null
     private var selectedUnit: UnitComponent? = null
@@ -48,74 +47,68 @@ class UnitManagementSystem : SortedIteratingSystem(
         currentMoveArea = null
     }
 
-    override fun addedToEngine(engine: Engine?) {
-        tiles = engine!!.getSystem(TileSystem::class.java)
-        if (tiles == null) {
-            error("[Error] UnitManagementSystem must be added after TileSystem.")
-        }
-
-        super.addedToEngine(engine)
-    }
-
-    override fun removedFromEngine(engine: Engine?) {
+    override fun dispose() {
         clean()
-        super.removedFromEngine(engine)
+        super.dispose()
     }
-
-    override fun processEntity(entity: Entity?, deltaTime: Float) {}
 
     fun getUnit(coord: Point): UnitComponent? {
-        if (!tiles!!.isCoordValid(coord)) return null
+        if (!tiles.isCoordValid(coord)) return null
 
-        for (entity in entities) {
-            val unit = unitMapper[entity]
-            if (unit.coord == coord) return unit
+        return entityIds.firstObject {
+            val unit = mUnit[it]
+            if (unit.coord == coord) unit else null
         }
-
-        return null
     }
 
-    fun getUnitEntity(unit: UnitComponent): Entity? {
-        for (entity in entities) {
-            val u = unitMapper[entity]
-            if (u == unit) return entity
-        }
-        return null
+    fun getUnitEntity(unit: UnitComponent): Int {
+        return entityIds.first {
+            val u = mUnit[it]
+            u == unit
+        } ?: -1
     }
 
-    fun addUnit(unit: UnitComponent): Entity {
-        val tile = tiles!![unit.coord]!!
-        val entity = Entity()
-        entity.add(TransformComponent(tiles!!.getPosition(tile)!!))
-        entity.add(unit)
-        entity.add(CircleComponent(
-            TileSystem.tileSize / 2f - 10f,
-            when (unit.faction) {
+    fun addUnit(
+        coord: Point = Point(),
+        speed: Float = 0f,
+        faction: UnitComponent.Faction = UnitComponent.Faction.NONE
+    ): Int {
+        val tile = tiles[coord]!!
+        val entityId = world.create()
+        mTransform.create(entityId).position = tiles.getPosition(tile)!!
+        mUnit.create(entityId).apply {
+            this.coord = coord
+            this.speed = speed
+            this.faction = faction
+        }
+        mCircle.create(entityId).apply {
+            radius = TileSystem.tileSize / 2f - 10f
+            color = when (faction) {
                 UnitComponent.Faction.NONE -> Color.GRAY
                 UnitComponent.Faction.PLAYER -> Color.CYAN
                 UnitComponent.Faction.ENEMY -> Color.RED
-            },
-            ShapeRenderer.ShapeType.Filled
-        ))
-        engine.addEntity(entity)
-        return entity
+            }
+            type = ShapeRenderer.ShapeType.Filled
+        }
+        return entityId
     }
 
     fun moveUnit(unit: UnitComponent, goal: Point) {
-        if (!tiles!!.isCoordValid(goal)) return
-        val path = Pathfinder.path(tiles!!, tiles!![unit.coord]!!, tiles!![goal]!!) ?: return
-        val entity = getUnitEntity(unit) ?: return
-        entity.add(PathFollowerComponent(path, tiles!!))
+        if (!tiles.isCoordValid(goal)) return
+        val path = Pathfinder.path(tiles, tiles[unit.coord]!!, tiles[goal]!!) ?: return
+        val entity = getUnitEntity(unit)
+        if (entity < 0) return
+        mPathFollower.create(entity).path = path
         unit.coord = goal
     }
 
     private fun showMoveArea(unit: UnitComponent) {
-        val tile = tiles!![unit.coord]
+        val tile = tiles[unit.coord]
         if (tile != null) {
             hideMoveArea()
             var areaIndicator = areaIndicators[unit]
             if (areaIndicator == null) {
-                areaIndicator = AreaIndicator(engine, Pathfinder.area(tiles!!, tile, unit.speed))
+                areaIndicator = AreaIndicator(world, Pathfinder.area(tiles, tile, unit.speed))
                 areaIndicators[unit] = areaIndicator
             }
             areaIndicator.show()
@@ -124,15 +117,15 @@ class UnitManagementSystem : SortedIteratingSystem(
     }
 
     private fun hideMoveArea() {
-        currentMoveArea?.let {
-            it.clearPath()
-            it.hide()
+        currentMoveArea?.apply {
+            clearPath()
+            hide()
             currentMoveArea = null
         }
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-        val mouseCoord = tiles!!.mouseCoord ?: return false
+        val mouseCoord = tiles.mouseCoord ?: return false
 
         val unit = getUnit(mouseCoord)
         if (unit != null) {
@@ -151,9 +144,8 @@ class UnitManagementSystem : SortedIteratingSystem(
             hideMoveArea()
             if (path != null) {
                 val u = selectedUnit!!
-                val entity = getUnitEntity(u)!!
-                val pathFollower = PathFollowerComponent(path, tiles!!)
-                entity.add(pathFollower)
+                val entityId = getUnitEntity(u)
+                mPathFollower.create(entityId).path = path
                 val dest = path[path.size - 1]
                 u.coord = dest.coord
                 areaIndicators.remove(u)!!.clear()
@@ -175,7 +167,7 @@ class UnitManagementSystem : SortedIteratingSystem(
 
     private var lastCoord: Point? = null
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
-        val mouseCoord = tiles!!.mouseCoord
+        val mouseCoord = tiles.mouseCoord
         if (lastCoord != mouseCoord) {
             currentMoveArea?.clearPath()
             if (mouseCoord != null) currentMoveArea?.showPathTo(mouseCoord)
@@ -203,4 +195,6 @@ class UnitManagementSystem : SortedIteratingSystem(
     override fun keyDown(keycode: Int): Boolean {
         return false
     }
+
+    override fun process(entityId: Int) {}
 }

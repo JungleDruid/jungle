@@ -1,60 +1,58 @@
 package net.natruid.jungle.systems
 
-import com.badlogic.ashley.core.Entity
-import com.badlogic.ashley.systems.SortedIteratingSystem
+import com.artemis.Aspect
+import com.artemis.Component
+import com.artemis.ComponentMapper
+import com.artemis.utils.Bag
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.utils.Align
-import ktx.ashley.allOf
-import ktx.ashley.mapperFor
-import ktx.ashley.oneOf
 import net.natruid.jungle.components.*
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.core.Marsh
 import net.natruid.jungle.utils.Layer
 import net.natruid.jungle.utils.RendererHelper
 
-class RenderSystem
-    : SortedIteratingSystem(
-    allOf(TransformComponent::class).oneOf(
-        TextureComponent::class,
-        LabelComponent::class,
-        RectComponent::class,
-        CircleComponent::class,
-        RenderableComponent::class
-    ).get(),
-    ZComparator()
-) {
+class RenderSystem : SortedIteratingSystem(Aspect.all(TransformComponent::class.java).one(
+    TextureComponent::class.java,
+    LabelComponent::class.java,
+    RectComponent::class.java,
+    CircleComponent::class.java,
+    RenderableComponent::class.java
+)) {
+    override val comparator by lazy {
+        Comparator<Int> { p0, p1 ->
+            val z0 = mTransform[p0].position.z
+            val z1 = mTransform[p1].position.z
+            when {
+                z0 > z1 -> 1
+                z0 < z1 -> -1
+                else -> 0
+            }
+        }
+    }
+
     private val camera = Jungle.instance.camera
     private val renderer = Jungle.instance.renderer
     private val batch = renderer.batch
     private val shapeRenderer = renderer.shapeRenderer
-    private val transformMapper = mapperFor<TransformComponent>()
-    private val shaderMapper = mapperFor<ShaderComponent>()
+    private lateinit var mTransform: ComponentMapper<TransformComponent>
+    private lateinit var mShader: ComponentMapper<ShaderComponent>
     private val shaderDefault = ShaderComponent()
     private val glyphLayout = GlyphLayout()
     private var layer = Layer.DEFAULT.value
 
-    class ZComparator : Comparator<Entity> {
-        private val transformMapper = mapperFor<TransformComponent>()
-        override fun compare(p0: Entity?, p1: Entity?): Int {
-            val z0 = transformMapper[p0].position.z
-            val z1 = transformMapper[p1].position.z
-            return if (z0 > z1) 1 else if (z0 < z1) -1 else 0
-        }
-    }
+    private val componentBag = Bag<Component>()
 
-    override fun processEntity(entity: Entity?, deltaTime: Float) {
-        if (entity == null) return
-
-        val transform = transformMapper[entity]
+    override fun process(entityId: Int) {
+        val transform = mTransform[entityId]
 
         if (!transform.visible || transform.layer.value.and(layer) == 0) {
             return
         }
 
-        val shader = shaderMapper[entity] ?: shaderDefault
+        val shader = mShader[entityId] ?: shaderDefault
 
-        for (component in entity.components) {
+        for (component in world.componentManager.getComponentsFor(entityId, componentBag)) {
             when (component) {
                 is TextureComponent -> {
                     component.region?.let { region ->
@@ -98,7 +96,6 @@ class RenderSystem
                     renderer.begin(camera, RendererHelper.Type.SPRITE_BATCH, shaderProgram = shader.shader)
                     batch.setBlendFunction(shader.blendSrcFunc, shader.blendDstFunc)
                     font.draw(batch, glyphLayout, transform.position.x, transform.position.y + offsetY)
-                    batch.enableBlending()
                 }
                 is RectComponent -> {
                     val originX = component.width * transform.pivot.x
@@ -131,6 +128,8 @@ class RenderSystem
                 is RenderableComponent -> component.render(transform)
             }
         }
+
+        componentBag.clear()
     }
 
     fun setLayer(vararg layers: Layer) {

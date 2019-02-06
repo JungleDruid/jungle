@@ -1,8 +1,8 @@
 package net.natruid.jungle.systems
 
-import com.badlogic.ashley.core.Engine
-import com.badlogic.ashley.core.Entity
-import com.badlogic.ashley.core.EntitySystem
+import com.artemis.BaseSystem
+import com.artemis.ComponentMapper
+import com.artemis.managers.TagManager
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
@@ -13,18 +13,17 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.glutils.ShaderProgram
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Vector3
-import ktx.ashley.add
-import ktx.ashley.allOf
-import ktx.ashley.entity
 import ktx.math.vec3
 import net.natruid.jungle.components.*
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.utils.*
 import kotlin.math.roundToInt
 
-class TileSystem : EntitySystem(), InputProcessor {
+class TileSystem : BaseSystem(), InputProcessor {
     companion object {
         const val tileSize = 64
+        private const val TAG_GRID_RENDERER = "GridRenderer"
+        private const val TAG_MOUSE_ON_TILE = "MouseOnTile"
 
         private val adjacent = arrayOf(
             ImmutablePoint(Point(1, 0)),
@@ -46,11 +45,13 @@ class TileSystem : EntitySystem(), InputProcessor {
 
     private val halfTileSize = tileSize / 2
 
-    private val family = allOf(TileComponent::class, TransformComponent::class).get()
-    private val tiles by lazy { ArrayList<TileComponent>(columns * rows) }
-    private var mouseOnTile: Entity? = null
-    private var mouseOnTileTransform: TransformComponent? = null
-    private var gridRenderer: Entity? = null
+    private lateinit var mTile: ComponentMapper<TileComponent>
+    private lateinit var mTransform: ComponentMapper<TransformComponent>
+    private lateinit var mTexture: ComponentMapper<TextureComponent>
+    private lateinit var mRect: ComponentMapper<RectComponent>
+    private lateinit var mRenderable: ComponentMapper<RenderableComponent>
+    private lateinit var tileEntities: Array<IntArray>
+    private val mouseOnTile get() = world.getSystem(TagManager::class.java).getEntityId(TAG_MOUSE_ON_TILE)
     private val renderer = Jungle.instance.renderer
     private val shapeRenderer = renderer.shapeRenderer
     private val camera = Jungle.instance.camera
@@ -72,20 +73,11 @@ class TileSystem : EntitySystem(), InputProcessor {
         )
     }
 
-    operator fun get(x: Int, y: Int): TileComponent? {
-        if (!isCoordValid(x, y)) return null
-        val index = y * columns + x
-        if (index < 0 || index >= tiles.size) return null
-        return tiles[index]
-    }
-
     operator fun get(coord: Point?): TileComponent? {
         if (coord == null) return null
-        return get(coord.x, coord.y)
-    }
-
-    fun isCoordValid(x: Int, y: Int): Boolean {
-        return x >= 0 && y >= 0 && x < columns && y < rows
+        val entityId = getEntity(coord)
+        if (entityId < 0) return null
+        return mTile[entityId]
     }
 
     fun isCoordValid(coord: Point?): Boolean {
@@ -93,16 +85,19 @@ class TileSystem : EntitySystem(), InputProcessor {
         return coord.x >= 0 && coord.y >= 0 && coord.x < columns && coord.y < rows
     }
 
-    fun getEntity(tile: TileComponent): Entity? {
-        if (columns == 0) return null
-        val e = engine?.getEntitiesFor(family) ?: return null
-        val index = tile.coord.y * columns + tile.coord.x
-        if (index < 0 || index >= e.size()) return null
-        return e[index]
+    fun getEntity(coord: Point): Int {
+        if (!isCoordValid(coord)) return -1
+        return tileEntities[coord.x][coord.y]
+    }
+
+    fun getEntity(tile: TileComponent): Int {
+        return getEntity(tile.coord)
     }
 
     fun getPosition(tile: TileComponent): Vector3? {
-        return getEntity(tile)?.getComponent(TransformComponent::class.java)?.position
+        val e = getEntity(tile)
+        if (e < 0) return null
+        return mTransform[e].position
     }
 
     fun neighbors(coord: Point, diagonal: Boolean = false): Array<TileComponent?> {
@@ -120,74 +115,64 @@ class TileSystem : EntitySystem(), InputProcessor {
     private val waterTexture = TextureRegion(Texture(Scout["assets/img/tiles/water.png"]))
 
     fun create(columns: Int, rows: Int) {
-        val engine = engine ?: return
         clean()
         this.columns = columns
         this.rows = rows
-        val generator = MapGenerator(columns, rows)
-        val map = generator.get()
+        val generator = MapGenerator(columns, rows, world)
+        tileEntities = generator.get()
         for (y in 0 until rows) {
             for (x in 0 until columns) {
-                engine.add {
-                    entity {
-                        val tile = map[x][y]
-                        tiles.add(tile)
-                        entity.add(tile)
-                        with<TransformComponent> {
-                            position = vec3(x * tileSize.toFloat(), y * tileSize.toFloat())
+                val entityId = tileEntities[x][y]
+                val tile = mTile[entityId]
+                mTransform[entityId].position = vec3(x * tileSize.toFloat(), y * tileSize.toFloat())
+                mTexture[entityId].apply {
+                    region = when (tile.terrainType) {
+                        TileComponent.TerrainType.NONE -> dirtTexture
+                        TileComponent.TerrainType.DIRT -> dirtTexture
+                        TileComponent.TerrainType.GRASS -> grassTexture
+                        TileComponent.TerrainType.WATER -> waterTexture
+                        TileComponent.TerrainType.ROAD -> roadTexture
+                    }
+                    color = when (tile.terrainType) {
+                        TileComponent.TerrainType.WATER ->
+                            Color(1f, 1f, 1f, .7f)
+                        TileComponent.TerrainType.ROAD ->
+                            Color(1f, 1f, 1f, .93f + generator.random.nextFloat() * .07f)
+                        else -> {
+                            val gb = .8f + generator.random.nextFloat() * .2f
+                            Color(
+                                (gb + .2f).coerceAtMost(1f),
+                                gb,
+                                gb,
+                                1f
+                            )
                         }
-                        with<TextureComponent> {
-                            region = when (tile.terrainType) {
-                                TileComponent.TerrainType.NONE -> dirtTexture
-                                TileComponent.TerrainType.DIRT -> dirtTexture
-                                TileComponent.TerrainType.GRASS -> grassTexture
-                                TileComponent.TerrainType.WATER -> waterTexture
-                                TileComponent.TerrainType.ROAD -> roadTexture
-                            }
-                            color = when (tile.terrainType) {
-                                TileComponent.TerrainType.WATER ->
-                                    Color(1f, 1f, 1f, .7f)
-                                TileComponent.TerrainType.ROAD ->
-                                    Color(1f, 1f, 1f, .93f + generator.random.nextFloat() * .07f)
-                                else -> {
-                                    val gb = .8f + generator.random.nextFloat() * .2f
-                                    Color(
-                                        (gb + .2f).coerceAtMost(1f),
-                                        gb,
-                                        gb,
-                                        1f
-                                    )
-                                }
-                            }
-                        }
-                        if (tile.terrainType == TileComponent.TerrainType.WATER)
-                            entity.add(waterTileShaderComponent)
-                        else
-                            entity.add(tileShaderComponent)
                     }
                 }
+                if (tile.terrainType == TileComponent.TerrainType.WATER)
+                    world.edit(entityId).add(waterTileShaderComponent)
+                else
+                    world.edit(entityId).add(tileShaderComponent)
             }
         }
-        engine.add {
-            gridRenderer = entity {
-                with<TransformComponent> {
-                    visible = gridRenderer?.getComponent(TransformComponent::class.java)?.visible ?: false
-                }
-                with<RenderableComponent> {
-                    renderCallback = gridRenderCallback
-                }
+        val tagManager = world.getSystem(TagManager::class.java)
+        world.create().let { entityId ->
+            tagManager.register("GridRenderer", entityId)
+            val visible = mTransform[entityId]?.visible ?: false
+            mTransform.create(entityId).visible = visible
+            mRenderable.create(entityId).renderCallback = gridRenderCallback
+        }
+        world.create().let { entityId ->
+            tagManager.register(TAG_MOUSE_ON_TILE, entityId)
+            mTransform.create(entityId).apply {
+                visible = false
+                position.z = 10f
             }
-            mouseOnTile = entity {
-                mouseOnTileTransform = with {
-                    visible = false
-                    position.z = 10f
-                }
-                with<RectComponent> {
-                    width = tileSize.toFloat()
-                    height = tileSize.toFloat()
-                    type = ShapeRenderer.ShapeType.Filled
-                    color = mouseOnTileColor
-                }
+            mRect.create(entityId).apply {
+                width = tileSize.toFloat()
+                height = tileSize.toFloat()
+                type = ShapeRenderer.ShapeType.Filled
+                color = mouseOnTileColor
             }
         }
     }
@@ -267,7 +252,7 @@ class TileSystem : EntitySystem(), InputProcessor {
 
         val currentCoord = screenToCoord(Point(screenX, screenY))
         if (currentCoord == mouseCoord) return false
-        val mott = mouseOnTileTransform ?: return false
+        val mott = mTransform[mouseOnTile] ?: return false
 
         mouseCoord = currentCoord
         if (mouseCoord == null) {
@@ -289,7 +274,7 @@ class TileSystem : EntitySystem(), InputProcessor {
 
     override fun keyUp(keycode: Int): Boolean {
         if (keycode == Input.Keys.APOSTROPHE) {
-            val gt = gridRenderer?.getComponent(TransformComponent::class.java)
+            val gt = mTransform[world.getSystem(TagManager::class.java).getEntityId("GridRenderer")]
             if (gt != null) {
                 gt.visible = !gt.visible
             }
@@ -305,35 +290,40 @@ class TileSystem : EntitySystem(), InputProcessor {
         return false
     }
 
-    override fun setProcessing(processing: Boolean) {
-        super.setProcessing(processing)
-        if (!processing) mouseOnTileTransform?.visible = false
+    override fun setEnabled(enabled: Boolean) {
+        super.setEnabled(enabled)
+        if (enabled) {
+            mTransform[mouseOnTile].visible = false
+        }
     }
 
-    override fun removedFromEngine(engine: Engine?) {
-        super.removedFromEngine(engine)
+    override fun dispose() {
         clean()
+        super.dispose()
     }
 
     private fun clean() {
         columns = 0
-        tiles.clear()
+        rows = 0
+        world.getSystem(TagManager::class.java).apply {
+            unregister(TAG_MOUSE_ON_TILE)
+            unregister(TAG_GRID_RENDERER)
+        }
     }
 
     private var time = 0f
-    override fun update(deltaTime: Float) {
-        super.update(deltaTime)
+    override fun processSystem() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
             tileShaderComponent.shader = ShaderProgram(Scout["assets/shaders/vertex.glsl"], Scout["assets/shaders/fragment.glsl"])
             waterTileShaderComponent.shader = ShaderProgram(Scout["assets/shaders/vertex.glsl"], Scout["assets/shaders/fragment.glsl"])
         }
 
-        time += deltaTime
+        time += world.delta
         try {
-            waterTileShaderComponent.shader.let {
-                it.begin()
-                it.setUniformf("time", time)
-                it.end()
+            waterTileShaderComponent.shader.apply {
+                begin()
+                setUniformf("time", time)
+                end()
             }
         } catch (e: Exception) {
         }

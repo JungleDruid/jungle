@@ -1,26 +1,28 @@
 package net.natruid.jungle.screens
 
-import com.badlogic.ashley.core.Engine
+import com.artemis.World
+import com.artemis.WorldConfiguration
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.Screen
 import net.natruid.jungle.systems.RenderSystem
-import net.natruid.jungle.utils.extensions.removeAllSystems
 
-abstract class AbstractScreen(protected val engine: Engine = Engine()) : Screen, InputProcessor {
+abstract class AbstractScreen(configuration: WorldConfiguration) : Screen, InputProcessor {
+    protected val world = World(configuration)
+
     override fun render(delta: Float) {
-        engine.update(delta)
+        world.setDelta(delta)
+        world.process()
     }
 
     override fun dispose() {
-        engine.removeAllEntities()
-        engine.removeAllSystems()
+        world.dispose()
     }
 
     override fun resize(width: Int, height: Int) {}
 
     override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-        for (system in engine.systems) {
-            if (system is InputProcessor && system.checkProcessing()) {
+        for (system in world.systems) {
+            if (system.isEnabled && system is InputProcessor) {
                 system.touchUp(screenX, screenY, pointer, button)
             }
         }
@@ -28,8 +30,8 @@ abstract class AbstractScreen(protected val engine: Engine = Engine()) : Screen,
     }
 
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
-        for (system in engine.systems) {
-            if (system is InputProcessor && system.checkProcessing()) {
+        for (system in world.systems) {
+            if (system.isEnabled && system is InputProcessor) {
                 system.mouseMoved(screenX, screenY)
             }
         }
@@ -37,8 +39,8 @@ abstract class AbstractScreen(protected val engine: Engine = Engine()) : Screen,
     }
 
     override fun keyTyped(character: Char): Boolean {
-        for (system in engine.systems) {
-            if (system is InputProcessor && system.checkProcessing()) {
+        for (system in world.systems) {
+            if (system.isEnabled && system is InputProcessor) {
                 system.keyTyped(character)
             }
         }
@@ -46,8 +48,8 @@ abstract class AbstractScreen(protected val engine: Engine = Engine()) : Screen,
     }
 
     override fun scrolled(amount: Int): Boolean {
-        for (system in engine.systems) {
-            if (system is InputProcessor && system.checkProcessing()) {
+        for (system in world.systems) {
+            if (system.isEnabled && system is InputProcessor) {
                 system.scrolled(amount)
             }
         }
@@ -55,8 +57,8 @@ abstract class AbstractScreen(protected val engine: Engine = Engine()) : Screen,
     }
 
     override fun keyUp(keycode: Int): Boolean {
-        for (system in engine.systems) {
-            if (system is InputProcessor && system.checkProcessing()) {
+        for (system in world.systems) {
+            if (system.isEnabled && system is InputProcessor) {
                 system.keyUp(keycode)
             }
         }
@@ -64,8 +66,8 @@ abstract class AbstractScreen(protected val engine: Engine = Engine()) : Screen,
     }
 
     override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
-        for (system in engine.systems) {
-            if (system is InputProcessor && system.checkProcessing()) {
+        for (system in world.systems) {
+            if (system.isEnabled && system is InputProcessor) {
                 system.touchDragged(screenX, screenY, pointer)
             }
         }
@@ -73,8 +75,8 @@ abstract class AbstractScreen(protected val engine: Engine = Engine()) : Screen,
     }
 
     override fun keyDown(keycode: Int): Boolean {
-        for (system in engine.systems) {
-            if (system is InputProcessor && system.checkProcessing()) {
+        for (system in world.systems) {
+            if (system.isEnabled && system is InputProcessor) {
                 system.keyDown(keycode)
             }
         }
@@ -82,8 +84,8 @@ abstract class AbstractScreen(protected val engine: Engine = Engine()) : Screen,
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-        for (system in engine.systems) {
-            if (system is InputProcessor && system.checkProcessing()) {
+        for (system in world.systems) {
+            if (system.isEnabled && system is InputProcessor) {
                 system.touchDown(screenX, screenY, pointer, button)
             }
         }
@@ -95,14 +97,14 @@ abstract class AbstractScreen(protected val engine: Engine = Engine()) : Screen,
     override fun show() {}
 
     override fun pause() {
-        for (system in engine.systems) {
-            if (system !is RenderSystem) system.setProcessing(false)
+        for (system in world.systems) {
+            if (system !is RenderSystem) system.isEnabled = false
         }
     }
 
     override fun resume() {
-        for (system in engine.systems) {
-            system.setProcessing(true)
+        for (system in world.systems) {
+            system.isEnabled = true
         }
     }
 }

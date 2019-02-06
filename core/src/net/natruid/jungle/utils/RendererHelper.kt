@@ -39,9 +39,9 @@ class RendererHelper : Disposable {
             }
             Type.SHAPE_RENDERER -> {
                 shapeRenderer.projectionMatrix = camera.combined
-                Gdx.gl.let {
-                    it.glEnable(GL20.GL_BLEND)
-                    it.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+                Gdx.gl.apply {
+                    glEnable(GL20.GL_BLEND)
+                    glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
                 }
                 shapeRenderer.begin(shapeType)
                 this.shapeType = shapeType

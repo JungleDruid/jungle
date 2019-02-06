@@ -1,6 +1,6 @@
 package net.natruid.jungle.components
 
-import com.badlogic.ashley.core.Component
+import com.artemis.Component
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.utils.Align
 
@@ -10,4 +10,4 @@ class LabelComponent(
     var color: Color = Color.WHITE!!,
     var width: Float = 0f,
     var align: Int = Align.topLeft
-) : Component
+) : Component()

@@ -6,7 +6,6 @@ import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
-import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.github.czyzby.lml.parser.LmlParser
 import com.github.czyzby.lml.parser.impl.AbstractLmlView
@@ -34,11 +33,11 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
 
     private var currentScreen: AbstractScreen? = null
     private var currentView: AbstractLmlView? = null
-    private val inputProcessors = Array<InputProcessor>()
+    private val inputProcessors = ArrayList<InputProcessor>()
     private var debugView: DebugView? = null
     private var targetFPS = 60
     private var backgroundFPS = 10
-    private var pauseOnBackground = true
+    private var pauseOnBackground = false
     private var resizing = false
     private var vSync = true
 
@@ -59,7 +58,7 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
         client.setTitle(bundle["title"])
 
         setScreen(FieldScreen())
-        debugView = AbstractView.createView()
+        if (debug) debugView = AbstractView.createView()
         Gdx.graphics.setVSync(vSync)
     }
 
@@ -101,8 +100,10 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
 
     private fun setScreen(screen: AbstractScreen) {
         resetCamera()
-        if (currentScreen != null) inputProcessors.removeValue(currentScreen, true)
-        currentScreen?.dispose()
+        currentScreen?.apply {
+            inputProcessors.remove(this)
+            dispose()
+        }
 
         currentScreen = screen
         val s = currentScreen ?: return
@@ -111,15 +112,14 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
     }
 
     private fun setView(view: AbstractView?) {
-        val v = currentView
-        if (v != null) {
-            inputProcessors.removeValue(v.stage, true)
-            v.dispose()
+        currentView?.apply {
+            inputProcessors.remove(stage)
+            dispose()
         }
 
         currentView = view
-        if (view != null) {
-            inputProcessors.insert(0, view.stage)
+        view?.apply {
+            inputProcessors.add(0, stage)
         }
     }
 
@@ -267,11 +267,7 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
         val debug = ManagementFactory.getRuntimeMXBean().inputArguments.toString().indexOf("-agentlib:jdwp") > 0
         val lmlParser: LmlParser by lazy { VisLml.parser().i18nBundle(Marsh.I18N["assets/locale/UI"]).build() }
 
-        private var hInstance: Jungle? = null
-        var instance: Jungle
-            get() = hInstance!!
-            private set(value) {
-                hInstance = value
-            }
+        lateinit var instance: Jungle
+            private set
     }
 }

@@ -1,59 +1,57 @@
 package net.natruid.jungle.utils
 
-import com.badlogic.ashley.core.Engine
-import com.badlogic.ashley.core.Entity
+import com.artemis.World
+import com.artemis.utils.IntBag
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Align
-import ktx.ashley.add
-import ktx.ashley.entity
 import net.natruid.jungle.components.LabelComponent
 import net.natruid.jungle.components.RectComponent
 import net.natruid.jungle.components.TileComponent
 import net.natruid.jungle.components.TransformComponent
 import net.natruid.jungle.systems.TileSystem
 import net.natruid.jungle.systems.TileSystem.Companion.tileSize
+import net.natruid.jungle.utils.extensions.forEach
 import java.text.DecimalFormat
 
-class AreaIndicator(private var engine: Engine, private var pathFinderResult: Collection<PathNode>) {
+class AreaIndicator(private var world: World, private var pathFinderResult: Collection<PathNode>) {
     companion object {
         private val formatter = DecimalFormat("#.#")
     }
 
-    private val areaEntities = ArrayList<Entity>()
-    private val pathEntities = ArrayList<Entity>()
+    private val areaEntities = IntBag()
+    private val pathEntities = IntBag()
+    private val mTransform = world.getMapper(TransformComponent::class.java)
+    private val mRect = world.getMapper(RectComponent::class.java)
+    private val mLabel = world.getMapper(LabelComponent::class.java)
     private var shown: Boolean = false
     private val moveAreaColor = Color(0f, 1f, 1f, .4f)
 
     fun show() {
         if (shown) return
-        val tiles = engine.getSystem(TileSystem::class.java) ?: return
+        val tiles = world.getSystem(TileSystem::class.java) ?: return
 
-        if (areaEntities.size > 0) {
+        if (areaEntities.size() > 0) {
             areaEntities.forEach {
-                it.getComponent(TransformComponent::class.java)?.visible = true
+                mTransform[it].visible = true
             }
         } else {
             for (p in pathFinderResult) {
                 p.tile.let { tile ->
-                    engine.add {
-                        val e = entity {
-                            with<TransformComponent> {
-                                position = tiles.getPosition(tile)!!
-                            }
-                            with<RectComponent> {
-                                width = TileSystem.tileSize.toFloat()
-                                height = tileSize.toFloat()
-                                type = ShapeRenderer.ShapeType.Filled
-                                color = moveAreaColor
-                            }
-                            with<LabelComponent> {
-                                text = formatter.format(p.cost)
-                                align = Align.center
-                                fontName = "big"
-                            }
+                    world.create().let { entityId ->
+                        mTransform.create(entityId).position = tiles.getPosition(tile)!!
+                        mRect.create(entityId).apply {
+                            width = TileSystem.tileSize.toFloat()
+                            height = tileSize.toFloat()
+                            type = ShapeRenderer.ShapeType.Filled
+                            color = moveAreaColor
                         }
-                        areaEntities.add(e)
+                        mLabel.create(entityId).apply {
+                            text = formatter.format(p.cost)
+                            align = Align.center
+                            fontName = "big"
+                        }
+                        areaEntities.add(entityId)
                     }
                 }
             }
@@ -65,7 +63,7 @@ class AreaIndicator(private var engine: Engine, private var pathFinderResult: Co
     fun hide() {
         if (!shown) return
         areaEntities.forEach {
-            it.getComponent(TransformComponent::class.java)?.visible = false
+            mTransform[it].visible = false
         }
         shown = false
     }
@@ -75,38 +73,34 @@ class AreaIndicator(private var engine: Engine, private var pathFinderResult: Co
     }
 
     fun showPathTo(coord: Point): Boolean {
-        val tiles = engine.getSystem(TileSystem::class.java)!!
+        val tiles = world.getSystem(TileSystem::class.java)!!
         val path = getPathTo(coord) ?: return false
         for (tile in path) {
-            engine.add {
-                val e = entity {
-                    with<TransformComponent> {
-                        position = tiles.getPosition(tile)!!
-                    }
-                    with<RectComponent> {
-                        width = tileSize.toFloat()
-                        height = tileSize.toFloat()
-                        type = ShapeRenderer.ShapeType.Filled
-                        color = moveAreaColor
-                    }
+            world.create().let { entityId ->
+                mTransform.create(entityId).position = tiles.getPosition(tile)!!
+                mRect.create(entityId).apply {
+                    width = tileSize.toFloat()
+                    height = tileSize.toFloat()
+                    type = ShapeRenderer.ShapeType.Filled
+                    color = moveAreaColor
                 }
-                pathEntities.add(e)
+                pathEntities.add(entityId)
             }
         }
         return true
     }
 
     fun clearPath() {
-        for (entity in pathEntities) {
-            engine.removeEntity(entity)
+        pathEntities.forEach {
+            world.delete(it)
         }
         pathEntities.clear()
     }
 
     fun clear() {
-        if (areaEntities.size > 0) {
-            areaEntities.forEach { entity ->
-                engine.removeEntity(entity)
+        if (areaEntities.size() > 0) {
+            areaEntities.forEach {
+                world.delete(it)
             }
             areaEntities.clear()
         }

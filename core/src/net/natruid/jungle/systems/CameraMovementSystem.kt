@@ -1,6 +1,6 @@
 package net.natruid.jungle.systems
 
-import com.badlogic.ashley.core.EntitySystem
+import com.artemis.BaseSystem
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
@@ -10,7 +10,7 @@ import net.natruid.jungle.core.Jungle
 import kotlin.math.max
 import kotlin.math.min
 
-class CameraMovementSystem : EntitySystem(0), InputProcessor {
+class CameraMovementSystem : BaseSystem(), InputProcessor {
     private val camera = Jungle.instance.camera
     private val speed = 512f
     private val maxZoom = 2f
@@ -26,14 +26,12 @@ class CameraMovementSystem : EntitySystem(0), InputProcessor {
             camera.update()
         }
 
-    override fun update(deltaTime: Float) {
+    override fun processSystem() {
         if (!velocity.isZero) {
-            camera.translate(velocity * speed * deltaTime * zoom)
+            camera.translate(velocity * speed * world.delta * zoom)
             camera.update()
             if (Jungle.instance.mouseMoved) Jungle.instance.mouseMoved(Gdx.input.x, Gdx.input.y)
         }
-
-        super.update(deltaTime)
     }
 
     override fun keyDown(keycode: Int): Boolean {

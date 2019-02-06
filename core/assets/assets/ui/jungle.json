@@ -636,7 +636,7 @@
       "disabledFontColor": "grey"
     }
   },
-  "com.badlogic.gdx.scenes.scene2d.ui.List$ListStyle": {
+  "ListStyle": {
     "default": {
       "fontColorUnselected": "white",
       "selection": "padded-list-selection",
@@ -644,13 +644,13 @@
       "font": "normal"
     }
   },
-  "com.badlogic.gdx.scenes.scene2d.ui.Touchpad$TouchpadStyle": {
+  "TouchpadStyle": {
     "default": {
       "background": "default-pane",
       "knob": "touchpad-knob"
     }
   },
-  "com.badlogic.gdx.scenes.scene2d.ui.Tree$TreeStyle": {
+  "TreeStyle": {
     "default": {
       "minus": "tree-minus",
       "plus": "tree-plus",
@@ -658,7 +658,7 @@
       "over": "tree-over"
     }
   },
-  "com.badlogic.gdx.scenes.scene2d.ui.TextTooltip$TextTooltipStyle": {
+  "TextTooltipStyle": {
     "default": {
       "background": "default-pane",
       "label": {

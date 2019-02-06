@@ -1,10 +1,26 @@
 package net.natruid.jungle.utils
 
+import com.artemis.ArchetypeBuilder
+import com.artemis.World
 import com.badlogic.gdx.math.RandomXS128
+import net.natruid.jungle.components.TextureComponent
 import net.natruid.jungle.components.TileComponent
+import net.natruid.jungle.components.TransformComponent
 
-class MapGenerator(private val columns: Int, private val rows: Int) {
-    private val map = Array(columns) { x -> Array(rows) { y -> TileComponent(Point(x, y)) } }
+class MapGenerator(private val columns: Int, private val rows: Int, private val world: World) {
+    private val tileArchetype = ArchetypeBuilder().add(
+        TileComponent::class.java,
+        TransformComponent::class.java,
+        TextureComponent::class.java
+    ).build(world)
+    private val mTile = world.getMapper(TileComponent::class.java)
+    private val map = Array(columns) { x ->
+        IntArray(rows) { y ->
+            val entityId = world.create(tileArchetype)
+            mTile[entityId].coord.set(x, y)
+            entityId
+        }
+    }
     val random = RandomXS128()
 
     private fun createLine(
@@ -24,15 +40,15 @@ class MapGenerator(private val columns: Int, private val rows: Int) {
         if (random.nextBoolean()) lRange = lRange.reversed()
         for (l in lRange) {
             if (fork) {
-                if (vertical && map[wMid][l].terrainType == terrainType
-                    || !vertical && map[l][wMid].terrainType == terrainType)
+                if (vertical && mTile[map[wMid][l]].terrainType == terrainType
+                    || !vertical && mTile[map[l][wMid]].terrainType == terrainType)
                     break
             }
             for (w in 0 until width) {
                 if (vertical)
-                    map[wMid + w - width / 2][l].terrainType = terrainType
+                    mTile[map[wMid + w - width / 2][l]].terrainType = terrainType
                 else
-                    map[l][wMid + w - width / 2].terrainType = terrainType
+                    mTile[map[l][wMid + w - width / 2]].terrainType = terrainType
             }
             if (random.nextLong(100) >= 100L - mutateChance) {
                 mutateChance = 0
@@ -41,17 +57,17 @@ class MapGenerator(private val columns: Int, private val rows: Int) {
                         if (wMid < ref - 1) {
                             wMid += 1
                             if (vertical)
-                                map[wMid + width / 2 - 1 + width.rem(2)][l].terrainType = terrainType
+                                mTile[map[wMid + width / 2 - 1 + width.rem(2)][l]].terrainType = terrainType
                             else
-                                map[l][wMid + width / 2 - 1 + width.rem(2)].terrainType = terrainType
+                                mTile[map[l][wMid + width / 2 - 1 + width.rem(2)]].terrainType = terrainType
                         }
                     } else {
                         if (wMid > 0) {
                             wMid -= 1
                             if (vertical)
-                                map[wMid - width / 2][l].terrainType = terrainType
+                                mTile[map[wMid - width / 2][l]].terrainType = terrainType
                             else
-                                map[l][wMid - width / 2].terrainType = terrainType
+                                mTile[map[l][wMid - width / 2]].terrainType = terrainType
                         }
                     }
                 } else {
@@ -72,12 +88,12 @@ class MapGenerator(private val columns: Int, private val rows: Int) {
         val top = random.nextInt(rows - bottom).coerceAtMost(maxHeight - 1) + bottom
         for (x in left..right) {
             for (y in bottom..top) {
-                map[x][y].terrainType = terrainType
+                mTile[map[x][y]].terrainType = terrainType
             }
         }
     }
 
-    fun get(): Array<Array<TileComponent>> {
+    fun get(): Array<IntArray> {
         repeat(random.nextInt(200) + 100) {
             createRect(TileComponent.TerrainType.fromByte((random.nextLong(2) + 1).toByte())!!)
         }

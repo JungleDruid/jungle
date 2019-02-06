@@ -14,9 +14,9 @@ class DebugView : AbstractView() {
     private var timer = 0f
 
     @LmlActor("fpsLabel")
-    val fpsLabel: VisLabel? = null
+    lateinit var fpsLabel: VisLabel
     @LmlActor("ramLabel")
-    val ramLabel: VisLabel? = null
+    lateinit var ramLabel: VisLabel
 
     override fun getTemplateFile(): FileHandle {
         return Scout["assets/templates/debug.lml"]
@@ -33,10 +33,10 @@ class DebugView : AbstractView() {
         timer += delta
         if (timer >= 1f) {
             timer -= 1f
-            fpsLabel?.setText("FPS: $fps")
+            fpsLabel.setText("FPS: $fps")
             fps = 0
             val runtime = Runtime.getRuntime()
-            ramLabel?.setText("RAM: ${(runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024}")
+            ramLabel.setText("RAM: ${(runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024}")
         }
 
         super.render(delta)
