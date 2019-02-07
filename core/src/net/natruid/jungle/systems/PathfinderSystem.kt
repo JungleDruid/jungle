@@ -1,43 +1,26 @@
-package net.natruid.jungle.utils
+package net.natruid.jungle.systems
 
+import com.artemis.BaseSystem
+import com.artemis.ComponentMapper
 import com.badlogic.gdx.utils.BinaryHeap
 import com.badlogic.gdx.utils.Queue
 import net.natruid.jungle.components.TileComponent
-import net.natruid.jungle.systems.TileSystem
+import net.natruid.jungle.utils.PathNode
+import net.natruid.jungle.utils.Point
 import kotlin.collections.set
 
-class Pathfinder(private val tiles: TileSystem) {
-    companion object {
-        fun area(tiles: TileSystem, from: TileComponent, maxCost: Float): Collection<PathNode> {
-            return Pathfinder(tiles).area(from, maxCost)
-        }
-
-        fun path(tiles: TileSystem, from: TileComponent, goal: TileComponent): Array<TileComponent>? {
-            return Pathfinder(tiles).path(from, goal)
-        }
-
-        fun extractPath(pathNodes: Collection<PathNode>, goal: Point): Array<TileComponent>? {
-            for (node in pathNodes) {
-                if (goal == node.tile.coord) {
-                    val path = ArrayList<TileComponent>()
-                    var prevNode: PathNode? = node
-                    while (prevNode != null) {
-                        path.add(prevNode.tile)
-                        prevNode = prevNode.prev
-                    }
-                    path.reverse()
-                    return path.toTypedArray()
-                }
-            }
-            return null
-        }
-    }
-
+class PathfinderSystem : BaseSystem() {
+    private lateinit var mTile: ComponentMapper<TileComponent>
+    private lateinit var sTile: TileSystem
     private val frontier = BinaryHeap<PathNode>()
-    private val visited = HashMap<TileComponent, PathNode>()
+    private val visited = HashMap<Int, PathNode>()
+    private val walkables = ArrayList<Boolean>(4)
+    private val walkableDiagonals = Queue<Boolean>(4)
 
-    private fun init(from: TileComponent): PathNode {
+    private fun init(from: Int): PathNode {
         val node = PathNode(from, 0f)
+        frontier.clear()
+        visited.clear()
         frontier.add(node)
         visited[from] = node
         return node
@@ -47,26 +30,28 @@ class Pathfinder(private val tiles: TileSystem) {
         current: PathNode,
         diagonal: Boolean = false,
         maxCost: Float? = null,
-        goal: TileComponent? = null
+        goal: Int? = null
     ): Boolean {
         if (!diagonal) {
             walkables.clear()
             walkableDiagonals.clear()
         }
         if (diagonal && walkableDiagonals.size == 0) return false
-        for (next in tiles.neighbors(current.tile.coord, diagonal)) {
+        for (next in sTile.neighbors(mTile[current.tile].coord, diagonal)) {
+            val nextTileComponent = if (next >= 0) mTile[next] else null
+            val nextWalkable = nextTileComponent != null && nextTileComponent.walkable
             if (!diagonal) {
                 val size = walkables.size
                 if (size > 0) {
-                    walkableDiagonals.addLast(next != null && next.walkable || walkables[size - 1])
+                    walkableDiagonals.addLast(nextWalkable || walkables[size - 1])
                     if (size == 3) {
-                        walkableDiagonals.addLast(next != null && next.walkable || walkables[0])
+                        walkableDiagonals.addLast(nextWalkable || walkables[0])
                     }
                 }
-                walkables.add(next != null && next.walkable)
+                walkables.add(nextWalkable)
             }
             var cost = if (!diagonal) 1f else 1.5f
-            when (next?.terrainType) {
+            when (nextTileComponent?.terrainType) {
                 TileComponent.TerrainType.WATER -> cost *= 3
                 TileComponent.TerrainType.ROAD -> cost /= 2
                 else -> {
@@ -75,8 +60,7 @@ class Pathfinder(private val tiles: TileSystem) {
             val nextCost = current.cost + cost
             if (
                 diagonal && !walkableDiagonals.removeFirst()
-                || next == null || !next.walkable
-                || maxCost != null && nextCost > maxCost
+                || !nextWalkable || maxCost != null && nextCost > maxCost
             ) continue
             val nextNode = this.visited[next]
             if (nextNode == null || nextNode.cost > nextCost) {
@@ -90,7 +74,11 @@ class Pathfinder(private val tiles: TileSystem) {
                 }
                 var priority = nextCost
                 if (goal != null) {
-                    priority += heuristic(goal.coord, next.coord, if (diagonal) .5f else 0f)
+                    priority += heuristic(
+                        mTile[goal].coord,
+                        nextTileComponent!!.coord,
+                        if (diagonal) .5f else 0f
+                    )
                 }
                 frontier.add(node, priority)
             }
@@ -98,20 +86,18 @@ class Pathfinder(private val tiles: TileSystem) {
         return false
     }
 
-    private val walkables = ArrayList<Boolean>(4)
-    private val walkableDiagonals = Queue<Boolean>(4)
     fun area(
-        from: TileComponent,
+        from: Int,
         maxCost: Float,
         diagonal: Boolean = true
-    ): Collection<PathNode> {
+    ): Array<PathNode> {
         init(from)
         while (!frontier.isEmpty) {
             val current = frontier.pop()
             searchNeighbors(current, maxCost = maxCost)
             if (diagonal) searchNeighbors(current, true, maxCost = maxCost)
         }
-        return visited.values
+        return visited.values.toTypedArray()
     }
 
     private fun heuristic(a: Point, b: Point, f: Float): Float {
@@ -119,16 +105,36 @@ class Pathfinder(private val tiles: TileSystem) {
     }
 
     fun path(
-        from: TileComponent,
-        goal: TileComponent,
+        from: Int,
+        goal: Int,
         diagonal: Boolean = true
-    ): Array<TileComponent>? {
+    ): IntArray? {
         init(from)
         while (!frontier.isEmpty) {
             val current = frontier.pop()
-            if (searchNeighbors(current, goal = goal)) return extractPath(visited.values, goal.coord)!!
-            if (diagonal && searchNeighbors(current, true, goal = goal)) return extractPath(visited.values, goal.coord)!!
+            if (searchNeighbors(current, goal = goal))
+                return extractPath(visited.values.toTypedArray(), mTile[goal].coord)!!
+            if (diagonal && searchNeighbors(current, true, goal = goal))
+                return extractPath(visited.values.toTypedArray(), mTile[goal].coord)!!
         }
         return null
     }
+
+    fun extractPath(pathNodes: Array<PathNode>, goal: Point): IntArray? {
+        for (node in pathNodes) {
+            if (goal == mTile[node.tile].coord) {
+                val path = ArrayList<Int>()
+                var prevNode: PathNode? = node
+                while (prevNode != null) {
+                    path.add(prevNode.tile)
+                    prevNode = prevNode.prev
+                }
+                path.reverse()
+                return path.toIntArray()
+            }
+        }
+        return null
+    }
+
+    override fun processSystem() {}
 }

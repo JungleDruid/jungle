@@ -7,18 +7,19 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Align
 import net.natruid.jungle.components.LabelComponent
 import net.natruid.jungle.components.RectComponent
-import net.natruid.jungle.components.TileComponent
 import net.natruid.jungle.components.TransformComponent
+import net.natruid.jungle.systems.PathfinderSystem
 import net.natruid.jungle.systems.TileSystem
 import net.natruid.jungle.systems.TileSystem.Companion.tileSize
 import net.natruid.jungle.utils.extensions.forEach
 import java.text.DecimalFormat
 
-class AreaIndicator(private var world: World, private var pathFinderResult: Collection<PathNode>) {
+class AreaIndicator(private var world: World, private var pathFinderResult: Array<PathNode>) {
     companion object {
         private val formatter = DecimalFormat("#.#")
     }
 
+    private val sPathfinder = world.getSystem(PathfinderSystem::class.java)
     private val areaEntities = IntBag()
     private val pathEntities = IntBag()
     private val mTransform = world.getMapper(TransformComponent::class.java)
@@ -29,7 +30,6 @@ class AreaIndicator(private var world: World, private var pathFinderResult: Coll
 
     fun show() {
         if (shown) return
-        val tiles = world.getSystem(TileSystem::class.java) ?: return
 
         if (areaEntities.size() > 0) {
             areaEntities.forEach {
@@ -39,7 +39,7 @@ class AreaIndicator(private var world: World, private var pathFinderResult: Coll
             for (p in pathFinderResult) {
                 p.tile.let { tile ->
                     world.create().let { entityId ->
-                        mTransform.create(entityId).position = tiles.getPosition(tile)!!
+                        mTransform.create(entityId).position = mTransform[tile].position
                         mRect.create(entityId).apply {
                             width = TileSystem.tileSize.toFloat()
                             height = tileSize.toFloat()
@@ -68,16 +68,15 @@ class AreaIndicator(private var world: World, private var pathFinderResult: Coll
         shown = false
     }
 
-    fun getPathTo(coord: Point): Array<TileComponent>? {
-        return Pathfinder.extractPath(pathFinderResult, coord)
+    fun getPathTo(coord: Point): IntArray? {
+        return sPathfinder.extractPath(pathFinderResult, coord)
     }
 
     fun showPathTo(coord: Point): Boolean {
-        val tiles = world.getSystem(TileSystem::class.java)!!
         val path = getPathTo(coord) ?: return false
         for (tile in path) {
             world.create().let { entityId ->
-                mTransform.create(entityId).position = tiles.getPosition(tile)!!
+                mTransform.create(entityId).position = mTransform[tile].position
                 mRect.create(entityId).apply {
                     width = tileSize.toFloat()
                     height = tileSize.toFloat()

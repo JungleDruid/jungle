@@ -2,18 +2,13 @@ package net.natruid.jungle.systems
 
 import com.artemis.Aspect
 import com.artemis.ComponentMapper
+import com.artemis.managers.TagManager
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import net.natruid.jungle.components.CircleComponent
-import net.natruid.jungle.components.PathFollowerComponent
-import net.natruid.jungle.components.TransformComponent
-import net.natruid.jungle.components.UnitComponent
+import net.natruid.jungle.components.*
 import net.natruid.jungle.utils.AreaIndicator
-import net.natruid.jungle.utils.Pathfinder
 import net.natruid.jungle.utils.Point
-import net.natruid.jungle.utils.extensions.first
-import net.natruid.jungle.utils.extensions.firstObject
 import kotlin.collections.set
 
 class UnitManagementSystem : SortedIteratingSystem(
@@ -34,10 +29,18 @@ class UnitManagementSystem : SortedIteratingSystem(
     private lateinit var mTransform: ComponentMapper<TransformComponent>
     private lateinit var mCircle: ComponentMapper<CircleComponent>
     private lateinit var mPathFollower: ComponentMapper<PathFollowerComponent>
-    private lateinit var tiles: TileSystem
-    private val areaIndicators = HashMap<UnitComponent, AreaIndicator>()
+    private lateinit var mTile: ComponentMapper<TileComponent>
+    private lateinit var sTile: TileSystem
+    private lateinit var sPathfinder: PathfinderSystem
+    private lateinit var sTag: TagManager
+    private val areaIndicators = HashMap<Int, AreaIndicator>()
     private var currentMoveArea: AreaIndicator? = null
-    private var selectedUnit: UnitComponent? = null
+    private var selectedUnit
+        get() = sTag.getEntityId("SELECTED_UNIT")
+        set(value) {
+            if (value >= 0) sTag.register("SELECTED_UNIT", value)
+            else sTag.unregister("SELECTED_UNIT")
+        }
 
     fun clean() {
         areaIndicators.values.forEach {
@@ -45,6 +48,7 @@ class UnitManagementSystem : SortedIteratingSystem(
         }
         areaIndicators.clear()
         currentMoveArea = null
+        selectedUnit = -1
     }
 
     override fun dispose() {
@@ -52,20 +56,8 @@ class UnitManagementSystem : SortedIteratingSystem(
         super.dispose()
     }
 
-    fun getUnit(coord: Point): UnitComponent? {
-        if (!tiles.isCoordValid(coord)) return null
-
-        return entityIds.firstObject {
-            val unit = mUnit[it]
-            if (unit.coord == coord) unit else null
-        }
-    }
-
-    fun getUnitEntity(unit: UnitComponent): Int {
-        return entityIds.first {
-            val u = mUnit[it]
-            u == unit
-        } ?: -1
+    fun getUnit(coord: Point): Int {
+        return mTile[sTile[coord]]?.unit ?: -1
     }
 
     fun addUnit(
@@ -73,9 +65,10 @@ class UnitManagementSystem : SortedIteratingSystem(
         speed: Float = 0f,
         faction: UnitComponent.Faction = UnitComponent.Faction.NONE
     ): Int {
-        val tile = tiles[coord]!!
+        val tile = sTile[coord]
+        assert(tile >= 0)
         val entityId = world.create()
-        mTransform.create(entityId).position = tiles.getPosition(tile)!!
+        mTransform.create(entityId).position = mTransform[tile].position
         mUnit.create(entityId).apply {
             this.coord = coord
             this.speed = speed
@@ -90,25 +83,37 @@ class UnitManagementSystem : SortedIteratingSystem(
             }
             type = ShapeRenderer.ShapeType.Filled
         }
+        mTile[tile].unit = entityId
         return entityId
     }
 
-    fun moveUnit(unit: UnitComponent, goal: Point) {
-        if (!tiles.isCoordValid(goal)) return
-        val path = Pathfinder.path(tiles, tiles[unit.coord]!!, tiles[goal]!!) ?: return
-        val entity = getUnitEntity(unit)
-        if (entity < 0) return
-        mPathFollower.create(entity).path = path
-        unit.coord = goal
+    fun moveUnit(unit: Int, goal: Point, path: IntArray) {
+        if (!sTile.isCoordValid(goal)) return
+        if (unit < 0) return
+        mPathFollower.create(unit).path = path
+        val dest = path[path.size - 1]
+        val cUnit = mUnit[unit]
+        mTile[sTile[cUnit.coord]]!!.unit = -1
+        cUnit.coord = mTile[dest].coord
+        mTile[dest]!!.unit = unit
     }
 
-    private fun showMoveArea(unit: UnitComponent) {
-        val tile = tiles[unit.coord]
-        if (tile != null) {
+    fun freeMoveUnit(unit: Int, goal: Point) {
+        val cUnit = mUnit[unit] ?: return
+        val path = sPathfinder.path(sTile[cUnit.coord], sTile[goal]) ?: return
+        moveUnit(unit, goal, path)
+    }
+
+    private fun showMoveArea(unit: Int) {
+        if (unit < 0) return
+
+        val cUnit = mUnit[unit]
+        val tile = sTile[cUnit.coord]
+        if (tile >= 0) {
             hideMoveArea()
             var areaIndicator = areaIndicators[unit]
             if (areaIndicator == null) {
-                areaIndicator = AreaIndicator(world, Pathfinder.area(tiles, tile, unit.speed))
+                areaIndicator = AreaIndicator(world, sPathfinder.area(tile, cUnit.speed))
                 areaIndicators[unit] = areaIndicator
             }
             areaIndicator.show()
@@ -125,11 +130,11 @@ class UnitManagementSystem : SortedIteratingSystem(
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-        val mouseCoord = tiles.mouseCoord ?: return false
+        val mouseCoord = sTile.mouseCoord ?: return false
 
-        val unit = getUnit(mouseCoord)
-        if (unit != null) {
-            when (unit.faction) {
+        var unit = getUnit(mouseCoord)
+        if (unit >= 0) {
+            when (mUnit[unit].faction) {
                 UnitComponent.Faction.NONE -> {
                 }
                 UnitComponent.Faction.PLAYER -> {
@@ -143,18 +148,15 @@ class UnitManagementSystem : SortedIteratingSystem(
             val path = currentMoveArea?.getPathTo(mouseCoord)
             hideMoveArea()
             if (path != null) {
-                val u = selectedUnit!!
-                val entityId = getUnitEntity(u)
-                mPathFollower.create(entityId).path = path
-                val dest = path[path.size - 1]
-                u.coord = dest.coord
-                areaIndicators.remove(u)!!.clear()
-                selectedUnit = null
-            } else if (selectedUnit != null) {
-                val u = selectedUnit!!
-                areaIndicators.remove(u)?.clear()
-                moveUnit(u, mouseCoord)
-                selectedUnit = null
+                unit = selectedUnit
+                moveUnit(unit, mouseCoord, path)
+                areaIndicators.remove(unit)!!.clear()
+                selectedUnit = -1
+            } else if (selectedUnit >= 0) {
+                unit = selectedUnit
+                areaIndicators.remove(unit)?.clear()
+                freeMoveUnit(unit, mouseCoord)
+                selectedUnit = -1
             }
         }
 
@@ -167,7 +169,7 @@ class UnitManagementSystem : SortedIteratingSystem(
 
     private var lastCoord: Point? = null
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
-        val mouseCoord = tiles.mouseCoord
+        val mouseCoord = sTile.mouseCoord
         if (lastCoord != mouseCoord) {
             currentMoveArea?.clearPath()
             if (mouseCoord != null) currentMoveArea?.showPathTo(mouseCoord)

@@ -17,7 +17,6 @@ class PathFollowingSystem : IteratingSystem(Aspect.all(
         private const val speed = 1000f
     }
 
-    private val tiles by lazy { world.getSystem(TileSystem::class.java) }
     private lateinit var mTransform: ComponentMapper<TransformComponent>
     private lateinit var mPathFollower: ComponentMapper<PathFollowerComponent>
 
@@ -25,7 +24,7 @@ class PathFollowingSystem : IteratingSystem(Aspect.all(
         val transform = mTransform[entityId]
         val pathFollower = mPathFollower[entityId]
         val path = pathFollower.path ?: return
-        val destination = tiles.getPosition(path[pathFollower.index])!!
+        val destination = mTransform[path[pathFollower.index]].position
         val v = destination - transform.position
         val len2 = v.len2()
         if (len2 != 0f && len2 != 1f) {

@@ -12,7 +12,6 @@ import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.glutils.ShaderProgram
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import com.badlogic.gdx.math.Vector3
 import ktx.math.vec3
 import net.natruid.jungle.components.*
 import net.natruid.jungle.core.Jungle
@@ -51,7 +50,13 @@ class TileSystem : BaseSystem(), InputProcessor {
     private lateinit var mRect: ComponentMapper<RectComponent>
     private lateinit var mRenderable: ComponentMapper<RenderableComponent>
     private lateinit var tileEntities: Array<IntArray>
-    private val mouseOnTile get() = world.getSystem(TagManager::class.java).getEntityId(TAG_MOUSE_ON_TILE)
+    private lateinit var sTag: TagManager
+    private var mouseOnTile
+        get() = sTag.getEntityId(TAG_MOUSE_ON_TILE)
+        set(value) {
+            if (value >= 0) sTag.register(TAG_MOUSE_ON_TILE, value)
+            else sTag.unregister(TAG_MOUSE_ON_TILE)
+        }
     private val renderer = Jungle.instance.renderer
     private val shapeRenderer = renderer.shapeRenderer
     private val camera = Jungle.instance.camera
@@ -73,11 +78,9 @@ class TileSystem : BaseSystem(), InputProcessor {
         )
     }
 
-    operator fun get(coord: Point?): TileComponent? {
-        if (coord == null) return null
-        val entityId = getEntity(coord)
-        if (entityId < 0) return null
-        return mTile[entityId]
+    operator fun get(coord: Point): Int {
+        if (!isCoordValid(coord)) return -1
+        return tileEntities[coord.x][coord.y]
     }
 
     fun isCoordValid(coord: Point?): Boolean {
@@ -85,23 +88,8 @@ class TileSystem : BaseSystem(), InputProcessor {
         return coord.x >= 0 && coord.y >= 0 && coord.x < columns && coord.y < rows
     }
 
-    fun getEntity(coord: Point): Int {
-        if (!isCoordValid(coord)) return -1
-        return tileEntities[coord.x][coord.y]
-    }
-
-    fun getEntity(tile: TileComponent): Int {
-        return getEntity(tile.coord)
-    }
-
-    fun getPosition(tile: TileComponent): Vector3? {
-        val e = getEntity(tile)
-        if (e < 0) return null
-        return mTransform[e].position
-    }
-
-    fun neighbors(coord: Point, diagonal: Boolean = false): Array<TileComponent?> {
-        val array = Array<TileComponent?>(4) { null }
+    fun neighbors(coord: Point, diagonal: Boolean = false): IntArray {
+        val array = IntArray(4) { -1 }
         for ((count, point) in (if (!diagonal) adjacent else diagonals).withIndex()) {
             val tile = get(coord + point)
             array[count] = tile
@@ -155,15 +143,14 @@ class TileSystem : BaseSystem(), InputProcessor {
                     world.edit(entityId).add(tileShaderComponent)
             }
         }
-        val tagManager = world.getSystem(TagManager::class.java)
         world.create().let { entityId ->
-            tagManager.register("GridRenderer", entityId)
+            sTag.register("GridRenderer", entityId)
             val visible = mTransform[entityId]?.visible ?: false
             mTransform.create(entityId).visible = visible
             mRenderable.create(entityId).renderCallback = gridRenderCallback
         }
         world.create().let { entityId ->
-            tagManager.register(TAG_MOUSE_ON_TILE, entityId)
+            mouseOnTile = entityId
             mTransform.create(entityId).apply {
                 visible = false
                 position.z = 10f
@@ -274,7 +261,7 @@ class TileSystem : BaseSystem(), InputProcessor {
 
     override fun keyUp(keycode: Int): Boolean {
         if (keycode == Input.Keys.APOSTROPHE) {
-            val gt = mTransform[world.getSystem(TagManager::class.java).getEntityId("GridRenderer")]
+            val gt = mTransform[sTag.getEntityId("GridRenderer")]
             if (gt != null) {
                 gt.visible = !gt.visible
             }
@@ -305,10 +292,8 @@ class TileSystem : BaseSystem(), InputProcessor {
     private fun clean() {
         columns = 0
         rows = 0
-        world.getSystem(TagManager::class.java).apply {
-            unregister(TAG_MOUSE_ON_TILE)
-            unregister(TAG_GRID_RENDERER)
-        }
+        mouseOnTile = -1
+        sTag.unregister(TAG_GRID_RENDERER)
     }
 
     private var time = 0f
