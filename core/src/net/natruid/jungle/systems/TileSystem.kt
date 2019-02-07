@@ -107,7 +107,9 @@ class TileSystem : BaseSystem(), InputProcessor {
         this.columns = columns
         this.rows = rows
         val generator = MapGenerator(columns, rows, world)
-        tileEntities = generator.get()
+        world.inject(generator)
+        tileEntities = generator.init()
+        generator.generate()
         for (y in 0 until rows) {
             for (x in 0 until columns) {
                 val entityId = tileEntities[x][y]
