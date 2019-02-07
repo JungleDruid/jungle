@@ -3,10 +3,10 @@ package net.natruid.jungle.systems
 import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
 import com.badlogic.gdx.utils.BinaryHeap
-import com.badlogic.gdx.utils.Queue
 import net.natruid.jungle.components.TileComponent
 import net.natruid.jungle.utils.PathNode
 import net.natruid.jungle.utils.Point
+import java.util.*
 import kotlin.collections.set
 
 class PathfinderSystem : BaseSystem() {
@@ -15,8 +15,7 @@ class PathfinderSystem : BaseSystem() {
     private val frontier = BinaryHeap<PathNode>()
     private val visited = HashMap<Int, PathNode>()
     private val walkables = ArrayList<Boolean>(4)
-    private val walkableDiagonals = Queue<Boolean>(4)
-    private val pathBuilder = ArrayList<Int>()
+    private val walkableDiagonals = LinkedList<Boolean>()
 
     private fun init(from: Int): PathNode {
         val node = PathNode(from, 0f)
@@ -109,29 +108,28 @@ class PathfinderSystem : BaseSystem() {
         from: Int,
         goal: Int,
         diagonal: Boolean = true
-    ): IntArray? {
+    ): Deque<Int>? {
         init(from)
         while (!frontier.isEmpty) {
             val current = frontier.pop()
             if (searchNeighbors(current, goal = goal))
-                return extractPath(visited.values.toTypedArray(), mTile[goal].coord)!!
+                return extractPath(visited.values, mTile[goal].coord)!!
             if (diagonal && searchNeighbors(current, true, goal = goal))
-                return extractPath(visited.values.toTypedArray(), mTile[goal].coord)!!
+                return extractPath(visited.values, mTile[goal].coord)!!
         }
         return null
     }
 
-    fun extractPath(pathNodes: Array<PathNode>, goal: Point): IntArray? {
+    fun extractPath(pathNodes: Iterable<PathNode>, goal: Point): Deque<Int>? {
         for (node in pathNodes) {
             if (goal == mTile[node.tile].coord) {
-                pathBuilder.clear()
+                val path = LinkedList<Int>()
                 var prevNode: PathNode? = node
                 while (prevNode != null) {
-                    pathBuilder.add(prevNode.tile)
+                    path.addFirst(prevNode.tile)
                     prevNode = prevNode.prev
                 }
-                pathBuilder.reverse()
-                return pathBuilder.toIntArray()
+                return path
             }
         }
         return null

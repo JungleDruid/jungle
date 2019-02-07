@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import net.natruid.jungle.components.*
 import net.natruid.jungle.components.IndicatorComponent.IndicatorType
 import net.natruid.jungle.utils.Point
+import java.util.*
 
 class UnitManagementSystem : SortedIteratingSystem(
     Aspect.all(TransformComponent::class.java, UnitComponent::class.java)
@@ -80,11 +81,17 @@ class UnitManagementSystem : SortedIteratingSystem(
         return entityId
     }
 
-    fun moveUnit(unit: Int, goal: Point, path: IntArray) {
+    fun moveUnit(unit: Int, goal: Point, path: Deque<Int>) {
         if (!sTile.isCoordValid(goal)) return
         if (unit < 0) return
-        mPathFollower.create(unit).path = path
-        val dest = path[path.size - 1]
+        mPathFollower.create(unit).apply {
+            if (this.path == null) {
+                this.path = path
+            } else {
+                this.path!!.addAll(path)
+            }
+        }
+        val dest = path.peekLast()
         val cUnit = mUnit[unit]
         mTile[sTile[cUnit.coord]]!!.unit = -1
         cUnit.coord = mTile[dest].coord

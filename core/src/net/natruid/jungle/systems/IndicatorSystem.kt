@@ -15,6 +15,7 @@ import net.natruid.jungle.utils.PathNode
 import net.natruid.jungle.utils.Point
 import net.natruid.jungle.utils.extensions.forEach
 import java.text.DecimalFormat
+import java.util.*
 
 class IndicatorSystem : BaseEntitySystem(Aspect.all(
     IndicatorComponent::class.java,
@@ -111,9 +112,9 @@ class IndicatorSystem : BaseEntitySystem(Aspect.all(
         }
     }
 
-    fun getPathTo(coord: Point, entityId: Int): IntArray? {
+    fun getPathTo(coord: Point, entityId: Int): Deque<Int>? {
         val result = resultMap[entityId]?.get(IndicatorType.MOVE_AREA) ?: return null
-        return sPathfinder.extractPath(result, coord)
+        return sPathfinder.extractPath(result.asIterable(), coord)
     }
 
     fun showPathTo(coord: Point, entityId: Int): Boolean {

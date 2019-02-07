@@ -24,7 +24,7 @@ class PathFollowingSystem : IteratingSystem(Aspect.all(
         val transform = mTransform[entityId]
         val pathFollower = mPathFollower[entityId]
         val path = pathFollower.path ?: return
-        val destination = mTransform[path[pathFollower.index]].position
+        val destination = mTransform[path.peek()].position
         val v = destination - transform.position
         val len2 = v.len2()
         if (len2 != 0f && len2 != 1f) {
@@ -39,8 +39,8 @@ class PathFollowingSystem : IteratingSystem(Aspect.all(
         }
 
         if (transform.position == destination) {
-            if (pathFollower.index < path.size - 1) {
-                pathFollower.index += 1
+            if (path.size > 1) {
+                path.remove()
             } else {
                 mPathFollower.remove(entityId)
             }
