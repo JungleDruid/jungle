@@ -5,6 +5,7 @@ import com.artemis.World
 import com.badlogic.gdx.math.RandomXS128
 import net.natruid.jungle.components.TextureComponent
 import net.natruid.jungle.components.TileComponent
+import net.natruid.jungle.components.TileComponent.TerrainType
 import net.natruid.jungle.components.TransformComponent
 
 class MapGenerator(private val columns: Int, private val rows: Int, private val world: World) {
@@ -24,7 +25,7 @@ class MapGenerator(private val columns: Int, private val rows: Int, private val 
     val random = RandomXS128()
 
     private fun createLine(
-        terrainType: TileComponent.TerrainType = TileComponent.TerrainType.ROAD,
+        terrainType: TileComponent.TerrainType = TerrainType.ROAD,
         minWidth: Int = 1,
         maxWidth: Int = 3,
         vertical: Boolean = random.nextBoolean(),
@@ -44,12 +45,18 @@ class MapGenerator(private val columns: Int, private val rows: Int, private val 
                     || !vertical && mTile[map[l][wMid]].terrainType == terrainType)
                     break
             }
+            var noMutation = false
             for (w in 0 until width) {
-                if (vertical)
-                    mTile[map[wMid + w - width / 2][l]].terrainType = terrainType
+                val cTile: TileComponent = if (vertical)
+                    mTile[map[wMid + w - width / 2][l]]
                 else
-                    mTile[map[l][wMid + w - width / 2]].terrainType = terrainType
+                    mTile[map[l][wMid + w - width / 2]]
+                if (cTile.terrainType == TerrainType.WATER && terrainType == TerrainType.ROAD) {
+                    noMutation = true
+                }
+                cTile.terrainType = terrainType
             }
+            if (noMutation) continue
             if (random.nextLong(100) >= 100L - mutateChance) {
                 mutateChance = 0
                 if (random.nextBoolean()) {
@@ -98,10 +105,10 @@ class MapGenerator(private val columns: Int, private val rows: Int, private val 
             createRect(TileComponent.TerrainType.fromByte((random.nextLong(2) + 1).toByte())!!)
         }
         repeat(random.nextInt(5)) {
-            createRect(TileComponent.TerrainType.WATER, 5, 5)
+            createRect(TerrainType.WATER, 5, 5)
         }
         val vertical = random.nextBoolean()
-        createLine(TileComponent.TerrainType.WATER, vertical = vertical)
+        createLine(TerrainType.WATER, vertical = vertical)
         createLine(vertical = !vertical)
         return map
     }
