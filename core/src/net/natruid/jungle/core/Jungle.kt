@@ -58,7 +58,10 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
         client.setTitle(bundle["title"])
 
         setScreen(FieldScreen())
-        if (debug) debugView = AbstractView.createView()
+        if (debug) {
+            debugView = AbstractView.createView()
+            DebugView.show = true
+        }
         Gdx.graphics.setVSync(vSync)
     }
 
@@ -196,7 +199,6 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
                 } else {
                     setScreen(TestScreen())
                     setView(AbstractView.createView<TestView>())
-                    debugView = AbstractView.createView()
                 }
 
                 return true

@@ -1,30 +1,27 @@
 package net.natruid.jungle.utils.extensions
 
-import com.artemis.utils.IntBag
+import com.artemis.utils.ImmutableIntBag
 
-fun IntBag.forEach(function: (Int) -> Unit) {
-    val data = data
+fun ImmutableIntBag<*>.forEach(function: (Int) -> Unit) {
     val s = size()
     for (i in 0 until s) {
-        function(data[i])
+        function(this[i])
     }
 }
 
-fun IntBag.first(function: (Int) -> Boolean): Int? {
-    val data = data
+fun ImmutableIntBag<*>.first(function: (Int) -> Boolean): Int? {
     val s = size()
     for (i in 0 until s) {
-        val value = data[i]
+        val value = this[i]
         if (function(value)) return value
     }
     return null
 }
 
-fun <T> IntBag.firstObject(function: (Int) -> T?): T? {
-    val data = data
+fun <T> ImmutableIntBag<*>.firstObject(function: (Int) -> T?): T? {
     val s = size()
     for (i in 0 until s) {
-        val value = function(data[i])
+        val value = function(this[i])
         if (value != null) return value
     }
     return null

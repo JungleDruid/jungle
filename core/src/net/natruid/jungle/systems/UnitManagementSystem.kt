@@ -7,9 +7,8 @@ import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import net.natruid.jungle.components.*
-import net.natruid.jungle.utils.AreaIndicator
+import net.natruid.jungle.components.IndicatorComponent.IndicatorType
 import net.natruid.jungle.utils.Point
-import kotlin.collections.set
 
 class UnitManagementSystem : SortedIteratingSystem(
     Aspect.all(TransformComponent::class.java, UnitComponent::class.java)
@@ -32,9 +31,8 @@ class UnitManagementSystem : SortedIteratingSystem(
     private lateinit var mTile: ComponentMapper<TileComponent>
     private lateinit var sTile: TileSystem
     private lateinit var sPathfinder: PathfinderSystem
+    private lateinit var sIndicator: IndicatorSystem
     private lateinit var sTag: TagManager
-    private val areaIndicators = HashMap<Int, AreaIndicator>()
-    private var currentMoveArea: AreaIndicator? = null
     private var selectedUnit
         get() = sTag.getEntityId("SELECTED_UNIT")
         set(value) {
@@ -43,11 +41,6 @@ class UnitManagementSystem : SortedIteratingSystem(
         }
 
     fun clean() {
-        areaIndicators.values.forEach {
-            it.clear()
-        }
-        areaIndicators.clear()
-        currentMoveArea = null
         selectedUnit = -1
     }
 
@@ -110,23 +103,16 @@ class UnitManagementSystem : SortedIteratingSystem(
         val cUnit = mUnit[unit]
         val tile = sTile[cUnit.coord]
         if (tile >= 0) {
-            hideMoveArea()
-            var areaIndicator = areaIndicators[unit]
-            if (areaIndicator == null) {
-                areaIndicator = AreaIndicator(world, sPathfinder.area(tile, cUnit.speed))
-                areaIndicators[unit] = areaIndicator
+            hideMoveArea(unit)
+            if (!sIndicator.hasResult(unit, IndicatorType.MOVE_AREA)) {
+                sIndicator.addResult(unit, IndicatorType.MOVE_AREA, sPathfinder.area(tile, cUnit.speed))
             }
-            areaIndicator.show()
-            currentMoveArea = areaIndicator
+            sIndicator.show(unit, IndicatorType.MOVE_AREA)
         }
     }
 
-    private fun hideMoveArea() {
-        currentMoveArea?.apply {
-            clearPath()
-            hide()
-            currentMoveArea = null
-        }
+    private fun hideMoveArea(unit: Int) {
+        sIndicator.hide(unit, IndicatorType.MOVE_AREA)
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
@@ -144,20 +130,18 @@ class UnitManagementSystem : SortedIteratingSystem(
                 UnitComponent.Faction.ENEMY -> {
                 }
             }
-        } else {
-            val path = currentMoveArea?.getPathTo(mouseCoord)
-            hideMoveArea()
+        } else if (selectedUnit >= 0) {
+            unit = selectedUnit
+            val path = sIndicator.getPathTo(mouseCoord, unit)
+            hideMoveArea(unit)
             if (path != null) {
-                unit = selectedUnit
                 moveUnit(unit, mouseCoord, path)
-                areaIndicators.remove(unit)!!.clear()
-                selectedUnit = -1
-            } else if (selectedUnit >= 0) {
-                unit = selectedUnit
-                areaIndicators.remove(unit)?.clear()
+                sIndicator.remove(unit, IndicatorType.MOVE_AREA)
+            } else {
+                sIndicator.remove(unit, IndicatorType.MOVE_AREA)
                 freeMoveUnit(unit, mouseCoord)
-                selectedUnit = -1
             }
+            selectedUnit = -1
         }
 
         return false
@@ -171,8 +155,11 @@ class UnitManagementSystem : SortedIteratingSystem(
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
         val mouseCoord = sTile.mouseCoord
         if (lastCoord != mouseCoord) {
-            currentMoveArea?.clearPath()
-            if (mouseCoord != null) currentMoveArea?.showPathTo(mouseCoord)
+            if (selectedUnit >= 0) {
+                sIndicator.hide(selectedUnit, IndicatorType.MOVE_PATH)
+                if (mouseCoord != null)
+                    sIndicator.showPathTo(mouseCoord, selectedUnit)
+            }
             lastCoord = mouseCoord
         }
         return false

@@ -16,6 +16,7 @@ class PathfinderSystem : BaseSystem() {
     private val visited = HashMap<Int, PathNode>()
     private val walkables = ArrayList<Boolean>(4)
     private val walkableDiagonals = Queue<Boolean>(4)
+    private val pathBuilder = ArrayList<Int>()
 
     private fun init(from: Int): PathNode {
         val node = PathNode(from, 0f)
@@ -123,14 +124,14 @@ class PathfinderSystem : BaseSystem() {
     fun extractPath(pathNodes: Array<PathNode>, goal: Point): IntArray? {
         for (node in pathNodes) {
             if (goal == mTile[node.tile].coord) {
-                val path = ArrayList<Int>()
+                pathBuilder.clear()
                 var prevNode: PathNode? = node
                 while (prevNode != null) {
-                    path.add(prevNode.tile)
+                    pathBuilder.add(prevNode.tile)
                     prevNode = prevNode.prev
                 }
-                path.reverse()
-                return path.toIntArray()
+                pathBuilder.reverse()
+                return pathBuilder.toIntArray()
             }
         }
         return null

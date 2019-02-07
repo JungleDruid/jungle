@@ -14,6 +14,7 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
     CameraMovementSystem(),
     TileSystem(),
     UnitManagementSystem(),
+    IndicatorSystem(),
     PathfinderSystem(),
     PathFollowingSystem(),
     RenderSystem()
