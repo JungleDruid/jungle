@@ -14,16 +14,13 @@ import com.kotcrab.vis.ui.VisUI
 import net.natruid.jungle.screens.AbstractScreen
 import net.natruid.jungle.screens.FieldScreen
 import net.natruid.jungle.screens.TestScreen
-import net.natruid.jungle.utils.Bark
-import net.natruid.jungle.utils.Client
-import net.natruid.jungle.utils.RendererHelper
-import net.natruid.jungle.utils.Sync
+import net.natruid.jungle.utils.*
 import net.natruid.jungle.views.AbstractView
 import net.natruid.jungle.views.DebugView
 import net.natruid.jungle.views.TestView
 import java.lang.management.ManagementFactory
 
-class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
+class Jungle(private val client: Client, debug: Boolean = false) : ApplicationListener, InputProcessor {
     val renderer by lazy { RendererHelper() }
     val camera by lazy { OrthographicCamera() }
     val uiViewport by lazy { ScreenViewport() }
@@ -43,26 +40,37 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
 
     init {
         instance = this
+        Companion.debug = Companion.debug || debug
     }
 
     override fun create() {
-        client.init()
+        Logger.stopwatch("Initialization") {
+            Logger.debug { "Initializing..." }
+            client.init()
 
-        Marsh.load()
+            Logger.catch("Data loading failed.") {
+                Marsh.load()
+            }
 
-        Gdx.input.inputProcessor = this
+            Gdx.input.inputProcessor = this
 
-        VisUI.load(Bark("assets/ui/jungle.json"))
+            Logger.catch("Skin loading failed.") {
+                VisUI.load(Bark("assets/ui/jungle.json"))
+            }
 
-        val bundle = Marsh.I18N["assets/locale/UI"]
-        client.setTitle(bundle["title"])
+            Logger.catch("I18n bundle loading failed.") {
+                val bundle = Marsh.I18N["assets/locale/UI"]
+                client.setTitle(bundle["title"])
+            }
 
-        setScreen(FieldScreen())
-        if (debug) {
-            debugView = AbstractView.createView()
-            DebugView.show = true
+            setScreen(FieldScreen())
+            if (debug) {
+                debugView = AbstractView.createView()
+                DebugView.show = true
+            }
+            Gdx.graphics.setVSync(vSync)
+            Logger.info { "Game initialized." }
         }
-        Gdx.graphics.setVSync(vSync)
     }
 
     override fun render() {
@@ -266,7 +274,8 @@ class Jungle(private val client: Client) : ApplicationListener, InputProcessor {
     }
 
     companion object {
-        val debug = ManagementFactory.getRuntimeMXBean().inputArguments.toString().indexOf("-agentlib:jdwp") > 0
+        var debug = ManagementFactory.getRuntimeMXBean().inputArguments.toString().indexOf("-agentlib:jdwp") > 0
+            private set
         val lmlParser: LmlParser by lazy { VisLml.parser().i18nBundle(Marsh.I18N["assets/locale/UI"]).build() }
 
         lateinit var instance: Jungle

@@ -142,24 +142,26 @@ class MapGenerator(private val columns: Int, private val rows: Int, private val 
     }
 
     fun generate(): Array<IntArray> {
-        repeat(random.nextInt(200) + 100) {
-            createRect(TileComponent.TerrainType.fromByte((random.nextLong(2) + 1).toByte())!!)
-        }
-        repeat(random.nextInt(3)) {
-            createRect(TerrainType.WATER, 2, 5)
-        }
-        var vertical = random.nextBoolean()
-        repeat(random.nextInt(4)) {
-            createLine(TerrainType.WATER, vertical = vertical, fork = true)
-            vertical = !vertical
-        }
-        repeat(random.nextInt(3)) {
-            createRect(TerrainType.WATER, 2, 5)
-        }
-        createPath(vertical)
-        repeat(random.nextInt(2)) {
-            vertical = !vertical
-            createLine(vertical = vertical, fork = random.nextBoolean())
+        Logger.stopwatch("Map generation") {
+            repeat(random.nextInt(200) + 100) {
+                createRect(TileComponent.TerrainType.fromByte((random.nextLong(2) + 1).toByte())!!)
+            }
+            repeat(random.nextInt(3)) {
+                createRect(TerrainType.WATER, 2, 5)
+            }
+            var vertical = random.nextBoolean()
+            repeat(random.nextInt(4)) {
+                createLine(TerrainType.WATER, vertical = vertical, fork = true)
+                vertical = !vertical
+            }
+            repeat(random.nextInt(3)) {
+                createRect(TerrainType.WATER, 2, 5)
+            }
+            createPath(vertical)
+            repeat(random.nextInt(2)) {
+                vertical = !vertical
+                createLine(vertical = vertical, fork = random.nextBoolean())
+            }
         }
         return map
     }

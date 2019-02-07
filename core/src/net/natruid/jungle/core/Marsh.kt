@@ -11,6 +11,7 @@ import com.badlogic.gdx.utils.I18NBundle
 import com.badlogic.gdx.utils.Json
 import com.badlogic.gdx.utils.JsonReader
 import ktx.freetype.generateFont
+import net.natruid.jungle.utils.Logger
 import net.natruid.jungle.utils.Scout
 import kotlin.collections.set
 
@@ -23,10 +24,10 @@ object Marsh {
         operator fun get(key: String): BitmapFont {
             var font = fonts[key]
             if (font == null) {
-                println("[Warning] Cannot find font name: $key")
+                Logger.warn { "Cannot find font name: $key" }
                 font = fonts["normal"]
                 if (font == null) {
-                    error("[Error] Cannot find fallback font: normal")
+                    error("Cannot find fallback font: normal")
                 }
             }
 
@@ -40,8 +41,7 @@ object Marsh {
         operator fun get(key: String): I18NBundle {
             var ret = i18nMap[key]
             if (ret == null) {
-                ret = I18NBundle.createBundle(Scout[key])
-                ret ?: error("[Error] Cannot find bundle $key")
+                ret = I18NBundle.createBundle(Scout[key]) ?: error("Cannot find bundle $key")
                 i18nMap[key] = ret
             }
 
@@ -82,7 +82,7 @@ object Marsh {
         val dir = Scout[path, useZip]
 
         if (!dir.isDirectory) {
-            error("[Error] Marsh getFiles: $path is not a directory.")
+            error("$path is not a directory.")
         }
 
         for (f in dir.list()) {
@@ -99,7 +99,7 @@ object Marsh {
     private fun readJson(json: Json, file: FileHandle) {
         val root = JsonReader().parse(file)
         if (!root.isObject) {
-            error("[Marsh] readJson: ${file.path()} is not a json object.")
+            error("${file.path()} is not a json object.")
         }
 
         for (j in root) {
@@ -126,7 +126,7 @@ object Marsh {
                         fontDefs.add(def)
                     }
                 }
-                else -> println("[Warning] Found unknown property ${j.name} in ${file.name()}")
+                else -> Logger.warn { "Found unknown property ${j.name} in ${file.name()}" }
             }
         }
     }

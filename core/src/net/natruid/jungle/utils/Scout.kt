@@ -17,7 +17,9 @@ object Scout {
         val jarFile = File(this::class.java.protectionDomain.codeSource.location.toURI())
         var jarPath = jarFile.path.replace('\\', '/')
         val workPath = System.getProperty("user.dir").replace('\\', '/')
-        assetPath = if (jarFile.isDirectory) {
+        Logger.info { "Working dir: $workPath" }
+        Logger.info { "Jar file: $jarFile" }
+        assetPath = if (Gdx.files.internal("$workPath/assets").exists()) {
             "$workPath/"
         } else {
             jarPath = jarPath.substring(0, jarPath.lastIndexOf(jarFile.name) - 1)
@@ -31,6 +33,7 @@ object Scout {
         zipPath = if (Gdx.files.internal(zip).exists()) zip else ""
         val asset = Gdx.files.internal(assetPath + "assets")
         hasAssetDir = asset.exists() && asset.isDirectory
+        Logger.info { "Assets path: ${if (hasAssetDir) asset.path() else zipPath}" }
     }
 
     operator fun get(path: String, useZip: Boolean = false): FileHandle {
@@ -51,7 +54,7 @@ object Scout {
                 ArchiveFileHandle(ZipFile(zipPath), path)
             }
             else -> {
-                error("[Error] Cannot find $path in assets.zip or assets folder.")
+                error("Cannot find $path in assets.zip or assets folder.")
             }
         }
     }

@@ -6,9 +6,9 @@ import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.utils.Client
 import org.lwjgl.glfw.GLFW
 
-class DesktopLauncher : Client {
+class DesktopLauncher(debug: Boolean = false) : Client {
     private val window by lazy { GLFW.glfwGetCurrentContext() }
-    private val game = Jungle(this)
+    private val game = Jungle(this, debug)
     private var focused = false
 
     init {

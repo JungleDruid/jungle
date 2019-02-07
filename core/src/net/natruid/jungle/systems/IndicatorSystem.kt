@@ -77,7 +77,7 @@ class IndicatorSystem : BaseEntitySystem(Aspect.all(
         if (shown) return
 
         val result = resultMap[entityId]?.get(indicatorType)
-            ?: error("[Error] Indicator: Cannot find result in $entityId-$indicatorType")
+            ?: error("Cannot find result in $entityId-$indicatorType")
         for (p in result) {
             p.tile.let { tile ->
                 world.create().let { indicator ->
