@@ -101,6 +101,7 @@ class TileSystem : BaseSystem(), InputProcessor {
     private val grassTexture = TextureRegion(Texture(Scout["assets/img/tiles/grass.png"]))
     private val roadTexture = TextureRegion(Texture(Scout["assets/img/tiles/road.png"]))
     private val waterTexture = TextureRegion(Texture(Scout["assets/img/tiles/water.png"]))
+    private val bridgeTexture = TextureRegion(Texture(Scout["assets/img/tiles/bridge.png"]))
 
     fun create(columns: Int, rows: Int) {
         clean()
@@ -120,14 +121,17 @@ class TileSystem : BaseSystem(), InputProcessor {
                         TileComponent.TerrainType.NONE -> dirtTexture
                         TileComponent.TerrainType.DIRT -> dirtTexture
                         TileComponent.TerrainType.GRASS -> grassTexture
-                        TileComponent.TerrainType.WATER -> waterTexture
                         TileComponent.TerrainType.ROAD -> roadTexture
+                        TileComponent.TerrainType.BRIDGE -> waterTexture
+                        TileComponent.TerrainType.WATER -> waterTexture
                     }
                     color = when (tile.terrainType) {
                         TileComponent.TerrainType.WATER ->
                             Color(1f, 1f, 1f, .7f)
                         TileComponent.TerrainType.ROAD ->
                             Color(1f, 1f, 1f, .93f + generator.random.nextFloat() * .07f)
+                        TileComponent.TerrainType.BRIDGE ->
+                            Color(1f, 1f, 1f, .7f)
                         else -> {
                             val gb = .8f + generator.random.nextFloat() * .2f
                             Color(
@@ -143,6 +147,17 @@ class TileSystem : BaseSystem(), InputProcessor {
                     world.edit(entityId).add(waterTileShaderComponent)
                 else
                     world.edit(entityId).add(tileShaderComponent)
+                if (tile.terrainType == TileComponent.TerrainType.BRIDGE) {
+                    world.create().let { bridge ->
+                        mTransform.create(bridge).apply {
+                            position = mTransform[entityId].position
+                            val compareTileX = if (x > 0) x - 1 else x + 1
+                            if (mTile[tileEntities[compareTileX][y]].terrainType == TileComponent.TerrainType.WATER)
+                                rotation = 90f
+                        }
+                        mTexture.create(bridge).region = bridgeTexture
+                    }
+                }
             }
         }
         world.create().let { entityId ->

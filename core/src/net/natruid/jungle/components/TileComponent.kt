@@ -12,7 +12,7 @@ class TileComponent(
 ) : Component() {
 
     enum class TerrainType(val value: Byte) {
-        NONE(0), DIRT(1), GRASS(2), WATER(3), ROAD(8);
+        NONE(0), DIRT(1), GRASS(2), ROAD(8), BRIDGE(9), WATER(16);
 
         companion object {
             private val map = TerrainType.values().associateBy(TerrainType::value)
