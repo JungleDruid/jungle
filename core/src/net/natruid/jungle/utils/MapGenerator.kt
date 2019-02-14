@@ -3,10 +3,11 @@ package net.natruid.jungle.utils
 import com.artemis.ArchetypeBuilder
 import com.artemis.ComponentMapper
 import com.artemis.World
+import com.artemis.utils.IntBag
 import com.badlogic.gdx.math.RandomXS128
+import net.natruid.jungle.components.ObstacleComponent
 import net.natruid.jungle.components.TextureComponent
 import net.natruid.jungle.components.TileComponent
-import net.natruid.jungle.components.TileComponent.TerrainType
 import net.natruid.jungle.components.TransformComponent
 import net.natruid.jungle.systems.PathfinderSystem
 import kotlin.math.min
@@ -18,18 +19,23 @@ class MapGenerator(private val columns: Int, private val rows: Int, private val 
         TextureComponent::class.java
     ).build(world)
     private lateinit var mTile: ComponentMapper<TileComponent>
+    private lateinit var mObstacle: ComponentMapper<ObstacleComponent>
     private lateinit var sPathfinder: PathfinderSystem
     private lateinit var map: Array<IntArray>
     val random = RandomXS128()
+    private val emptyTiles = IntBag(columns * rows)
+    private var initialized = false
 
     fun init(): Array<IntArray> {
         map = Array(columns) { x ->
             IntArray(rows) { y ->
                 val entityId = world.create(tileArchetype)
                 mTile[entityId].coord.set(x, y)
+                emptyTiles.add(entityId)
                 entityId
             }
         }
+        initialized = true
         return map
     }
 
@@ -42,7 +48,7 @@ class MapGenerator(private val columns: Int, private val rows: Int, private val 
     }
 
     private fun createLine(
-        terrainType: TileComponent.TerrainType = TerrainType.ROAD,
+        terrainType: TerrainType = TerrainType.ROAD,
         minWidth: Int = 1,
         maxWidth: Int = 3,
         vertical: Boolean = random.nextBoolean(),
@@ -95,7 +101,7 @@ class MapGenerator(private val columns: Int, private val rows: Int, private val 
     }
 
     private fun createRect(
-        terrainType: TileComponent.TerrainType,
+        terrainType: TerrainType,
         minWidth: Int = 1,
         maxWidth: Int = min(columns, rows)
     ) {
@@ -117,7 +123,7 @@ class MapGenerator(private val columns: Int, private val rows: Int, private val 
         for (i in 1..10) {
             start = getTile(0, random.nextInt(startRange) + (ref - startRange) / 2, vertical)
             val cTile = mTile[start]
-            if (cTile.terrainType != TerrainType.WATER && cTile.walkable) break
+            if (cTile.terrainType != TerrainType.WATER && cTile.obstacle < 0) break
         }
 
         var minCost = (columns * rows).toFloat()
@@ -156,10 +162,49 @@ class MapGenerator(private val columns: Int, private val rows: Int, private val 
         }
     }
 
+    private fun createObstacles(amount: Int) {
+        var count = 0
+        while (emptyTiles.size() > 0 && count < amount) {
+            var canCreate = true
+            val tile = emptyTiles.remove(random.nextInt(emptyTiles.size()))
+            val cTile = mTile[tile]
+            var obstacleType = ObstacleType.ROCK
+            var destroyable = false
+            when (cTile.terrainType) {
+                TerrainType.DIRT -> {
+                    obstacleType = ObstacleType.ROCK
+                }
+                TerrainType.GRASS -> {
+                    obstacleType = ObstacleType.TREE
+                    destroyable = true
+                }
+                else -> {
+                    canCreate = false
+                }
+            }
+            if (canCreate) {
+                val obstacle = world.create()
+                mObstacle.create(obstacle).apply {
+                    type = obstacleType
+                    this.destroyable = destroyable
+                    maxHp = 100f
+                    hp = maxHp
+                }
+                count += 1
+                cTile.obstacle = obstacle
+            }
+        }
+    }
+
+    private fun clean() {
+        emptyTiles.clear()
+    }
+
     fun generate(): Array<IntArray> {
         Logger.stopwatch("Map generation") {
+            if (!initialized) init()
             repeat(random.nextInt(200) + 100) {
-                createRect(TileComponent.TerrainType.fromByte((random.nextLong(2) + 1).toByte())!!)
+                createRect(TerrainType.fromByte((random.nextLong(2) + 1).toByte())!!)
             }
             repeat(random.nextInt(3)) {
                 createRect(TerrainType.WATER, 2, 5)
@@ -177,6 +222,8 @@ class MapGenerator(private val columns: Int, private val rows: Int, private val 
                 vertical = !vertical
                 createPath(vertical)
             }
+            createObstacles(random.nextInt(columns * rows / 20) + columns * rows / 40)
+            clean()
         }
         return map
     }

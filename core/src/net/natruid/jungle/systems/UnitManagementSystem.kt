@@ -7,7 +7,8 @@ import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import net.natruid.jungle.components.*
-import net.natruid.jungle.components.IndicatorComponent.IndicatorType
+import net.natruid.jungle.utils.Constants
+import net.natruid.jungle.utils.IndicatorType
 import net.natruid.jungle.utils.Point
 import java.util.*
 
@@ -62,7 +63,10 @@ class UnitManagementSystem : SortedIteratingSystem(
         val tile = sTile[coord]
         assert(tile >= 0)
         val entityId = world.create()
-        mTransform.create(entityId).position = mTransform[tile].position
+        mTransform.create(entityId).apply {
+            position = mTransform[tile].position
+            z = Constants.Z_UNIT
+        }
         mUnit.create(entityId).apply {
             this.coord = coord
             this.speed = speed

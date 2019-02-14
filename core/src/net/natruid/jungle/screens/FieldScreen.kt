@@ -27,6 +27,7 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
         world.getSystem(TileSystem::class.java).create(20, 20)
         world.getSystem(UnitManagementSystem::class.java)
             .addUnit(faction = UnitComponent.Faction.PLAYER, speed = 6f)
+        world.getSystem(RenderSystem::class.java).sort()
     }
 
     override fun show() {

@@ -10,7 +10,7 @@ import net.natruid.jungle.components.*
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.core.Marsh
 import net.natruid.jungle.utils.Layer
-import net.natruid.jungle.utils.RendererHelper
+import net.natruid.jungle.utils.RendererType
 
 class RenderSystem : SortedIteratingSystem(Aspect.all(TransformComponent::class.java).one(
     TextureComponent::class.java,
@@ -21,8 +21,8 @@ class RenderSystem : SortedIteratingSystem(Aspect.all(TransformComponent::class.
 )) {
     override val comparator by lazy {
         Comparator<Int> { p0, p1 ->
-            val z0 = mTransform[p0].position.z
-            val z1 = mTransform[p1].position.z
+            val z0 = mTransform[p0].z
+            val z1 = mTransform[p1].z
             when {
                 z0 > z1 -> 1
                 z0 < z1 -> -1
@@ -63,7 +63,7 @@ class RenderSystem : SortedIteratingSystem(Aspect.all(TransformComponent::class.
                         val originY = height * transform.pivot.y
 
                         region.flip(region.isFlipX != component.flipX, region.isFlipY != component.flipY)
-                        renderer.begin(camera, RendererHelper.Type.SPRITE_BATCH, shaderProgram = shader.shader)
+                        renderer.begin(camera, RendererType.SPRITE_BATCH, shaderProgram = shader.shader)
                         batch.setBlendFunction(shader.blendSrcFunc, shader.blendDstFunc)
                         batch.color = component.color
                         batch.draw(
@@ -93,7 +93,7 @@ class RenderSystem : SortedIteratingSystem(Aspect.all(TransformComponent::class.
                         component.align.and(Align.bottom) != 0 -> glyphLayout.height
                         else -> glyphLayout.height * transform.pivot.y
                     }
-                    renderer.begin(camera, RendererHelper.Type.SPRITE_BATCH, shaderProgram = shader.shader)
+                    renderer.begin(camera, RendererType.SPRITE_BATCH, shaderProgram = shader.shader)
                     batch.setBlendFunction(shader.blendSrcFunc, shader.blendDstFunc)
                     font.draw(batch, glyphLayout, transform.position.x, transform.position.y + offsetY)
                 }
@@ -101,7 +101,7 @@ class RenderSystem : SortedIteratingSystem(Aspect.all(TransformComponent::class.
                     val originX = component.width * transform.pivot.x
                     val originY = component.height * transform.pivot.y
 
-                    renderer.begin(camera, RendererHelper.Type.SHAPE_RENDERER, component.type)
+                    renderer.begin(camera, RendererType.SHAPE_RENDERER, component.type)
                     shapeRenderer.color = component.color
                     shapeRenderer.rect(
                         transform.position.x - originX,
@@ -116,7 +116,7 @@ class RenderSystem : SortedIteratingSystem(Aspect.all(TransformComponent::class.
                     )
                 }
                 is CircleComponent -> {
-                    renderer.begin(camera, RendererHelper.Type.SHAPE_RENDERER, component.type)
+                    renderer.begin(camera, RendererType.SHAPE_RENDERER, component.type)
                     shapeRenderer.color = component.color
                     shapeRenderer.circle(
                         transform.position.x,

@@ -9,8 +9,9 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Align
 import net.natruid.jungle.components.*
-import net.natruid.jungle.components.IndicatorComponent.IndicatorType
 import net.natruid.jungle.systems.TileSystem.Companion.tileSize
+import net.natruid.jungle.utils.Constants
+import net.natruid.jungle.utils.IndicatorType
 import net.natruid.jungle.utils.PathNode
 import net.natruid.jungle.utils.Point
 import net.natruid.jungle.utils.extensions.forEach
@@ -81,7 +82,10 @@ class IndicatorSystem : BaseEntitySystem(Aspect.all(
         for (p in result) {
             p.tile.let { tile ->
                 world.create().let { indicator ->
-                    mTransform.create(indicator).position = mTransform[tile].position
+                    mTransform.create(indicator).apply {
+                        position = mTransform[tile].position
+                        z = Constants.Z_PATH_INDICATOR
+                    }
                     mRect.create(indicator).apply {
                         width = TileSystem.tileSize.toFloat()
                         height = tileSize.toFloat()
@@ -121,7 +125,10 @@ class IndicatorSystem : BaseEntitySystem(Aspect.all(
         val path = getPathTo(coord, entityId) ?: return false
         for (tile in path) {
             world.create().let { indicator ->
-                mTransform.create(indicator).position = mTransform[tile].position
+                mTransform.create(indicator).apply {
+                    position = mTransform[tile].position
+                    z = Constants.Z_PATH_INDICATOR
+                }
                 mRect.create(indicator).apply {
                     width = tileSize.toFloat()
                     height = tileSize.toFloat()

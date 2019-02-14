@@ -6,6 +6,7 @@ import com.badlogic.gdx.utils.BinaryHeap
 import net.natruid.jungle.components.TileComponent
 import net.natruid.jungle.utils.PathNode
 import net.natruid.jungle.utils.Point
+import net.natruid.jungle.utils.TerrainType
 import java.util.*
 import kotlin.collections.set
 
@@ -39,7 +40,7 @@ class PathfinderSystem : BaseSystem() {
         if (diagonal && walkableDiagonals.size == 0) return false
         for (next in sTile.neighbors(mTile[current.tile].coord, diagonal)) {
             val nextTileComponent = if (next >= 0) mTile[next] else null
-            val nextWalkable = nextTileComponent != null && nextTileComponent.walkable
+            val nextWalkable = nextTileComponent != null && nextTileComponent.obstacle < 0
             if (!diagonal) {
                 val size = walkables.size
                 if (size > 0) {
@@ -52,8 +53,8 @@ class PathfinderSystem : BaseSystem() {
             }
             var cost = if (!diagonal) 1f else 1.5f
             when (nextTileComponent?.terrainType) {
-                TileComponent.TerrainType.WATER -> cost *= 3
-                TileComponent.TerrainType.ROAD -> cost /= 2
+                TerrainType.WATER -> cost *= 3
+                TerrainType.ROAD -> cost /= 2
                 else -> {
                 }
             }

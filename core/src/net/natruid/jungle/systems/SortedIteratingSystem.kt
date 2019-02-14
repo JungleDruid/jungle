@@ -31,5 +31,9 @@ abstract class SortedIteratingSystem(aspect: Aspect.Builder)
         }
     }
 
+    fun sort() {
+        needSorting = true
+    }
+
     abstract fun process(entityId: Int)
 }

@@ -4,8 +4,8 @@ import com.artemis.BaseSystem
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
+import com.badlogic.gdx.math.Vector2
 import ktx.math.times
-import ktx.math.vec2
 import net.natruid.jungle.core.Jungle
 import kotlin.math.max
 import kotlin.math.min
@@ -17,7 +17,7 @@ class CameraMovementSystem : BaseSystem(), InputProcessor {
     private val minZoom = 0.25f
     private val zoomStep = minZoom
 
-    private val velocity = vec2(0f, 0f)
+    private val velocity = Vector2(0f, 0f)
 
     private var zoom
         get() = camera.zoom

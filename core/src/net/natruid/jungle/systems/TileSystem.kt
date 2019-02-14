@@ -12,7 +12,8 @@ import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.glutils.ShaderProgram
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import ktx.math.vec3
+import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.math.Vector3
 import net.natruid.jungle.components.*
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.utils.*
@@ -49,6 +50,7 @@ class TileSystem : BaseSystem(), InputProcessor {
     private lateinit var mTexture: ComponentMapper<TextureComponent>
     private lateinit var mRect: ComponentMapper<RectComponent>
     private lateinit var mRenderable: ComponentMapper<RenderableComponent>
+    private lateinit var mObstacle: ComponentMapper<ObstacleComponent>
     private lateinit var tileEntities: Array<IntArray>
     private lateinit var sTag: TagManager
     private var mouseOnTile
@@ -102,6 +104,8 @@ class TileSystem : BaseSystem(), InputProcessor {
     private val roadTexture = TextureRegion(Texture(Scout["assets/img/tiles/road.png"]))
     private val waterTexture = TextureRegion(Texture(Scout["assets/img/tiles/water.png"]))
     private val bridgeTexture = TextureRegion(Texture(Scout["assets/img/tiles/bridge.png"]))
+    private val treeTexture = TextureRegion(Texture(Scout["assets/img/tiles/tree.png"]))
+    private val rockTexture = TextureRegion(Texture(Scout["assets/img/tiles/rock.png"]))
 
     fun create(columns: Int, rows: Int) {
         clean()
@@ -113,24 +117,24 @@ class TileSystem : BaseSystem(), InputProcessor {
         generator.generate()
         for (y in 0 until rows) {
             for (x in 0 until columns) {
-                val entityId = tileEntities[x][y]
-                val tile = mTile[entityId]
-                mTransform[entityId].position = vec3(x * tileSize.toFloat(), y * tileSize.toFloat())
-                mTexture[entityId].apply {
-                    region = when (tile.terrainType) {
-                        TileComponent.TerrainType.NONE -> dirtTexture
-                        TileComponent.TerrainType.DIRT -> dirtTexture
-                        TileComponent.TerrainType.GRASS -> grassTexture
-                        TileComponent.TerrainType.ROAD -> roadTexture
-                        TileComponent.TerrainType.BRIDGE -> waterTexture
-                        TileComponent.TerrainType.WATER -> waterTexture
+                val tile = tileEntities[x][y]
+                val cTile = mTile[tile]
+                mTransform[tile].position = Vector2(x * tileSize.toFloat(), y * tileSize.toFloat())
+                mTexture[tile].apply {
+                    region = when (cTile.terrainType) {
+                        TerrainType.NONE -> dirtTexture
+                        TerrainType.DIRT -> dirtTexture
+                        TerrainType.GRASS -> grassTexture
+                        TerrainType.ROAD -> roadTexture
+                        TerrainType.BRIDGE -> waterTexture
+                        TerrainType.WATER -> waterTexture
                     }
-                    color = when (tile.terrainType) {
-                        TileComponent.TerrainType.WATER ->
+                    color = when (cTile.terrainType) {
+                        TerrainType.WATER ->
                             Color(1f, 1f, 1f, .7f)
-                        TileComponent.TerrainType.ROAD ->
+                        TerrainType.ROAD ->
                             Color(1f, 1f, 1f, .93f + generator.random.nextFloat() * .07f)
-                        TileComponent.TerrainType.BRIDGE ->
+                        TerrainType.BRIDGE ->
                             Color(1f, 1f, 1f, .7f)
                         else -> {
                             val gb = .8f + generator.random.nextFloat() * .2f
@@ -143,19 +147,39 @@ class TileSystem : BaseSystem(), InputProcessor {
                         }
                     }
                 }
-                if (tile.terrainType == TileComponent.TerrainType.WATER)
-                    world.edit(entityId).add(waterTileShaderComponent)
+                if (cTile.terrainType == TerrainType.WATER)
+                    world.edit(tile).add(waterTileShaderComponent)
                 else
-                    world.edit(entityId).add(tileShaderComponent)
-                if (tile.terrainType == TileComponent.TerrainType.BRIDGE) {
+                    world.edit(tile).add(tileShaderComponent)
+                if (cTile.terrainType == TerrainType.BRIDGE) {
                     world.create().let { bridge ->
                         mTransform.create(bridge).apply {
-                            position = mTransform[entityId].position
+                            position = mTransform[tile].position
                             val compareTileX = if (x > 0) x - 1 else x + 1
-                            if (mTile[tileEntities[compareTileX][y]].terrainType == TileComponent.TerrainType.WATER)
+                            if (mTile[tileEntities[compareTileX][y]].terrainType == TerrainType.WATER)
                                 rotation = 90f
                         }
                         mTexture.create(bridge).region = bridgeTexture
+                    }
+                }
+
+                if (cTile.obstacle >= 0) {
+                    val obstacle = cTile.obstacle
+                    val cObstacle = mObstacle[obstacle]
+                    mTransform.create(obstacle).apply {
+                        position = mTransform[tile].position
+                        z = Constants.Z_OBSTACLE
+                        scale.set(
+                            generator.random.nextFloat() * 0.2f + 0.9f,
+                            generator.random.nextFloat() * 0.2f + 0.9f
+                        )
+                    }
+                    mTexture.create(obstacle).apply {
+                        region = when (cObstacle.type) {
+                            ObstacleType.TREE -> treeTexture
+                            ObstacleType.ROCK -> rockTexture
+                            else -> treeTexture
+                        }
                     }
                 }
             }
@@ -170,7 +194,7 @@ class TileSystem : BaseSystem(), InputProcessor {
             mouseOnTile = entityId
             mTransform.create(entityId).apply {
                 visible = false
-                position.z = 10f
+                z = Constants.Z_MOUSE_ON_TILE
             }
             mRect.create(entityId).apply {
                 width = tileSize.toFloat()
@@ -184,7 +208,7 @@ class TileSystem : BaseSystem(), InputProcessor {
     private fun renderGrid() {
         if (columns <= 0) return
 
-        renderer.begin(camera, RendererHelper.Type.SHAPE_RENDERER, ShapeRenderer.ShapeType.Line)
+        renderer.begin(camera, RendererType.SHAPE_RENDERER, ShapeRenderer.ShapeType.Line)
         val origin = (-halfTileSize).toFloat()
         val right = (-halfTileSize + columns * tileSize).toFloat()
         val top = (-halfTileSize + rows * tileSize).toFloat()
@@ -230,7 +254,7 @@ class TileSystem : BaseSystem(), InputProcessor {
         if (columns == 0) return null
 
         val camera = Jungle.instance.camera
-        val projection = vec3(screenX.toFloat(), screenY.toFloat(), 0f)
+        val projection = Vector3(screenX.toFloat(), screenY.toFloat(), 0f)
         camera.unproject(projection)
         val x = projection.x.roundToInt() + halfTileSize
         val y = projection.y.roundToInt() + halfTileSize
@@ -259,12 +283,12 @@ class TileSystem : BaseSystem(), InputProcessor {
         val mott = mTransform[mouseOnTile] ?: return false
 
         mouseCoord = currentCoord
-        if (mouseCoord == null) {
+        if (currentCoord == null) {
             mott.visible = false
             return false
         }
         mott.visible = true
-        mott.position = vec3((mouseCoord!!.x * tileSize).toFloat(), (mouseCoord!!.y * tileSize).toFloat(), 10f)
+        mott.position = mTransform[this[currentCoord]].position
         return false
     }
 

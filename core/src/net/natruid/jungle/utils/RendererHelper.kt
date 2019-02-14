@@ -11,33 +11,32 @@ import com.badlogic.gdx.utils.Disposable
 import net.natruid.jungle.components.ShaderComponent
 
 class RendererHelper : Disposable {
-    enum class Type { NONE, SPRITE_BATCH, SHAPE_RENDERER }
 
     val batch = SpriteBatch(1000, ShaderComponent.defaultShader)
     val shapeRenderer = ShapeRenderer()
 
-    private var current = Type.NONE
+    private var current = RendererType.NONE
     private var shapeType = ShapeRenderer.ShapeType.Line
 
     fun begin(
         camera: OrthographicCamera,
-        rendererType: Type,
+        rendererType: RendererType,
         shapeType: ShapeRenderer.ShapeType = ShapeRenderer.ShapeType.Line,
         shaderProgram: ShaderProgram = ShaderComponent.defaultShader
     ) {
-        if (rendererType == Type.SPRITE_BATCH && batch.shader != shaderProgram) batch.shader = shaderProgram
-        if (current == rendererType && (rendererType != Type.SHAPE_RENDERER || this.shapeType == shapeType)) return
+        if (rendererType == RendererType.SPRITE_BATCH && batch.shader != shaderProgram) batch.shader = shaderProgram
+        if (current == rendererType && (rendererType != RendererType.SHAPE_RENDERER || this.shapeType == shapeType)) return
 
         end()
 
         when (rendererType) {
-            Type.SPRITE_BATCH -> {
+            RendererType.SPRITE_BATCH -> {
                 batch.color = Color.WHITE
                 batch.projectionMatrix = camera.combined
                 batch.enableBlending()
                 batch.begin()
             }
-            Type.SHAPE_RENDERER -> {
+            RendererType.SHAPE_RENDERER -> {
                 shapeRenderer.projectionMatrix = camera.combined
                 Gdx.gl.apply {
                     glEnable(GL20.GL_BLEND)
@@ -56,13 +55,13 @@ class RendererHelper : Disposable {
 
     fun end() {
         when (current) {
-            Type.SPRITE_BATCH -> {
+            RendererType.SPRITE_BATCH -> {
                 batch.end()
                 batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
                 batch.color = Color.WHITE
                 if (batch.shader != ShaderComponent.defaultShader) batch.shader = ShaderComponent.defaultShader
             }
-            Type.SHAPE_RENDERER -> {
+            RendererType.SHAPE_RENDERER -> {
                 shapeRenderer.end()
                 Gdx.gl.glDisable(GL20.GL_BLEND)
             }
@@ -71,7 +70,7 @@ class RendererHelper : Disposable {
             }
         }
 
-        current = Type.NONE
+        current = RendererType.NONE
     }
 
     override fun dispose() {
