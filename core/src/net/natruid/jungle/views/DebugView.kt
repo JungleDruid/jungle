@@ -3,6 +3,7 @@ package net.natruid.jungle.views
 import com.badlogic.gdx.files.FileHandle
 import com.github.czyzby.lml.annotation.LmlActor
 import com.kotcrab.vis.ui.widget.VisLabel
+import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.utils.Scout
 
 class DebugView : AbstractView() {
@@ -17,6 +18,8 @@ class DebugView : AbstractView() {
     lateinit var fpsLabel: VisLabel
     @LmlActor("ramLabel")
     lateinit var ramLabel: VisLabel
+    @LmlActor("renderCallsLabel")
+    lateinit var rcLabel: VisLabel
 
     override fun getTemplateFile(): FileHandle {
         return Scout["assets/templates/debug.lml"]
@@ -28,15 +31,21 @@ class DebugView : AbstractView() {
 
     override fun render(delta: Float) {
         if (!show) return
+        val renderer = Jungle.instance.renderer
+        val batch = renderer.batch
 
         fps += 1
         timer += delta
         if (timer >= 1f) {
             timer -= 1f
             fpsLabel.setText("FPS: $fps")
-            fps = 0
             val runtime = Runtime.getRuntime()
             ramLabel.setText("RAM: ${(runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024}")
+            rcLabel.setText("RC: ${batch.totalRenderCalls / fps}/${renderer.batchDraws / fps} [${renderer.batchBegins / fps}]")
+            fps = 0
+            batch.totalRenderCalls = 0
+            renderer.batchDraws = 0
+            renderer.batchBegins = 0
         }
 
         super.render(delta)

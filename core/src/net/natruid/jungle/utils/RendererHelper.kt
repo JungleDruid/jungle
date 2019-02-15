@@ -15,6 +15,9 @@ class RendererHelper : Disposable {
     val batch = SpriteBatch(1000, ShaderComponent.defaultShader)
     val shapeRenderer = ShapeRenderer()
 
+    var batchDraws = 0
+    var batchBegins = 0
+
     private var current = RendererType.NONE
     private var shapeType = ShapeRenderer.ShapeType.Line
 
@@ -24,6 +27,7 @@ class RendererHelper : Disposable {
         shapeType: ShapeRenderer.ShapeType = ShapeRenderer.ShapeType.Line,
         shaderProgram: ShaderProgram = ShaderComponent.defaultShader
     ) {
+        if (rendererType == RendererType.SPRITE_BATCH) batchDraws += 1
         if (rendererType == RendererType.SPRITE_BATCH && batch.shader != shaderProgram) batch.shader = shaderProgram
         if (current == rendererType && (rendererType != RendererType.SHAPE_RENDERER || this.shapeType == shapeType)) return
 
@@ -31,6 +35,7 @@ class RendererHelper : Disposable {
 
         when (rendererType) {
             RendererType.SPRITE_BATCH -> {
+                batchBegins += 1
                 batch.color = Color.WHITE
                 batch.projectionMatrix = camera.combined
                 batch.enableBlending()

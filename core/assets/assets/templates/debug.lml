@@ -8,4 +8,7 @@
     <label id="ramLabel" style="small" color="green" padleft="5" row="true" align="left">
         RAM: 0
     </label>
+    <label id="renderCallsLabel" style="small" color="green" padleft="5" row="true" align="left">
+        RC: 0
+    </label>
 </table>
