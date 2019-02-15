@@ -10,9 +10,17 @@ import net.natruid.jungle.components.TextureComponent
 import net.natruid.jungle.components.TileComponent
 import net.natruid.jungle.components.TransformComponent
 import net.natruid.jungle.systems.PathfinderSystem
+import java.util.*
+import kotlin.math.max
 import kotlin.math.min
+import kotlin.random.Random
 
-class MapGenerator(private val columns: Int, private val rows: Int, private val world: World) {
+class MapGenerator(
+    private val columns: Int,
+    private val rows: Int,
+    private val world: World,
+    private val seed: Long = Random.nextLong()
+) {
     private val tileArchetype = ArchetypeBuilder().add(
         TileComponent::class.java,
         TransformComponent::class.java,
@@ -22,11 +30,12 @@ class MapGenerator(private val columns: Int, private val rows: Int, private val 
     private lateinit var mObstacle: ComponentMapper<ObstacleComponent>
     private lateinit var sPathfinder: PathfinderSystem
     private lateinit var map: Array<IntArray>
-    val random = RandomXS128()
+    val random = RandomXS128(seed)
     private val emptyTiles = IntBag(columns * rows)
     private var initialized = false
 
     fun init(): Array<IntArray> {
+        Logger.debug { "Map seed: $seed" }
         map = Array(columns) { x ->
             IntArray(rows) { y ->
                 val entityId = world.create(tileArchetype)
@@ -52,7 +61,8 @@ class MapGenerator(private val columns: Int, private val rows: Int, private val 
         minWidth: Int = 1,
         maxWidth: Int = 3,
         vertical: Boolean = random.nextBoolean(),
-        fork: Boolean = false
+        fork: Boolean = false,
+        mutationFactor: Long = 30L
     ) {
         val ref = if (vertical) columns else rows
         val length = if (vertical) rows else columns
@@ -75,45 +85,75 @@ class MapGenerator(private val columns: Int, private val rows: Int, private val 
                 replaceTile(cTile, terrainType)
             }
             if (noMutation) continue
-            if (random.nextLong(100) >= 100L - mutateChance) {
-                mutateChance = 0
-                if (random.nextBoolean()) {
+            if (mutateChance >= 100L || random.nextLong(100) >= 100L - mutateChance) {
+                mutateChance = 0L
+                if (random.nextBoolean()) {     // direction mutation
                     if (random.nextBoolean()) {
                         if (wMid < ref - 1) {
                             wMid += 1
-                            replaceTile(mTile[getTile(l, wMid + width / 2 - 1 + width.rem(2), vertical)], terrainType)
+                            replaceTile(
+                                mTile[getTile(l, min(ref - 1, wMid + width / 2 - 1 + width.rem(2)), vertical)],
+                                terrainType
+                            )
                         }
                     } else {
                         if (wMid > 0) {
                             wMid -= 1
-                            replaceTile(mTile[getTile(l, wMid - width / 2, vertical)], terrainType)
+                            replaceTile(
+                                mTile[getTile(l, max(0, wMid - width / 2), vertical)],
+                                terrainType
+                            )
                         }
                     }
-                } else {
+                } else {                        // width mutation
                     width += when {
                         width == maxWidth -> -1
                         width == minWidth || random.nextBoolean() -> 1
                         else -> -1
                     }
                 }
-            } else mutateChance += 2L
+            } else mutateChance += mutationFactor
         }
     }
 
-    private fun createRect(
+    private val creationQueue = LinkedList<Int>()
+    private val distanceMap = HashMap<Int, Int>()
+    private fun createArea(
         terrainType: TerrainType,
-        minWidth: Int = 1,
-        maxWidth: Int = min(columns, rows)
+        minRadius: Int = 1,
+        maxRadius: Int = min(columns, rows) / 2
     ) {
-        val left = random.nextInt(columns - minWidth)
-        val right = random.nextInt(columns - left - minWidth + 1).coerceAtMost(maxWidth - minWidth) + left + minWidth - 1
-        val bottom = random.nextInt(rows - minWidth)
-        val top = random.nextInt(rows - bottom - minWidth + 1).coerceAtMost(maxWidth - minWidth) + bottom + minWidth - 1
-        for (x in left..right) {
-            for (y in bottom..top) {
-                mTile[map[x][y]].terrainType = terrainType
+        val start = map[random.nextInt(columns)][random.nextInt(rows)]
+        creationQueue.addLast(start)
+        distanceMap[start] = 1
+        while (creationQueue.isNotEmpty()) {
+            val tile = creationQueue.removeFirst()
+            val distance = distanceMap[tile]!!
+            mTile[tile].terrainType = terrainType
+            if (distance >= maxRadius) continue
+            val coord = mTile[tile].coord
+            val chance = when {
+                distance < minRadius -> 1f
+                minRadius == maxRadius -> 0f
+                else -> 1f - (distance + 1 - minRadius) / (maxRadius - minRadius).toFloat()
+            }
+            if (chance <= 0f) continue
+            for (diff in -1..1 step 2) {
+                for (i in 0..1) {
+                    var x = coord.x
+                    var y = coord.y
+                    if (i == 0) x += diff else y += diff
+                    if (x < 0 || y < 0 || x >= columns || y >= rows) continue
+                    val next = map[x][y]
+                    if (distanceMap.containsKey(next)) continue
+                    if (chance >= 1f || random.nextFloat() < chance) {
+                        creationQueue.add(next)
+                        distanceMap[next] = distance + 1
+                    }
+                }
             }
         }
+        distanceMap.clear()
     }
 
     private fun createPath(vertical: Boolean = false) {
@@ -203,11 +243,11 @@ class MapGenerator(private val columns: Int, private val rows: Int, private val 
     fun generate(): Array<IntArray> {
         Logger.stopwatch("Map generation") {
             if (!initialized) init()
-            repeat(random.nextInt(200) + 100) {
-                createRect(TerrainType.fromByte((random.nextLong(2) + 1).toByte())!!)
+            repeat(random.nextInt(5) + 5) {
+                createArea(TerrainType.fromByte((random.nextLong(2) + 1).toByte())!!, min(columns, rows) / 3)
             }
             repeat(random.nextInt(3)) {
-                createRect(TerrainType.WATER, 2, 5)
+                createArea(TerrainType.WATER, 2, 5)
             }
             var vertical = random.nextBoolean()
             repeat(random.nextInt(4)) {
@@ -215,7 +255,7 @@ class MapGenerator(private val columns: Int, private val rows: Int, private val 
                 vertical = !vertical
             }
             repeat(random.nextInt(3)) {
-                createRect(TerrainType.WATER, 2, 5)
+                createArea(TerrainType.WATER, 2, 5)
             }
             createPath(vertical)
             repeat(random.nextInt(2)) {
