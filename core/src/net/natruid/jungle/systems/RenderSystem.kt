@@ -26,7 +26,32 @@ class RenderSystem : SortedIteratingSystem(Aspect.all(TransformComponent::class.
             when {
                 z0 > z1 -> 1
                 z0 < z1 -> -1
-                else -> 0
+                else -> {
+                    val t0 = mTexture[p0]
+                    val t1 = mTexture[p1]
+                    when {
+                        t0?.region?.texture == null || t1?.region?.texture == null -> {
+                            if (t0?.region?.texture == null) 1 else -1
+                        }
+                        else -> {
+                            val th0 = t0.region!!.texture.hashCode()
+                            val th1 = t1.region!!.texture.hashCode()
+                            when {
+                                th0 > th1 -> 1
+                                th0 < th1 -> -1
+                                else -> {
+                                    val sh0 = mShader[p0]?.hashCode() ?: 0
+                                    val sh1 = mShader[p1]?.hashCode() ?: 0
+                                    when {
+                                        sh0 > sh1 -> 1
+                                        sh0 < sh1 -> -1
+                                        else -> 0
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -37,6 +62,7 @@ class RenderSystem : SortedIteratingSystem(Aspect.all(TransformComponent::class.
     private val shapeRenderer = renderer.shapeRenderer
     private lateinit var mTransform: ComponentMapper<TransformComponent>
     private lateinit var mShader: ComponentMapper<ShaderComponent>
+    private lateinit var mTexture: ComponentMapper<TextureComponent>
     private val shaderDefault = ShaderComponent()
     private val glyphLayout = GlyphLayout()
     private var layer = Layer.DEFAULT.value
