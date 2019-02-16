@@ -8,11 +8,10 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShaderProgram
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Disposable
-import net.natruid.jungle.components.ShaderComponent
 
 class RendererHelper : Disposable {
 
-    val batch = SpriteBatch(1000, ShaderComponent.defaultShader)
+    val batch = SpriteBatch(1000, Shader.defaultShaderProgram)
     val shapeRenderer = ShapeRenderer()
 
     var batchDraws = 0
@@ -25,7 +24,7 @@ class RendererHelper : Disposable {
         camera: OrthographicCamera,
         rendererType: RendererType,
         shapeType: ShapeRenderer.ShapeType = ShapeRenderer.ShapeType.Line,
-        shaderProgram: ShaderProgram = ShaderComponent.defaultShader
+        shaderProgram: ShaderProgram = Shader.defaultShaderProgram
     ) {
         if (rendererType == RendererType.SPRITE_BATCH) batchDraws += 1
         if (rendererType == RendererType.SPRITE_BATCH && batch.shader != shaderProgram) batch.shader = shaderProgram
@@ -64,7 +63,7 @@ class RendererHelper : Disposable {
                 batch.end()
                 batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
                 batch.color = Color.WHITE
-                if (batch.shader != ShaderComponent.defaultShader) batch.shader = ShaderComponent.defaultShader
+                if (batch.shader != Shader.defaultShaderProgram) batch.shader = Shader.defaultShaderProgram
             }
             RendererType.SHAPE_RENDERER -> {
                 shapeRenderer.end()

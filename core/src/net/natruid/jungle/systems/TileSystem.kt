@@ -1,5 +1,6 @@
 package net.natruid.jungle.systems
 
+import com.artemis.Aspect
 import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
 import com.artemis.managers.TagManager
@@ -10,38 +11,35 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureRegion
-import com.badlogic.gdx.graphics.glutils.ShaderProgram
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Vector3
+import ktx.graphics.use
 import net.natruid.jungle.components.*
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.utils.*
+import net.natruid.jungle.utils.Constants.DOWN
+import net.natruid.jungle.utils.Constants.LEFT
+import net.natruid.jungle.utils.Constants.RIGHT
+import net.natruid.jungle.utils.Constants.UP
+import net.natruid.jungle.utils.Constants.Z_MOUSE_ON_TILE
+import net.natruid.jungle.utils.Constants.Z_OBSTACLE
+import net.natruid.jungle.utils.extensions.forEach
 import kotlin.math.roundToInt
+import kotlin.random.Random
 
 class TileSystem : BaseSystem(), InputProcessor {
     companion object {
         const val tileSize = 64
         private const val TAG_GRID_RENDERER = "GridRenderer"
         private const val TAG_MOUSE_ON_TILE = "MouseOnTile"
-
-        private val adjacent = arrayOf(
-            ImmutablePoint(Point(1, 0)),
-            ImmutablePoint(Point(0, 1)),
-            ImmutablePoint(Point(-1, 0)),
-            ImmutablePoint(Point(0, -1))
-        )
-        private val diagonals = arrayOf(
-            ImmutablePoint(Point(1, 1)),
-            ImmutablePoint(Point(-1, 1)),
-            ImmutablePoint(Point(-1, -1)),
-            ImmutablePoint(Point(1, -1))
-        )
     }
 
     private var columns = 0
     private var rows = 0
     var mouseCoord: Point? = null
+    var seed = 0L
+        private set
 
     private val halfTileSize = tileSize / 2
 
@@ -51,6 +49,7 @@ class TileSystem : BaseSystem(), InputProcessor {
     private lateinit var mRect: ComponentMapper<RectComponent>
     private lateinit var mRenderable: ComponentMapper<RenderableComponent>
     private lateinit var mObstacle: ComponentMapper<ObstacleComponent>
+    private lateinit var mShader: ComponentMapper<ShaderComponent>
     private lateinit var tileEntities: Array<IntArray>
     private lateinit var sTag: TagManager
     private var mouseOnTile
@@ -65,53 +64,95 @@ class TileSystem : BaseSystem(), InputProcessor {
     private val gridColor = Color(0.5f, 0.7f, 0.3f, 0.8f)
     private val gridRenderCallback: ((TransformComponent) -> Unit) = { renderGrid() }
     private val mouseOnTileColor = Color(1f, 1f, 0f, 0.4f)
-    private val tileShaderComponent by lazy {
-        ShaderComponent(
-            ShaderProgram(Scout["assets/shaders/vertex.glsl"], Scout["assets/shaders/fragment.glsl"]),
-            GL20.GL_SRC_ALPHA,
-            GL20.GL_ONE
-        )
-    }
-    private val waterTileShaderComponent by lazy {
-        ShaderComponent(
-            ShaderProgram(Scout["assets/shaders/vertex.glsl"], Scout["assets/shaders/fragment.glsl"]),
-            GL20.GL_SRC_ALPHA,
-            GL20.GL_ONE
-        )
-    }
+    private val tileShaderComponent = ShaderComponent(
+        Shader(fragment = "tile").apply {
+            getInstance().use {
+                it.setUniformf("bound", 1f - 64f / 96f)
+            }
+        },
+        GL20.GL_SRC_ALPHA,
+        GL20.GL_ONE
+    )
+    private val waterTileShaderComponent = ShaderComponent(
+        Shader(fragment = "tile").apply {
+            getInstance().use {
+                it.setUniformf("bound", 1f - 64f / 96f)
+            }
+        },
+        GL20.GL_SRC_ALPHA,
+        GL20.GL_ONE
+    )
 
     operator fun get(coord: Point): Int {
         if (!isCoordValid(coord)) return -1
         return tileEntities[coord.x][coord.y]
     }
 
+    operator fun get(x: Int, y: Int): Int {
+        if (!isCoordValid(x, y)) return -1
+        return tileEntities[x][y]
+    }
+
     fun isCoordValid(coord: Point?): Boolean {
         if (coord == null) return false
-        return coord.x >= 0 && coord.y >= 0 && coord.x < columns && coord.y < rows
+        return isCoordValid(coord.x, coord.y)
+    }
+
+    fun isCoordValid(x: Int, y: Int): Boolean {
+        return x >= 0 && y >= 0 && x < columns && y < rows
+    }
+
+    fun neighbors(entityId: Int, diagonal: Boolean = false): IntArray {
+        return neighbors(mTile[entityId].coord, diagonal)
     }
 
     fun neighbors(coord: Point, diagonal: Boolean = false): IntArray {
-        val array = IntArray(4) { -1 }
-        for ((count, point) in (if (!diagonal) adjacent else diagonals).withIndex()) {
-            val tile = get(coord + point)
-            array[count] = tile
-        }
-        return array
+        return IntArray(4) { this[coord.neighbor(it, diagonal)] }
+    }
+
+    fun up(coord: Point): Int {
+        val x = coord.x
+        val y = coord.y + 1
+        return this[x, y]
+    }
+
+    fun down(coord: Point): Int {
+        val x = coord.x
+        val y = coord.y - 1
+        return this[x, y]
+    }
+
+    fun right(coord: Point): Int {
+        val x = coord.x + 1
+        val y = coord.y
+        return this[x, y]
+    }
+
+    fun left(coord: Point): Int {
+        val x = coord.x - 1
+        val y = coord.y
+        return this[x, y]
     }
 
     private val dirtTexture = TextureRegion(Texture(Scout["assets/img/tiles/dirt.png"]))
     private val grassTexture = TextureRegion(Texture(Scout["assets/img/tiles/grass.png"]))
     private val roadTexture = TextureRegion(Texture(Scout["assets/img/tiles/road.png"]))
+    private val roadTextureUpDown = TextureRegion(Texture(Scout["assets/img/tiles/road-ud.png"]))
+    private val roadTextureRightUp = TextureRegion(Texture(Scout["assets/img/tiles/road-ru.png"]))
+    private val roadTextureRightUpLeft = TextureRegion(Texture(Scout["assets/img/tiles/road-rul.png"]))
+    private val roadTextureRightUpLeftDown = TextureRegion(Texture(Scout["assets/img/tiles/road-ruld.png"]))
     private val waterTexture = TextureRegion(Texture(Scout["assets/img/tiles/water.png"]))
     private val bridgeTexture = TextureRegion(Texture(Scout["assets/img/tiles/bridge.png"]))
+    private val bridgeMultiDirectionTexture = TextureRegion(Texture(Scout["assets/img/tiles/bridge-multi-direction.png"]))
     private val treeTexture = TextureRegion(Texture(Scout["assets/img/tiles/tree.png"]))
     private val rockTexture = TextureRegion(Texture(Scout["assets/img/tiles/rock.png"]))
 
-    fun create(columns: Int, rows: Int) {
+    fun create(columns: Int, rows: Int, seed: Long = Random.nextLong()) {
         clean()
         this.columns = columns
         this.rows = rows
-        val generator = MapGenerator(columns, rows, world)
+        this.seed = seed
+        val generator = MapGenerator(columns, rows, world, seed)
         world.inject(generator)
         tileEntities = generator.init()
         generator.generate()
@@ -125,16 +166,10 @@ class TileSystem : BaseSystem(), InputProcessor {
                         TerrainType.NONE -> dirtTexture
                         TerrainType.DIRT -> dirtTexture
                         TerrainType.GRASS -> grassTexture
-                        TerrainType.ROAD -> roadTexture
-                        TerrainType.BRIDGE -> waterTexture
                         TerrainType.WATER -> waterTexture
                     }
                     color = when (cTile.terrainType) {
                         TerrainType.WATER ->
-                            Color(1f, 1f, 1f, .7f)
-                        TerrainType.ROAD ->
-                            Color(1f, 1f, 1f, .93f + generator.random.nextFloat() * .07f)
-                        TerrainType.BRIDGE ->
                             Color(1f, 1f, 1f, .7f)
                         else -> {
                             val gb = .8f + generator.random.nextFloat() * .2f
@@ -147,19 +182,115 @@ class TileSystem : BaseSystem(), InputProcessor {
                         }
                     }
                 }
-                if (cTile.terrainType == TerrainType.WATER)
-                    world.edit(tile).add(waterTileShaderComponent)
-                else
-                    world.edit(tile).add(tileShaderComponent)
-                if (cTile.terrainType == TerrainType.BRIDGE) {
-                    world.create().let { bridge ->
-                        mTransform.create(bridge).apply {
-                            position = mTransform[tile].position
-                            val compareTileX = if (x > 0) x - 1 else x + 1
-                            if (mTile[tileEntities[compareTileX][y]].terrainType == TerrainType.WATER)
-                                rotation = 90f
+                when {
+                    cTile.terrainType == TerrainType.WATER -> world.edit(tile).add(waterTileShaderComponent)
+                    else -> world.edit(tile).add(tileShaderComponent)
+                }
+                if (cTile.hasRoad) {
+                    // create road or bridge
+                    world.create().let { road ->
+                        mTransform.create(road).apply {
+                            mTransform[tile].let {
+                                position = it.position
+                                z = it.z + 0.1f
+                            }
+                            val coord = cTile.coord
+                            var roadCount = 0
+                            val dirs = Array(4) { i ->
+                                val t = when (i) {
+                                    0 -> right(coord)
+                                    1 -> up(coord)
+                                    2 -> left(coord)
+                                    else -> down(coord)
+                                }
+                                when {
+                                    t < 0 -> false
+                                    mTile[t].hasRoad -> {
+                                        roadCount += 1
+                                        true
+                                    }
+                                    else -> false
+                                }
+                            }
+                            if (cTile.terrainType == TerrainType.WATER) {
+                                // create bridge
+                                var rotate = false
+                                var multiDirection = false
+                                when (roadCount) {
+                                    1 -> {
+                                        if (dirs[1] || dirs[3])
+                                            rotate = true
+                                    }
+                                    2 -> {
+                                        if (dirs[1] && dirs[3]) {
+                                            rotate = true
+                                        } else if (!(dirs[0] && dirs[2])) {
+                                            multiDirection = true
+                                        }
+                                    }
+                                    else -> {
+                                        multiDirection = true
+                                    }
+                                }
+                                if (rotate) rotation = 90f
+                                mTexture.create(road).region = when {
+                                    multiDirection -> bridgeMultiDirectionTexture
+                                    else -> {
+                                        z += 0.01f
+                                        bridgeTexture
+                                    }
+                                }
+                            } else {
+                                // create road
+                                var directions = 0
+                                for ((i, dir) in dirs.withIndex()) {
+                                    if (dir) directions = directions.or(1.shl(i))
+                                }
+                                mTexture.create(road).region = when (directions) {
+                                    UP.or(DOWN), UP, DOWN -> {
+                                        roadTextureUpDown
+                                    }
+                                    LEFT.or(RIGHT), LEFT, RIGHT -> {
+                                        rotation = 90f
+                                        roadTextureUpDown
+                                    }
+                                    RIGHT.or(UP) -> {
+                                        roadTextureRightUp
+                                    }
+                                    UP.or(LEFT) -> {
+                                        rotation = 90f
+                                        roadTextureRightUp
+                                    }
+                                    LEFT.or(DOWN) -> {
+                                        rotation = 180f
+                                        roadTextureRightUp
+                                    }
+                                    DOWN.or(RIGHT) -> {
+                                        rotation = 270f
+                                        roadTextureRightUp
+                                    }
+                                    RIGHT.or(UP).or(LEFT) -> {
+                                        roadTextureRightUpLeft
+                                    }
+                                    UP.or(LEFT).or(DOWN) -> {
+                                        rotation = 90f
+                                        roadTextureRightUpLeft
+                                    }
+                                    LEFT.or(DOWN).or(RIGHT) -> {
+                                        rotation = 180f
+                                        roadTextureRightUpLeft
+                                    }
+                                    DOWN.or(RIGHT).or(UP) -> {
+                                        rotation = 270f
+                                        roadTextureRightUpLeft
+                                    }
+                                    RIGHT.or(UP).or(LEFT).or(DOWN) -> {
+                                        roadTextureRightUpLeftDown
+                                    }
+                                    else -> roadTexture
+                                }
+                            }
                         }
-                        mTexture.create(bridge).region = bridgeTexture
                     }
                 }
 
@@ -168,7 +299,7 @@ class TileSystem : BaseSystem(), InputProcessor {
                     val cObstacle = mObstacle[obstacle]
                     mTransform.create(obstacle).apply {
                         position = mTransform[tile].position
-                        z = Constants.Z_OBSTACLE
+                        z = Z_OBSTACLE
                         scale.set(
                             generator.random.nextFloat() * 0.2f + 0.9f,
                             generator.random.nextFloat() * 0.2f + 0.9f
@@ -194,7 +325,7 @@ class TileSystem : BaseSystem(), InputProcessor {
             mouseOnTile = entityId
             mTransform.create(entityId).apply {
                 visible = false
-                z = Constants.Z_MOUSE_ON_TILE
+                z = Z_MOUSE_ON_TILE
             }
             mRect.create(entityId).apply {
                 width = tileSize.toFloat()
@@ -337,19 +468,16 @@ class TileSystem : BaseSystem(), InputProcessor {
         sTag.unregister(TAG_GRID_RENDERER)
     }
 
-    private var time = 0f
     override fun processSystem() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
-            tileShaderComponent.shader = ShaderProgram(Scout["assets/shaders/vertex.glsl"], Scout["assets/shaders/fragment.glsl"])
-            waterTileShaderComponent.shader = ShaderProgram(Scout["assets/shaders/vertex.glsl"], Scout["assets/shaders/fragment.glsl"])
+            world.aspectSubscriptionManager.get(Aspect.all(ShaderComponent::class.java)).entities.forEach {
+                mShader[it].shader.reset()
+            }
         }
 
-        time += world.delta
         try {
-            waterTileShaderComponent.shader.apply {
-                begin()
-                setUniformf("time", time)
-                end()
+            waterTileShaderComponent.shader.getInstance().use {
+                it.setUniformf("time", Jungle.instance.time)
             }
         } catch (e: Exception) {
         }

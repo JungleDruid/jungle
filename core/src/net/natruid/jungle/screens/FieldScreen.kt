@@ -3,11 +3,13 @@ package net.natruid.jungle.screens
 import com.artemis.Aspect
 import com.artemis.WorldConfigurationBuilder
 import com.artemis.managers.TagManager
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import net.natruid.jungle.components.UnitComponent
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.systems.*
 import net.natruid.jungle.utils.extensions.forEach
+import kotlin.random.Random
 
 class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
     TagManager(),
@@ -23,8 +25,8 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
         init()
     }
 
-    private fun init() {
-        world.getSystem(TileSystem::class.java).create(20, 20)
+    private fun init(seed: Long = Random.nextLong()) {
+        world.getSystem(TileSystem::class.java).create(20, 20, seed)
         world.getSystem(UnitManagementSystem::class.java)
             .addUnit(faction = UnitComponent.Faction.PLAYER, speed = 6f)
         world.getSystem(RenderSystem::class.java).sort()
@@ -44,7 +46,11 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
             world.aspectSubscriptionManager.get(Aspect.all()).entities.forEach {
                 world.delete(it)
             }
-            init()
+            if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)) {
+                init(world.getSystem(TileSystem::class.java).seed)
+            } else {
+                init()
+            }
             return true
         }
 

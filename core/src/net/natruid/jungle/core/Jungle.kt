@@ -27,6 +27,8 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
 
     var mouseMoved = false
         private set
+    var time = 0f
+        private set
 
     private var currentScreen: AbstractScreen? = null
     private var currentView: AbstractLmlView? = null
@@ -78,6 +80,7 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
         val delta = Gdx.graphics.deltaTime
+        time += delta
         currentScreen?.render(delta)
         currentView?.render(delta)
         debugView?.render(delta)

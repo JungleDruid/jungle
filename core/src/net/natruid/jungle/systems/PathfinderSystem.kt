@@ -17,6 +17,8 @@ class PathfinderSystem : BaseSystem() {
     private val visited = HashMap<Int, PathNode>()
     private val walkables = ArrayList<Boolean>(4)
     private val walkableDiagonals = LinkedList<Boolean>()
+    private val searchQueue = LinkedList<Int>()
+    private val searchDirection = Point()
 
     private fun init(from: Int): PathNode {
         val node = PathNode(from, 0f)
@@ -31,14 +33,45 @@ class PathfinderSystem : BaseSystem() {
         current: PathNode,
         diagonal: Boolean = false,
         maxCost: Float? = null,
-        goal: Int? = null
+        goal: Int? = null,
+        buildingRoad: Boolean = false
     ): Boolean {
         if (!diagonal) {
             walkables.clear()
             walkableDiagonals.clear()
         }
         if (diagonal && walkableDiagonals.size == 0) return false
-        for (next in sTile.neighbors(mTile[current.tile].coord, diagonal)) {
+
+        var costMultiplier = 1f
+
+        searchQueue.clear()
+        mTile[current.tile].let {
+            if (buildingRoad && it.terrainType == TerrainType.WATER && current.prev != null) {
+                searchDirection.set(it.coord)
+                searchDirection *= 2
+                searchDirection -= mTile[current.prev!!.tile].coord
+                val next = sTile[searchDirection]
+                if (next >= 0) searchQueue.add(next)
+            } else {
+                var roadCount = 0
+                for (next in sTile.neighbors(it.coord, diagonal)) {
+                    searchQueue.add(next)
+                    if (buildingRoad) {
+                        if (next >= 0) {
+                            if (mTile[next].terrainType == TerrainType.WATER && it.terrainType != TerrainType.WATER)
+                                costMultiplier += 1f
+                            if (mTile[next].hasRoad) roadCount += 1
+                        } else {
+                            costMultiplier += 0.75f
+                        }
+                    }
+                }
+                if (buildingRoad && !it.hasRoad && roadCount > 1) return false
+            }
+        }
+
+        while (searchQueue.isNotEmpty()) {
+            val next = searchQueue.removeFirst()
             val nextTileComponent = if (next >= 0) mTile[next] else null
             val nextWalkable = nextTileComponent != null && nextTileComponent.obstacle < 0
             if (!diagonal) {
@@ -53,12 +86,13 @@ class PathfinderSystem : BaseSystem() {
             }
             var cost = if (!diagonal) 1f else 1.5f
             when (nextTileComponent?.terrainType) {
-                TerrainType.WATER -> cost *= 3
-                TerrainType.ROAD -> cost /= 2
+                TerrainType.WATER -> if (!nextTileComponent.hasRoad) cost *= if (buildingRoad) 10f else 3f
                 else -> {
+                    if (nextTileComponent != null && nextTileComponent.hasRoad)
+                        cost *= if (buildingRoad) 0.1f else 0.5f
                 }
             }
-            val nextCost = current.cost + cost
+            val nextCost = current.cost + cost * costMultiplier
             if (
                 diagonal && !walkableDiagonals.removeFirst()
                 || !nextWalkable || maxCost != null && nextCost > maxCost
@@ -89,14 +123,15 @@ class PathfinderSystem : BaseSystem() {
 
     fun area(
         from: Int,
-        maxCost: Float,
-        diagonal: Boolean = true
+        maxCost: Float?,
+        diagonal: Boolean = true,
+        buildingRoad: Boolean = false
     ): Array<PathNode> {
         init(from)
         while (!frontier.isEmpty) {
             val current = frontier.pop()
-            searchNeighbors(current, maxCost = maxCost)
-            if (diagonal) searchNeighbors(current, true, maxCost = maxCost)
+            searchNeighbors(current, maxCost = maxCost, buildingRoad = buildingRoad)
+            if (diagonal) searchNeighbors(current, true, maxCost)
         }
         return visited.values.toTypedArray()
     }
@@ -113,9 +148,9 @@ class PathfinderSystem : BaseSystem() {
         init(from)
         while (!frontier.isEmpty) {
             val current = frontier.pop()
-            if (searchNeighbors(current, goal = goal))
+            if (searchNeighbors(current, goal = goal, buildingRoad = false))
                 return extractPath(visited.values, mTile[goal].coord)!!
-            if (diagonal && searchNeighbors(current, true, goal = goal))
+            if (diagonal && searchNeighbors(current, true, goal = goal, buildingRoad = false))
                 return extractPath(visited.values, mTile[goal].coord)!!
         }
         return null

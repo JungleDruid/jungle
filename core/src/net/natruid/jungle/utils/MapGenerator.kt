@@ -57,7 +57,7 @@ class MapGenerator(
     }
 
     private fun createLine(
-        terrainType: TerrainType = TerrainType.ROAD,
+        terrainType: TerrainType = TerrainType.WATER,
         minWidth: Int = 1,
         maxWidth: Int = 3,
         vertical: Boolean = random.nextBoolean(),
@@ -78,11 +78,11 @@ class MapGenerator(
             }
             var noMutation = false
             for (w in 0 until width) {
-                val cTile: TileComponent = mTile[getTile(l, wMid + w - width / 2, vertical)]
-                if (cTile.terrainType == TerrainType.WATER && terrainType == TerrainType.ROAD) {
+                val tile = getTile(l, wMid + w - width / 2, vertical)
+                if (mTile[tile].terrainType == TerrainType.WATER) {
                     noMutation = true
                 }
-                replaceTile(cTile, terrainType)
+                replaceTile(tile, terrainType)
             }
             if (noMutation) continue
             if (mutateChance >= 100L || random.nextLong(100) >= 100L - mutateChance) {
@@ -92,7 +92,7 @@ class MapGenerator(
                         if (wMid < ref - 1) {
                             wMid += 1
                             replaceTile(
-                                mTile[getTile(l, min(ref - 1, wMid + width / 2 - 1 + width.rem(2)), vertical)],
+                                getTile(l, min(ref - 1, wMid + width / 2 - 1 + width.rem(2)), vertical),
                                 terrainType
                             )
                         }
@@ -100,7 +100,7 @@ class MapGenerator(
                         if (wMid > 0) {
                             wMid -= 1
                             replaceTile(
-                                mTile[getTile(l, max(0, wMid - width / 2), vertical)],
+                                getTile(l, max(0, wMid - width / 2), vertical),
                                 terrainType
                             )
                         }
@@ -129,7 +129,7 @@ class MapGenerator(
         while (creationQueue.isNotEmpty()) {
             val tile = creationQueue.removeFirst()
             val distance = distanceMap[tile]!!
-            mTile[tile].terrainType = terrainType
+            replaceTile(tile, terrainType)
             if (distance >= maxRadius) continue
             val coord = mTile[tile].coord
             val chance = when {
@@ -166,9 +166,9 @@ class MapGenerator(
             if (cTile.terrainType != TerrainType.WATER && cTile.obstacle < 0) break
         }
 
-        var minCost = (columns * rows).toFloat()
+        var minCost = Float.MAX_VALUE
         var end: PathNode? = null
-        val area = sPathfinder.area(start, minCost, false)
+        val area = sPathfinder.area(start, null, diagonal = false, buildingRoad = true)
         for (node in area) {
             val coord = mTile[node.tile].coord
             if (node.cost < minCost && (vertical && coord.y == rows - 1 || !vertical && coord.x == columns - 1)) {
@@ -176,30 +176,24 @@ class MapGenerator(
                 end = node
             }
         }
-        replaceTile(mTile[end?.tile ?: return], TerrainType.ROAD)
+        buildRoad(end?.tile ?: return)
         while (end?.prev != null) {
             val coord = mTile[end.tile].coord
             end = end.prev!!
             val cTile = mTile[end.tile]
             if (vertical && coord.y == 0 && cTile.coord.y == coord.y) break
             if (!vertical && coord.x == 0 && cTile.coord.x == coord.x) break
-            replaceTile(cTile, TerrainType.ROAD)
+            buildRoad(end.tile)
         }
     }
 
-    private fun replaceTile(tileComponent: TileComponent, terrainType: TerrainType) {
-        when (terrainType) {
-            TerrainType.ROAD -> {
-                if (tileComponent.terrainType == TerrainType.WATER) {
-                    tileComponent.terrainType = TerrainType.BRIDGE
-                } else if (tileComponent.terrainType != TerrainType.BRIDGE) {
-                    tileComponent.terrainType = TerrainType.ROAD
-                }
-            }
-            else -> {
-                tileComponent.terrainType = terrainType
-            }
-        }
+    private fun replaceTile(entityId: Int, terrainType: TerrainType) {
+        val tileComponent = mTile[entityId]
+        tileComponent.terrainType = terrainType
+    }
+
+    private fun buildRoad(entityId: Int) {
+        mTile[entityId].hasRoad = true
     }
 
     private fun createObstacles(amount: Int) {
@@ -257,12 +251,12 @@ class MapGenerator(
             repeat(random.nextInt(3)) {
                 createArea(TerrainType.WATER, 2, 5)
             }
+            createObstacles(random.nextInt(columns * rows / 20) + columns * rows / 40)
             createPath(vertical)
             repeat(random.nextInt(2)) {
                 vertical = !vertical
                 createPath(vertical)
             }
-            createObstacles(random.nextInt(columns * rows / 20) + columns * rows / 40)
             clean()
         }
         return map

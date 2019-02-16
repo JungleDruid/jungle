@@ -70,92 +70,95 @@ class RenderSystem : SortedIteratingSystem(Aspect.all(TransformComponent::class.
     private val componentBag = Bag<Component>()
 
     override fun process(entityId: Int) {
-        val transform = mTransform[entityId]
+        try {
+            val transform = mTransform[entityId]
 
-        if (!transform.visible || transform.layer.value.and(layer) == 0) {
-            return
-        }
+            if (!transform.visible || transform.layer.value.and(layer) == 0) {
+                return
+            }
 
-        val shader = mShader[entityId] ?: shaderDefault
+            val cShader = mShader[entityId] ?: shaderDefault
 
-        for (component in world.componentManager.getComponentsFor(entityId, componentBag)) {
-            when (component) {
-                is TextureComponent -> {
-                    component.region?.let { region ->
-                        val width = region.regionWidth.toFloat()
-                        val height = region.regionHeight.toFloat()
+            for (component in world.componentManager.getComponentsFor(entityId, componentBag)) {
+                when (component) {
+                    is TextureComponent -> {
+                        component.region?.let { region ->
+                            val width = region.regionWidth.toFloat()
+                            val height = region.regionHeight.toFloat()
 
-                        val originX = width * transform.pivot.x
-                        val originY = height * transform.pivot.y
+                            val originX = width * transform.pivot.x
+                            val originY = height * transform.pivot.y
 
-                        region.flip(region.isFlipX != component.flipX, region.isFlipY != component.flipY)
-                        renderer.begin(camera, RendererType.SPRITE_BATCH, shaderProgram = shader.shader)
-                        batch.setBlendFunction(shader.blendSrcFunc, shader.blendDstFunc)
-                        batch.color = component.color
-                        batch.draw(
-                            region,
+                            region.flip(region.isFlipX != component.flipX, region.isFlipY != component.flipY)
+                            renderer.begin(camera, RendererType.SPRITE_BATCH, shaderProgram = cShader.shader.program)
+                            batch.setBlendFunction(cShader.blendSrcFunc, cShader.blendDstFunc)
+                            batch.color = component.color
+                            batch.draw(
+                                region,
+                                transform.position.x - originX,
+                                transform.position.y - originY,
+                                originX,
+                                originY,
+                                width,
+                                height,
+                                transform.scale.x,
+                                transform.scale.y,
+                                transform.rotation
+                            )
+                        }
+                    }
+                    is LabelComponent -> {
+                        val font = Marsh.Fonts[component.fontName]
+                        val hAlign = when {
+                            component.align == Align.top -> Align.center
+                            component.align == Align.bottom -> Align.center
+                            else -> component.align
+                        }
+                        glyphLayout.setText(font, component.text, component.color, component.width, hAlign, component.width > 0f)
+                        val offsetY: Float = when {
+                            component.align.and(Align.top) != 0 -> 0f
+                            component.align.and(Align.bottom) != 0 -> glyphLayout.height
+                            else -> glyphLayout.height * transform.pivot.y
+                        }
+                        renderer.begin(camera, RendererType.SPRITE_BATCH, shaderProgram = cShader.shader.program)
+                        batch.setBlendFunction(cShader.blendSrcFunc, cShader.blendDstFunc)
+                        font.draw(batch, glyphLayout, transform.position.x, transform.position.y + offsetY)
+                    }
+                    is RectComponent -> {
+                        val originX = component.width * transform.pivot.x
+                        val originY = component.height * transform.pivot.y
+
+                        renderer.begin(camera, RendererType.SHAPE_RENDERER, component.type)
+                        shapeRenderer.color = component.color
+                        shapeRenderer.rect(
                             transform.position.x - originX,
                             transform.position.y - originY,
                             originX,
                             originY,
-                            width,
-                            height,
+                            component.width,
+                            component.height,
                             transform.scale.x,
                             transform.scale.y,
                             transform.rotation
                         )
                     }
-                }
-                is LabelComponent -> {
-                    val font = Marsh.Fonts[component.fontName]
-                    val hAlign = when {
-                        component.align == Align.top -> Align.center
-                        component.align == Align.bottom -> Align.center
-                        else -> component.align
+                    is CircleComponent -> {
+                        renderer.begin(camera, RendererType.SHAPE_RENDERER, component.type)
+                        shapeRenderer.color = component.color
+                        shapeRenderer.circle(
+                            transform.position.x,
+                            transform.position.y,
+                            component.radius,
+                            1.coerceAtLeast((8 * Math.cbrt(component.radius.toDouble()) / camera.zoom).toInt())
+                        )
                     }
-                    glyphLayout.setText(font, component.text, component.color, component.width, hAlign, component.width > 0f)
-                    val offsetY: Float = when {
-                        component.align.and(Align.top) != 0 -> 0f
-                        component.align.and(Align.bottom) != 0 -> glyphLayout.height
-                        else -> glyphLayout.height * transform.pivot.y
-                    }
-                    renderer.begin(camera, RendererType.SPRITE_BATCH, shaderProgram = shader.shader)
-                    batch.setBlendFunction(shader.blendSrcFunc, shader.blendDstFunc)
-                    font.draw(batch, glyphLayout, transform.position.x, transform.position.y + offsetY)
+                    is RenderableComponent -> component.render(transform)
                 }
-                is RectComponent -> {
-                    val originX = component.width * transform.pivot.x
-                    val originY = component.height * transform.pivot.y
-
-                    renderer.begin(camera, RendererType.SHAPE_RENDERER, component.type)
-                    shapeRenderer.color = component.color
-                    shapeRenderer.rect(
-                        transform.position.x - originX,
-                        transform.position.y - originY,
-                        originX,
-                        originY,
-                        component.width,
-                        component.height,
-                        transform.scale.x,
-                        transform.scale.y,
-                        transform.rotation
-                    )
-                }
-                is CircleComponent -> {
-                    renderer.begin(camera, RendererType.SHAPE_RENDERER, component.type)
-                    shapeRenderer.color = component.color
-                    shapeRenderer.circle(
-                        transform.position.x,
-                        transform.position.y,
-                        component.radius,
-                        1.coerceAtLeast((8 * Math.cbrt(component.radius.toDouble()) / camera.zoom).toInt())
-                    )
-                }
-                is RenderableComponent -> component.render(transform)
             }
-        }
 
-        componentBag.clear()
+            componentBag.clear()
+        } catch (e: Exception) {
+        }
     }
 
     fun setLayer(vararg layers: Layer) {

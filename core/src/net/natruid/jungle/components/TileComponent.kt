@@ -8,6 +8,7 @@ import net.natruid.jungle.utils.TerrainType
 class TileComponent(
     var coord: Point = Point(),
     var terrainType: TerrainType = TerrainType.NONE,
+    var hasRoad: Boolean = false,
     @EntityId var unit: Int = -1,
     @EntityId var obstacle: Int = -1
 ) : Component() {
