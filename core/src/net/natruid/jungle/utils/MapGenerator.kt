@@ -49,6 +49,12 @@ class MapGenerator(
     }
 
     private fun getTile(x: Int, y: Int, reversed: Boolean = false): Int {
+        if (x < 0 || y < 0) return -1
+        if (!reversed) {
+            if (x >= columns || y >= rows) return -1
+        } else {
+            if (x >= rows || y >= columns) return -1
+        }
         return if (!reversed) {
             map[x][y]
         } else {
@@ -79,6 +85,7 @@ class MapGenerator(
             var noMutation = false
             for (w in 0 until width) {
                 val tile = getTile(l, wMid + w - width / 2, vertical)
+                if (tile < 0) continue
                 if (mTile[tile].terrainType == TerrainType.WATER) {
                     noMutation = true
                 }
@@ -156,14 +163,44 @@ class MapGenerator(
         distanceMap.clear()
     }
 
+    private inline fun forNeighbor(x: Int, y: Int, function: (tile: Int) -> Boolean) {
+        for (diff in -1..1 step 2) {
+            for (i in 0..1) {
+                var x1 = x
+                var y1 = y
+                if (i == 0) x1 += diff else y1 += diff
+                if (x1 < 0 || y1 < 0 || x1 >= columns || y1 >= rows) continue
+                val tile = map[x1][y1]
+                if (function(tile)) break
+            }
+        }
+    }
+
     private fun createPath(vertical: Boolean = false) {
         val ref = if (vertical) columns else rows
-        val startRange = ref / 2
+        var centerFactor = 2f
         var start = -1
-        for (i in 1..10) {
-            start = getTile(0, random.nextInt(startRange) + (ref - startRange) / 2, vertical)
+        var reversed = random.nextBoolean()
+        for (i in 1..20) {
+            val startRange = (ref / centerFactor).toInt()
+            val x = if (reversed) ref - 1 else 0
+            val y = random.nextInt(startRange) + (ref - startRange) / 2
+            start = getTile(x, y, vertical)
+            if (start < 0) continue
+            var ideal = true
+            forNeighbor(if (vertical) y else x, if (vertical) x else y) {
+                val cTile = mTile[it]
+                if (cTile.terrainType == TerrainType.WATER || cTile.obstacle >= 0) {
+                    ideal = false
+                    true
+                } else false
+            }
+            if (!ideal) continue
             val cTile = mTile[start]
             if (cTile.terrainType != TerrainType.WATER && cTile.obstacle < 0) break
+            reversed = !reversed
+            centerFactor -= 0.2f
+            centerFactor = centerFactor.coerceAtLeast(1f)
         }
 
         var minCost = Float.MAX_VALUE
@@ -171,7 +208,9 @@ class MapGenerator(
         val area = sPathfinder.area(start, null, diagonal = false, buildingRoad = true)
         for (node in area) {
             val coord = mTile[node.tile].coord
-            if (node.cost < minCost && (vertical && coord.y == rows - 1 || !vertical && coord.x == columns - 1)) {
+            val endX = !vertical && coord.x == (if (reversed) 0 else columns - 1)
+            val endY = vertical && coord.y == (if (reversed) 0 else rows - 1)
+            if (node.cost < minCost && (endX || endY)) {
                 minCost = node.cost
                 end = node
             }
@@ -181,8 +220,10 @@ class MapGenerator(
             val coord = mTile[end.tile].coord
             end = end.prev!!
             val cTile = mTile[end.tile]
-            if (vertical && coord.y == 0 && cTile.coord.y == coord.y) break
-            if (!vertical && coord.x == 0 && cTile.coord.x == coord.x) break
+            val endX = reversed && coord.x == columns - 1 || !reversed && coord.x == 0
+            val endY = reversed && coord.y == rows - 1 || !reversed && coord.y == 0
+            if (!vertical && endX && cTile.coord.x == coord.x) break
+            if (vertical && endY && cTile.coord.y == coord.y) break
             buildRoad(end.tile)
         }
     }
@@ -196,16 +237,28 @@ class MapGenerator(
         mTile[entityId].hasRoad = true
     }
 
+    private fun getEmptyTile(): Int {
+        while (emptyTiles.size() > 0) {
+            val tile = emptyTiles.remove(random.nextInt(emptyTiles.size()))
+            val cTile = mTile[tile]
+            if (cTile.obstacle >= 0) continue
+            if (cTile.terrainType == TerrainType.WATER) continue
+            return tile
+        }
+        return -1
+    }
+
     private fun createObstacles(amount: Int) {
         var count = 0
-        while (emptyTiles.size() > 0 && count < amount) {
+        while (count < amount) {
             var canCreate = true
-            val tile = emptyTiles.remove(random.nextInt(emptyTiles.size()))
+            val tile = getEmptyTile()
+            if (tile < 0) break
             val cTile = mTile[tile]
             var obstacleType = ObstacleType.ROCK
             var destroyable = false
             when (cTile.terrainType) {
-                TerrainType.DIRT -> {
+                TerrainType.DIRT, TerrainType.NONE -> {
                     obstacleType = ObstacleType.ROCK
                 }
                 TerrainType.GRASS -> {
@@ -244,18 +297,19 @@ class MapGenerator(
                 createArea(TerrainType.WATER, 2, 5)
             }
             var vertical = random.nextBoolean()
+            var riverCount = 0
             repeat(random.nextInt(4)) {
                 createLine(TerrainType.WATER, vertical = vertical, fork = true)
                 vertical = !vertical
+                riverCount++
             }
             repeat(random.nextInt(3)) {
                 createArea(TerrainType.WATER, 2, 5)
             }
             createObstacles(random.nextInt(columns * rows / 20) + columns * rows / 40)
-            createPath(vertical)
-            repeat(random.nextInt(2)) {
-                vertical = !vertical
+            repeat((random.nextInt(2) + riverCount).coerceIn(1, 2)) {
                 createPath(vertical)
+                vertical = !vertical
             }
             clean()
         }
