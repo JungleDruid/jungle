@@ -5,7 +5,7 @@ import com.artemis.ComponentMapper
 import com.artemis.managers.TagManager
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer
+import com.badlogic.gdx.utils.Align
 import net.natruid.jungle.components.*
 import net.natruid.jungle.utils.Constants
 import net.natruid.jungle.utils.IndicatorType
@@ -31,6 +31,7 @@ class UnitManagementSystem : SortedIteratingSystem(
     private lateinit var mCircle: ComponentMapper<CircleComponent>
     private lateinit var mPathFollower: ComponentMapper<PathFollowerComponent>
     private lateinit var mTile: ComponentMapper<TileComponent>
+    private lateinit var mLabel: ComponentMapper<LabelComponent>
     private lateinit var sTile: TileSystem
     private lateinit var sPathfinder: PathfinderSystem
     private lateinit var sIndicator: IndicatorSystem
@@ -72,14 +73,28 @@ class UnitManagementSystem : SortedIteratingSystem(
             this.speed = speed
             this.faction = faction
         }
-        mCircle.create(entityId).apply {
-            radius = TileSystem.tileSize / 2f - 10f
+//        mCircle.create(entityId).apply {
+//            radius = TileSystem.tileSize / 2f - 10f
+//            color = when (faction) {
+//                UnitComponent.Faction.NONE -> Color.GRAY
+//                UnitComponent.Faction.PLAYER -> Color.CYAN
+//                UnitComponent.Faction.ENEMY -> Color.RED
+//            }
+//            type = ShapeRenderer.ShapeType.Filled
+//        }
+        mLabel.create(entityId).apply {
+            fontName = "huge"
             color = when (faction) {
                 UnitComponent.Faction.NONE -> Color.GRAY
-                UnitComponent.Faction.PLAYER -> Color.CYAN
+                UnitComponent.Faction.PLAYER -> Color.GREEN
                 UnitComponent.Faction.ENEMY -> Color.RED
             }
-            type = ShapeRenderer.ShapeType.Filled
+            text = when (faction) {
+                UnitComponent.Faction.NONE -> "？"
+                UnitComponent.Faction.PLAYER -> "Ｎ"
+                UnitComponent.Faction.ENEMY -> "Ｄ"
+            }
+            align = Align.center
         }
         mTile[tile].unit = entityId
         return entityId
@@ -141,6 +156,7 @@ class UnitManagementSystem : SortedIteratingSystem(
                 UnitComponent.Faction.ENEMY -> {
                 }
             }
+            return true
         } else if (selectedUnit >= 0) {
             unit = selectedUnit
             val path = sIndicator.getPathTo(mouseCoord, unit)
@@ -153,6 +169,7 @@ class UnitManagementSystem : SortedIteratingSystem(
                 freeMoveUnit(unit, mouseCoord)
             }
             selectedUnit = -1
+            return true
         }
 
         return false

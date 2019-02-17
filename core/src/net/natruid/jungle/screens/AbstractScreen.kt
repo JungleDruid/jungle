@@ -23,7 +23,7 @@ abstract class AbstractScreen(configuration: WorldConfiguration) : Screen, Input
     override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
         for (system in world.systems) {
             if (system.isEnabled && system is InputProcessor) {
-                system.touchUp(screenX, screenY, pointer, button)
+                if (system.touchUp(screenX, screenY, pointer, button)) return true
             }
         }
         return false
@@ -32,7 +32,7 @@ abstract class AbstractScreen(configuration: WorldConfiguration) : Screen, Input
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
         for (system in world.systems) {
             if (system.isEnabled && system is InputProcessor) {
-                system.mouseMoved(screenX, screenY)
+                if (system.mouseMoved(screenX, screenY)) return true
             }
         }
         return false
@@ -41,7 +41,7 @@ abstract class AbstractScreen(configuration: WorldConfiguration) : Screen, Input
     override fun keyTyped(character: Char): Boolean {
         for (system in world.systems) {
             if (system.isEnabled && system is InputProcessor) {
-                system.keyTyped(character)
+                if (system.keyTyped(character)) return true
             }
         }
         return false
@@ -50,7 +50,7 @@ abstract class AbstractScreen(configuration: WorldConfiguration) : Screen, Input
     override fun scrolled(amount: Int): Boolean {
         for (system in world.systems) {
             if (system.isEnabled && system is InputProcessor) {
-                system.scrolled(amount)
+                if (system.scrolled(amount)) return true
             }
         }
         return false
@@ -59,7 +59,7 @@ abstract class AbstractScreen(configuration: WorldConfiguration) : Screen, Input
     override fun keyUp(keycode: Int): Boolean {
         for (system in world.systems) {
             if (system.isEnabled && system is InputProcessor) {
-                system.keyUp(keycode)
+                if (system.keyUp(keycode)) return true
             }
         }
         return false
@@ -68,7 +68,7 @@ abstract class AbstractScreen(configuration: WorldConfiguration) : Screen, Input
     override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
         for (system in world.systems) {
             if (system.isEnabled && system is InputProcessor) {
-                system.touchDragged(screenX, screenY, pointer)
+                if (system.touchDragged(screenX, screenY, pointer)) return true
             }
         }
         return false
@@ -77,7 +77,7 @@ abstract class AbstractScreen(configuration: WorldConfiguration) : Screen, Input
     override fun keyDown(keycode: Int): Boolean {
         for (system in world.systems) {
             if (system.isEnabled && system is InputProcessor) {
-                system.keyDown(keycode)
+                if (system.keyDown(keycode)) return true
             }
         }
         return false
@@ -86,7 +86,7 @@ abstract class AbstractScreen(configuration: WorldConfiguration) : Screen, Input
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
         for (system in world.systems) {
             if (system.isEnabled && system is InputProcessor) {
-                system.touchDown(screenX, screenY, pointer, button)
+                if (system.touchDown(screenX, screenY, pointer, button)) return true
             }
         }
         return false

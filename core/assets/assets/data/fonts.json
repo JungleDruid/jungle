@@ -11,6 +11,11 @@
       "size": 32
     },
     {
+      "name": "huge",
+      "file": "NotoSansCJKtc-Medium.otf",
+      "size": 64
+    },
+    {
       "name": "small",
       "file": "NotoSansCJKtc-Medium.otf",
       "size": 16

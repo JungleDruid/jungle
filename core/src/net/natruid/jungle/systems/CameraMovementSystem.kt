@@ -7,6 +7,7 @@ import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.math.Vector2
 import ktx.math.times
 import net.natruid.jungle.core.Jungle
+import net.natruid.jungle.utils.Point
 import kotlin.math.max
 import kotlin.math.min
 
@@ -35,16 +36,16 @@ class CameraMovementSystem : BaseSystem(), InputProcessor {
     }
 
     override fun keyDown(keycode: Int): Boolean {
-        if (keycode == Input.Keys.W) {
+        if (keycode == Input.Keys.W || keycode == Input.Keys.UP) {
             velocity.y += 1
         }
-        if (keycode == Input.Keys.S) {
+        if (keycode == Input.Keys.S || keycode == Input.Keys.DOWN) {
             velocity.y -= 1
         }
-        if (keycode == Input.Keys.A) {
+        if (keycode == Input.Keys.A || keycode == Input.Keys.LEFT) {
             velocity.x -= 1
         }
-        if (keycode == Input.Keys.D) {
+        if (keycode == Input.Keys.D || keycode == Input.Keys.RIGHT) {
             velocity.x += 1
         }
 
@@ -52,16 +53,16 @@ class CameraMovementSystem : BaseSystem(), InputProcessor {
     }
 
     override fun keyUp(keycode: Int): Boolean {
-        if (keycode == Input.Keys.W) {
+        if (keycode == Input.Keys.W || keycode == Input.Keys.UP) {
             velocity.y -= 1
         }
-        if (keycode == Input.Keys.S) {
+        if (keycode == Input.Keys.S || keycode == Input.Keys.DOWN) {
             velocity.y += 1
         }
-        if (keycode == Input.Keys.A) {
+        if (keycode == Input.Keys.A || keycode == Input.Keys.LEFT) {
             velocity.x += 1
         }
-        if (keycode == Input.Keys.D) {
+        if (keycode == Input.Keys.D || keycode == Input.Keys.RIGHT) {
             velocity.x -= 1
         }
 
@@ -80,10 +81,6 @@ class CameraMovementSystem : BaseSystem(), InputProcessor {
         return false
     }
 
-    override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-        return false
-    }
-
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
         return false
     }
@@ -92,11 +89,24 @@ class CameraMovementSystem : BaseSystem(), InputProcessor {
         return false
     }
 
+    private val dragPoint = Point()
+    private var dragStarted = false
     override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
-        return false
+        if (!dragStarted) return false
+        camera.translate((dragPoint.x - screenX) * camera.zoom, (screenY - dragPoint.y) * camera.zoom)
+        camera.update()
+        dragPoint.set(screenX, screenY)
+        return true
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
+        dragPoint.set(screenX, screenY)
+        dragStarted = true
+        return false
+    }
+
+    override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
+        dragStarted = false
         return false
     }
 }

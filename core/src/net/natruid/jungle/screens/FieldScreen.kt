@@ -13,12 +13,12 @@ import kotlin.random.Random
 
 class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
     TagManager(),
-    CameraMovementSystem(),
     TileSystem(),
     UnitManagementSystem(),
     IndicatorSystem(),
     PathfinderSystem(),
     PathFollowingSystem(),
+    CameraMovementSystem(),
     RenderSystem()
 ).build()) {
     init {
