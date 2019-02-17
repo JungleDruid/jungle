@@ -28,6 +28,8 @@ class Shader(vertex: String = DEFAULT_NAME, fragment: String = DEFAULT_NAME) {
             }
         }
 
+        val defaultShader = Shader()
+
         val defaultShaderProgram: ShaderProgram
             get() {
                 var program = shaderPrograms[defaultPair]
@@ -42,7 +44,7 @@ class Shader(vertex: String = DEFAULT_NAME, fragment: String = DEFAULT_NAME) {
     private var source: ExposedShaderProgram? = null
     private var instance: ExposedShaderProgram? = null
     private var resettingInstance = false
-    private val pair = Pair(vertex, fragment)
+    private var pair = Pair(vertex, fragment)
     val program: ShaderProgram
         get() {
             restore()
@@ -62,7 +64,7 @@ class Shader(vertex: String = DEFAULT_NAME, fragment: String = DEFAULT_NAME) {
         if (shaderProgram == null) {
             shaderProgram = createShaderProgram()
             source?.let {
-                shaderProgram.copy(it)
+                if (it.pair == pair) shaderProgram.copy(it)
             }
             shaderPrograms[pair] = shaderProgram
         }
@@ -71,6 +73,12 @@ class Shader(vertex: String = DEFAULT_NAME, fragment: String = DEFAULT_NAME) {
 
     private fun createShaderProgram(): ExposedShaderProgram {
         return ExposedShaderProgram(pair)
+    }
+
+    fun setProgram(vertex: String = DEFAULT_NAME, fragment: String = DEFAULT_NAME) {
+        removeInstance()
+        pair = Pair(vertex, fragment)
+        initSource()
     }
 
     fun getInstance(): ShaderProgram {
@@ -83,6 +91,7 @@ class Shader(vertex: String = DEFAULT_NAME, fragment: String = DEFAULT_NAME) {
     }
 
     fun removeInstance() {
+        instance?.disposeSafely()
         instance = null
         resettingInstance = false
     }

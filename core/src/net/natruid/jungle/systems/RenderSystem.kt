@@ -27,27 +27,18 @@ class RenderSystem : SortedIteratingSystem(Aspect.all(TransformComponent::class.
                 z0 > z1 -> 1
                 z0 < z1 -> -1
                 else -> {
-                    val t0 = mTexture[p0]
-                    val t1 = mTexture[p1]
+                    val t0 = mTexture[p0]?.region?.texture?.hashCode() ?: 0
+                    val t1 = mTexture[p1]?.region?.texture?.hashCode() ?: 0
                     when {
-                        t0?.region?.texture == null || t1?.region?.texture == null -> {
-                            if (t0?.region?.texture == null) 1 else -1
-                        }
+                        t0 > t1 -> 1
+                        t0 < t1 -> -1
                         else -> {
-                            val th0 = t0.region!!.texture.hashCode()
-                            val th1 = t1.region!!.texture.hashCode()
+                            val sh0 = mShader[p0]?.hashCode() ?: 0
+                            val sh1 = mShader[p1]?.hashCode() ?: 0
                             when {
-                                th0 > th1 -> 1
-                                th0 < th1 -> -1
-                                else -> {
-                                    val sh0 = mShader[p0]?.hashCode() ?: 0
-                                    val sh1 = mShader[p1]?.hashCode() ?: 0
-                                    when {
-                                        sh0 > sh1 -> 1
-                                        sh0 < sh1 -> -1
-                                        else -> 0
-                                    }
-                                }
+                                sh0 > sh1 -> 1
+                                sh0 < sh1 -> -1
+                                else -> 0
                             }
                         }
                     }

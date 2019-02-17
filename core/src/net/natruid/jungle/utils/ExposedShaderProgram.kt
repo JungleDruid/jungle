@@ -5,7 +5,7 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram
 import com.badlogic.gdx.utils.BufferUtils
 import ktx.graphics.use
 
-class ExposedShaderProgram(private val pair: Pair<String, String>) : ShaderProgram(
+class ExposedShaderProgram(val pair: Pair<String, String>) : ShaderProgram(
     Scout["assets/shaders/${pair.first}Vertex.glsl"],
     Scout["assets/shaders/${pair.second}Fragment.glsl"]
 ) {

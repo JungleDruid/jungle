@@ -5,13 +5,15 @@ import com.artemis.annotations.EntityId
 import net.natruid.jungle.utils.Point
 import net.natruid.jungle.utils.TerrainType
 
-class TileComponent(
-    var coord: Point = Point(),
-    var terrainType: TerrainType = TerrainType.NONE,
-    var hasRoad: Boolean = false,
-    @EntityId var unit: Int = -1,
-    @EntityId var obstacle: Int = -1
-) : Component() {
+class TileComponent : Component() {
+    var coord: Point = Point()
+    var terrainType: TerrainType = TerrainType.NONE
+    var hasRoad: Boolean = false
+    @EntityId
+    var unit: Int = -1
+    @EntityId
+    var obstacle: Int = -1
+
     override fun toString(): String {
         return coord.toString()
     }

@@ -64,24 +64,22 @@ class TileSystem : BaseSystem(), InputProcessor {
     private val gridColor = Color(0.5f, 0.7f, 0.3f, 0.8f)
     private val gridRenderCallback: ((TransformComponent) -> Unit) = { renderGrid() }
     private val mouseOnTileColor = Color(1f, 1f, 0f, 0.4f)
-    private val tileShaderComponent = ShaderComponent(
-        Shader(fragment = "tile").apply {
-            getInstance().use {
-                it.setUniformf("bound", 1f - 64f / 96f)
-            }
-        },
-        GL20.GL_SRC_ALPHA,
-        GL20.GL_ONE
-    )
-    private val waterTileShaderComponent = ShaderComponent(
-        Shader(fragment = "tile").apply {
-            getInstance().use {
-                it.setUniformf("bound", 1f - 64f / 96f)
-            }
-        },
-        GL20.GL_SRC_ALPHA,
-        GL20.GL_ONE
-    )
+    private val tileShaderComponent = ShaderComponent().apply {
+        shader = Shader(fragment = "tile")
+        shader.getInstance().use {
+            it.setUniformf("bound", 1f - 64f / 96f)
+        }
+        blendSrcFunc = GL20.GL_SRC_ALPHA
+        blendDstFunc = GL20.GL_ONE
+    }
+    private val waterTileShaderComponent = ShaderComponent().apply {
+        shader = Shader(fragment = "tile")
+        shader.getInstance().use {
+            it.setUniformf("bound", 1f - 64f / 96f)
+        }
+        blendSrcFunc = GL20.GL_SRC_ALPHA
+        blendDstFunc = GL20.GL_ONE
+    }
 
     operator fun get(coord: Point): Int {
         if (!isCoordValid(coord)) return -1
