@@ -80,6 +80,12 @@ class TileSystem : BaseSystem(), InputProcessor {
         blendSrcFunc = GL20.GL_SRC_ALPHA
         blendDstFunc = GL20.GL_ONE
     }
+    private val stoneInWaterShaderComponent = ShaderComponent().apply {
+        shader = Shader(fragment = "tile")
+        shader.getInstance().use {
+            it.setUniformf("bound", 0.45f)
+        }
+    }
 
     operator fun get(coord: Point): Int {
         if (!isCoordValid(coord)) return -1
@@ -306,9 +312,15 @@ class TileSystem : BaseSystem(), InputProcessor {
                     mTexture.create(obstacle).apply {
                         region = when (cObstacle.type) {
                             ObstacleType.TREE -> treeTexture
-                            ObstacleType.ROCK -> rockTexture
+                            ObstacleType.ROCK -> {
+                                if (cTile.terrainType == TerrainType.WATER) {
+                                    world.edit(obstacle).add(stoneInWaterShaderComponent)
+                                }
+                                rockTexture
+                            }
                             else -> treeTexture
                         }
+                        flipX = generator.random.nextBoolean()
                     }
                 }
             }

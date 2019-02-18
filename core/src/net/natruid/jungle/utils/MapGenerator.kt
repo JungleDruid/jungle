@@ -242,7 +242,6 @@ class MapGenerator(
             val tile = emptyTiles.remove(random.nextInt(emptyTiles.size()))
             val cTile = mTile[tile]
             if (cTile.obstacle >= 0) continue
-            if (cTile.terrainType == TerrainType.WATER) continue
             return tile
         }
         return -1
@@ -251,35 +250,29 @@ class MapGenerator(
     private fun createObstacles(amount: Int) {
         var count = 0
         while (count < amount) {
-            var canCreate = true
             val tile = getEmptyTile()
             if (tile < 0) break
             val cTile = mTile[tile]
             var obstacleType = ObstacleType.ROCK
             var destroyable = false
             when (cTile.terrainType) {
-                TerrainType.DIRT, TerrainType.NONE -> {
+                TerrainType.DIRT, TerrainType.NONE, TerrainType.WATER -> {
                     obstacleType = ObstacleType.ROCK
                 }
                 TerrainType.GRASS -> {
                     obstacleType = ObstacleType.TREE
                     destroyable = true
                 }
-                else -> {
-                    canCreate = false
-                }
             }
-            if (canCreate) {
-                val obstacle = world.create()
-                mObstacle.create(obstacle).apply {
-                    type = obstacleType
-                    this.destroyable = destroyable
-                    maxHp = 100f
-                    hp = maxHp
-                }
-                count += 1
-                cTile.obstacle = obstacle
+            val obstacle = world.create()
+            mObstacle.create(obstacle).apply {
+                type = obstacleType
+                this.destroyable = destroyable
+                maxHp = 100f
+                hp = maxHp
             }
+            count += 1
+            cTile.obstacle = obstacle
         }
     }
 
