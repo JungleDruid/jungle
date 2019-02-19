@@ -23,8 +23,15 @@ class CameraMovementSystem : BaseSystem(), InputProcessor {
     private var zoom
         get() = camera.zoom
         set(value) {
+            val oldZoom = camera.zoom
             camera.zoom = max(minZoom, min(maxZoom, value))
-            camera.update()
+            val diff = camera.zoom - oldZoom
+            if (diff != 0f) {
+                val x = (Gdx.input.x - Gdx.graphics.width / 2) * -diff
+                val y = (Gdx.input.y - Gdx.graphics.height / 2) * diff
+                camera.translate(x, y)
+                camera.update()
+            }
         }
 
     override fun processSystem() {
