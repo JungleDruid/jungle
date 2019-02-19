@@ -1,0 +1,76 @@
+{
+  "stats": {
+    "hp": {
+      "base": 20,
+      "level": 10,
+      "attributes": {
+        "endurance": {
+          "mul": 0.05
+        }
+      }
+    },
+    "speed": {
+      "base": 200,
+      "level": 0,
+      "attributes": {
+        "awareness": {
+          "add": 10
+        }
+      }
+    },
+    "damage": {
+      "base": 0,
+      "level": 0,
+      "attributes": {
+        "determination": {
+          "add": 5
+        }
+      }
+    },
+    "heal": {
+      "base": 0,
+      "level": 0,
+      "attributes": {
+        "determination": {
+          "add": 5
+        }
+      }
+    },
+    "accuracy": {
+      "base": 0,
+      "level": 10,
+      "attributes": {
+        "luck": {
+          "add": 1
+        }
+      }
+    },
+    "dodge": {
+      "base": 0,
+      "level": 10,
+      "attributes": {
+        "awareness": {
+          "add": 1
+        }
+      }
+    },
+    "area": {
+      "base": 0,
+      "level": 0,
+      "attributes": {
+        "intelligence": {
+          "add": 5
+        }
+      }
+    },
+    "duration": {
+      "base": 0,
+      "level": 0,
+      "attributes": {
+        "intelligence": {
+          "add": 5
+        }
+      }
+    }
+  }
+}

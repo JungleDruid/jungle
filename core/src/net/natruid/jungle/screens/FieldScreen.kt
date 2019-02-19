@@ -5,9 +5,9 @@ import com.artemis.WorldConfigurationBuilder
 import com.artemis.managers.TagManager
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
-import net.natruid.jungle.components.UnitComponent
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.systems.*
+import net.natruid.jungle.utils.Faction
 import net.natruid.jungle.utils.extensions.forEach
 import kotlin.random.Random
 
@@ -28,7 +28,7 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
     private fun init(seed: Long = Random.nextLong()) {
         world.getSystem(TileSystem::class.java).create(20, 20, seed)
         world.getSystem(UnitManagementSystem::class.java)
-            .addUnit(faction = UnitComponent.Faction.PLAYER, speed = 6f)
+            .addUnit(faction = Faction.PLAYER)
         world.getSystem(RenderSystem::class.java).sort()
     }
 

@@ -10,15 +10,16 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.utils.I18NBundle
 import com.badlogic.gdx.utils.Json
 import com.badlogic.gdx.utils.JsonReader
+import com.badlogic.gdx.utils.JsonValue
 import ktx.freetype.generateFont
-import net.natruid.jungle.utils.Logger
-import net.natruid.jungle.utils.Scout
+import net.natruid.jungle.utils.*
 import kotlin.collections.set
 
 object Marsh {
     private val fontDefs = ArrayList<FontDef>()
     private val fontGeneratorMap = HashMap<String, FreeTypeFontGenerator>()
     private var fonts = HashMap<String, BitmapFont>()
+    val statDefs = Array(StatType.size) { StatDef() }
 
     object Fonts {
         operator fun get(key: String): BitmapFont {
@@ -126,7 +127,15 @@ object Marsh {
                         fontDefs.add(def)
                     }
                 }
-                else -> Logger.warn { "Found unknown property ${j.name} in ${file.name()}" }
+                "stats" -> {
+                    for (statDefJson in j) {
+                        val def = json.readValue(StatDef::class.java, statDefJson)
+                        val stat = StatType.fromString(statDefJson.name.toUpperCase())
+                            ?: error("Unknown stat \"${statDefJson.name}\"")
+                        statDefs[stat.ordinal] = def
+                    }
+                }
+                else -> Logger.warn { "Found unknown property \"${j.name}\" in \"${file.name()}\"" }
             }
         }
     }
@@ -135,5 +144,47 @@ object Marsh {
         val name: String = ""
         val file: String = ""
         val size: Int = 0
+    }
+
+    class StatDef : Json.Serializable {
+        companion object {
+            private val modifierList = ArrayList<AttributeModifier>(1)
+        }
+
+        var base = 0
+        var level = 0
+        var attributes: Array<AttributeModifier>? = null
+
+        override fun write(json: Json) {
+            error("Not implemented")
+        }
+
+        override fun read(json: Json, jsonData: JsonValue) {
+            for (stat in jsonData) {
+                when (stat.name) {
+                    "base" -> base = stat.asInt()
+                    "level" -> level = stat.asInt()
+                    "attributes" -> {
+                        for (attr in stat) {
+                            val type = AttributeType.fromString(attr.name.toUpperCase())
+                                ?: error("Unknown attribute \"${attr.name}\"")
+                            var add = 0
+                            var mul = 0f
+                            for (mod in attr) {
+                                when (mod.name) {
+                                    "add" -> add = mod.asInt()
+                                    "mul" -> mul = mod.asFloat()
+                                }
+                            }
+                            modifierList.add(AttributeModifier(type, add, mul))
+                        }
+                    }
+                }
+            }
+            if (modifierList.size > 0) {
+                attributes = modifierList.toTypedArray()
+                modifierList.clear()
+            }
+        }
     }
 }

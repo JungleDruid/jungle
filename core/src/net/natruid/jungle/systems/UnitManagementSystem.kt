@@ -1,37 +1,24 @@
 package net.natruid.jungle.systems
 
-import com.artemis.Aspect
+import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
 import com.artemis.managers.TagManager
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.utils.Align
 import net.natruid.jungle.components.*
-import net.natruid.jungle.utils.Constants
-import net.natruid.jungle.utils.IndicatorType
-import net.natruid.jungle.utils.Point
+import net.natruid.jungle.core.Marsh
+import net.natruid.jungle.utils.*
 import java.util.*
 
-class UnitManagementSystem : SortedIteratingSystem(
-    Aspect.all(TransformComponent::class.java, UnitComponent::class.java)
-), InputProcessor {
-    override val comparator: Comparator<in Int>
-        get() = Comparator { p0, p1 ->
-            val f0 = mUnit[p0].faction.value
-            val f1 = mUnit[p1].faction.value
-            when {
-                f0 < f1 -> 1
-                f0 > f1 -> -1
-                else -> 0
-            }
-        }
-
+class UnitManagementSystem : BaseSystem(), InputProcessor {
     private lateinit var mUnit: ComponentMapper<UnitComponent>
     private lateinit var mTransform: ComponentMapper<TransformComponent>
-    private lateinit var mCircle: ComponentMapper<CircleComponent>
     private lateinit var mPathFollower: ComponentMapper<PathFollowerComponent>
     private lateinit var mTile: ComponentMapper<TileComponent>
     private lateinit var mLabel: ComponentMapper<LabelComponent>
+    private lateinit var mStats: ComponentMapper<StatsComponent>
+    private lateinit var mAttributes: ComponentMapper<AttributesComponent>
     private lateinit var sTile: TileSystem
     private lateinit var sPathfinder: PathfinderSystem
     private lateinit var sIndicator: IndicatorSystem
@@ -58,8 +45,7 @@ class UnitManagementSystem : SortedIteratingSystem(
 
     fun addUnit(
         coord: Point = Point(),
-        speed: Float = 0f,
-        faction: UnitComponent.Faction = UnitComponent.Faction.NONE
+        faction: Faction = Faction.NONE
     ): Int {
         val tile = sTile[coord]
         assert(tile >= 0)
@@ -70,33 +56,28 @@ class UnitManagementSystem : SortedIteratingSystem(
         }
         mUnit.create(entityId).apply {
             this.coord = coord
-            this.speed = speed
             this.faction = faction
         }
-//        mCircle.create(entityId).apply {
-//            radius = TileSystem.tileSize / 2f - 10f
-//            color = when (faction) {
-//                UnitComponent.Faction.NONE -> Color.GRAY
-//                UnitComponent.Faction.PLAYER -> Color.CYAN
-//                UnitComponent.Faction.ENEMY -> Color.RED
-//            }
-//            type = ShapeRenderer.ShapeType.Filled
-//        }
+        mAttributes.create(entityId).apply {
+            base.fill(12)
+        }
+        mStats.create(entityId)
         mLabel.create(entityId).apply {
             fontName = "huge"
             color = when (faction) {
-                UnitComponent.Faction.NONE -> Color.GRAY
-                UnitComponent.Faction.PLAYER -> Color.GREEN
-                UnitComponent.Faction.ENEMY -> Color.RED
+                Faction.NONE -> Color.GRAY
+                Faction.PLAYER -> Color.GREEN
+                Faction.ENEMY -> Color.RED
             }
             text = when (faction) {
-                UnitComponent.Faction.NONE -> "？"
-                UnitComponent.Faction.PLAYER -> "Ｎ"
-                UnitComponent.Faction.ENEMY -> "Ｄ"
+                Faction.NONE -> "？"
+                Faction.PLAYER -> "Ｎ"
+                Faction.ENEMY -> "Ｄ"
             }
             align = Align.center
         }
         mTile[tile].unit = entityId
+        calculateStats(entityId)
         return entityId
     }
 
@@ -123,6 +104,49 @@ class UnitManagementSystem : SortedIteratingSystem(
         moveUnit(unit, goal, path)
     }
 
+    private val statMultipliers = Array(StatType.size) { 1f }
+    fun calculateStats(entityId: Int) {
+        if (entityId < 0) return
+        val cStats = mStats[entityId] ?: return
+        if (!cStats.dirty) return
+        val cUnit = mUnit[entityId] ?: return
+        val cAttr = mAttributes[entityId] ?: return
+
+        statMultipliers.fill(1f)
+
+        val stats = cStats.values
+        val attributes = cAttr.modified
+        val statDefs = Marsh.statDefs
+
+        // calculate modified attributes
+        if (cAttr.dirty) {
+            val base = cAttr.base
+            for (i in 0 until base.size) {
+                attributes[i] = base[i]
+            }
+            cAttr.dirty = false
+        }
+
+        // calculate base stats
+        for (i in 0 until stats.size) {
+            val def = statDefs[i]
+            var value = def.base + def.level * cUnit.level
+            def.attributes?.forEach {
+                val attr = attributes[it.type.ordinal] - 10
+                if (it.add != 0) value += attr * it.add
+                if (it.mul != 0f) statMultipliers[i] += attr * it.mul
+            }
+            stats[i] = value
+        }
+
+        // multiply stats with multipliers
+        for (i in 0 until stats.size) {
+            stats[i] = (stats[i] * statMultipliers[i]).toInt()
+        }
+
+        cStats.dirty = false
+    }
+
     private fun showMoveArea(unit: Int) {
         if (unit < 0) return
 
@@ -131,7 +155,9 @@ class UnitManagementSystem : SortedIteratingSystem(
         if (tile >= 0) {
             hideMoveArea(unit)
             if (!sIndicator.hasResult(unit, IndicatorType.MOVE_AREA)) {
-                sIndicator.addResult(unit, IndicatorType.MOVE_AREA, sPathfinder.area(tile, cUnit.speed))
+                calculateStats(unit)
+                val movement = mStats[unit].speed / 100f * 4
+                sIndicator.addResult(unit, IndicatorType.MOVE_AREA, sPathfinder.area(tile, movement))
             }
             sIndicator.show(unit, IndicatorType.MOVE_AREA)
         }
@@ -147,13 +173,13 @@ class UnitManagementSystem : SortedIteratingSystem(
         var unit = getUnit(mouseCoord)
         if (unit >= 0) {
             when (mUnit[unit].faction) {
-                UnitComponent.Faction.NONE -> {
+                Faction.NONE -> {
                 }
-                UnitComponent.Faction.PLAYER -> {
+                Faction.PLAYER -> {
                     showMoveArea(unit)
                     selectedUnit = unit
                 }
-                UnitComponent.Faction.ENEMY -> {
+                Faction.ENEMY -> {
                 }
             }
             return true
@@ -213,5 +239,5 @@ class UnitManagementSystem : SortedIteratingSystem(
         return false
     }
 
-    override fun process(entityId: Int) {}
+    override fun processSystem() {}
 }

@@ -21,3 +21,29 @@ enum class ShaderUniformType(val value: Int) {
     UNIFORM1FV(5), UNIFORM2FV(6), UNIFORM3FV(7), UNIFORM4FV(8),
     UNIFORM1I(9), UNIFORM2I(10), UNIFORM3I(11), UNIFORM4I(12)
 }
+
+enum class AttributeType {
+    INTELLIGENCE, DETERMINATION, ENDURANCE, AWARENESS, LUCK;
+
+    companion object {
+        private val intMap = AttributeType.values().associateBy(AttributeType::ordinal)
+        private val stringMap = AttributeType.values().associateBy(AttributeType::name)
+        fun fromInt(type: Int) = intMap[type]
+        fun fromString(name: String) = stringMap[name]
+        val size get() = intMap.size
+    }
+}
+
+enum class StatType {
+    HP, SPEED, DAMAGE, HEAL, ACCURACY, DODGE, AREA, DURATION, RANGE, AP, STUN;
+
+    companion object {
+        private val intMap = StatType.values().associateBy(StatType::ordinal)
+        private val stringMap = StatType.values().associateBy(StatType::name)
+        fun fromInt(type: Int) = intMap[type]
+        fun fromString(name: String) = stringMap[name]
+        val size get() = intMap.size
+    }
+}
+
+enum class Faction(val value: Int) { NONE(0), PLAYER(1.shl(0)), ENEMY(1.shl(1)) }
