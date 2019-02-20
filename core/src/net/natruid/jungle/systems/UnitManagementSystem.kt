@@ -9,6 +9,7 @@ import com.badlogic.gdx.utils.Align
 import net.natruid.jungle.components.*
 import net.natruid.jungle.core.Marsh
 import net.natruid.jungle.utils.*
+import net.natruid.jungle.views.SkillBarView
 import java.util.*
 import kotlin.math.ceil
 
@@ -38,6 +39,7 @@ class UnitManagementSystem : SortedIteratingSystem(
     private lateinit var sPathfinder: PathfinderSystem
     private lateinit var sIndicator: IndicatorSystem
     private lateinit var sCombatTurn: CombatTurnSystem
+    private lateinit var sViewManage: ViewManageSystem
     private lateinit var sTag: TagManager
 
     private var unitsHasTurn: Int = 0
@@ -187,8 +189,12 @@ class UnitManagementSystem : SortedIteratingSystem(
         if (cUnit.ap < ap) return false
         function()
         cUnit.ap -= ap
-        if (cUnit.ap == 0) endTurn(unit)
-        return true
+        sViewManage.get<SkillBarView>()?.setAp(cUnit.ap)
+        if (cUnit.ap == 0) {
+            endTurn(unit)
+            return true
+        }
+        return false
     }
 
     fun endTurn(unit: Int) {
@@ -230,6 +236,7 @@ class UnitManagementSystem : SortedIteratingSystem(
                 Faction.PLAYER -> {
                     showMoveArea(unit)
                     selectedUnit = unit
+                    sViewManage.get<SkillBarView>()?.setAp(mUnit[unit].ap)
                 }
                 Faction.ENEMY -> {
                 }
@@ -240,27 +247,38 @@ class UnitManagementSystem : SortedIteratingSystem(
             val path = sIndicator.getPathTo(mouseCoord, unit)
             hideMoveArea(unit)
             if (path != null) {
-                val cUnit = mUnit[unit]
-                var cost = path.last.cost
-                var apCost = 0
-                if (cost > cUnit.extraMovement) {
-                    cost -= cUnit.extraMovement
-                    val movementPerAp = mStats[unit].speed
-                    apCost = ceil(cost / movementPerAp).toInt()
-                    cUnit.extraMovement = movementPerAp * apCost - cost
-                } else {
-                    cUnit.extraMovement -= cost
-                }
                 sIndicator.remove(unit, IndicatorType.MOVE_AREA)
-                useAp(unit, apCost) {
-                    moveUnit(unit, mouseCoord, path)
+                if (useAp(unit, getMovementCost(unit, path.last.cost)) {
+                        moveUnit(unit, mouseCoord, path)
+                    }) {
+                    sViewManage.get<SkillBarView>()?.hideAp()
+                    selectedUnit = -1
+                } else {
+                    showMoveArea(unit)
                 }
+            } else {
+                selectedUnit = -1
+                sViewManage.get<SkillBarView>()?.hideAp()
             }
-            selectedUnit = -1
             return true
         }
 
         return false
+    }
+
+    private fun getMovementCost(unit: Int, cost: Float, preview: Boolean = false): Int {
+        val cUnit = mUnit[unit]
+        var apCost = 0
+        if (cost > cUnit.extraMovement) {
+            val newCost = cost - cUnit.extraMovement
+            val movementPerAp = mStats[unit].speed
+            apCost = ceil(newCost / movementPerAp).toInt()
+            if (!preview) cUnit.extraMovement = movementPerAp * apCost - newCost
+        } else if (!preview) {
+            cUnit.extraMovement -= cost
+        }
+
+        return apCost
     }
 
     override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
@@ -273,8 +291,15 @@ class UnitManagementSystem : SortedIteratingSystem(
         if (lastCoord != mouseCoord) {
             if (selectedUnit >= 0) {
                 sIndicator.hide(selectedUnit, IndicatorType.MOVE_PATH)
-                if (mouseCoord != null)
-                    sIndicator.showPathTo(mouseCoord, selectedUnit)
+                if (mouseCoord != null) {
+                    val cost = sIndicator.showPathTo(mouseCoord, selectedUnit)
+                    if (cost >= 0) {
+                        sViewManage.get<SkillBarView>()?.setAp(
+                            mUnit[selectedUnit].ap,
+                            getMovementCost(selectedUnit, cost, true)
+                        )
+                    }
+                }
             }
             lastCoord = mouseCoord
         }

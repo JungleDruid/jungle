@@ -8,9 +8,9 @@ import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.github.czyzby.lml.parser.LmlParser
-import com.github.czyzby.lml.parser.impl.AbstractLmlView
 import com.github.czyzby.lml.vis.util.VisLml
 import com.kotcrab.vis.ui.VisUI
+import ktx.assets.disposeSafely
 import net.natruid.jungle.screens.AbstractScreen
 import net.natruid.jungle.screens.FieldScreen
 import net.natruid.jungle.screens.TestScreen
@@ -19,6 +19,7 @@ import net.natruid.jungle.views.AbstractView
 import net.natruid.jungle.views.DebugView
 import net.natruid.jungle.views.TestView
 import java.lang.management.ManagementFactory
+import java.util.*
 
 class Jungle(private val client: Client, debug: Boolean = false) : ApplicationListener, InputProcessor {
     val renderer by lazy { RendererHelper() }
@@ -31,8 +32,7 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
         private set
 
     private var currentScreen: AbstractScreen? = null
-    private var currentView: AbstractLmlView? = null
-    private val inputProcessors = ArrayList<InputProcessor>()
+    private val viewList = ArrayList<AbstractView>()
     private var debugView: DebugView? = null
     private var targetFPS = 60
     private var backgroundFPS = 10
@@ -82,7 +82,9 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
         val delta = Gdx.graphics.deltaTime
         time += delta
         currentScreen?.render(delta)
-        currentView?.render(delta)
+        viewList.forEach {
+            it.render(delta)
+        }
         debugView?.render(delta)
         renderer.end()
 
@@ -98,7 +100,10 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
 
     override fun dispose() {
         currentScreen?.dispose()
-        currentView?.dispose()
+        viewList.forEach {
+            it.dispose()
+        }
+        viewList.clear()
         debugView?.dispose()
         renderer.dispose()
         VisUI.dispose()
@@ -114,39 +119,57 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
 
     private fun setScreen(screen: AbstractScreen) {
         resetCamera()
-        currentScreen?.apply {
-            inputProcessors.remove(this)
-            dispose()
-        }
+        currentScreen?.disposeSafely()
 
         currentScreen = screen
         val s = currentScreen ?: return
-        inputProcessors.add(s)
         s.show()
     }
 
-    private fun setView(view: AbstractView?) {
-        currentView?.apply {
-            inputProcessors.remove(stage)
-            dispose()
+    fun showView(view: AbstractView) {
+        if (!viewList.contains(view)) {
+            viewList.add(view)
+            view.show()
         }
+    }
 
-        currentView = view
-        view?.apply {
-            inputProcessors.add(0, stage)
+    fun hideView(view: AbstractView) {
+        if (viewList.remove(view)) {
+            view.hide()
         }
+    }
+
+    fun hideLastView(): AbstractView? {
+        if (viewList.size == 0) return null
+        return viewList.removeAt(viewList.size - 1).apply { hide() }
+    }
+
+    fun destroyView(view: AbstractView) {
+        hideView(view)
+        view.disposeSafely()
+    }
+
+    fun destroyAllViews() {
+        viewList.forEach {
+            it.disposeSafely()
+        }
+        viewList.clear()
     }
 
     override fun pause() {
         mouseMoved = false
         currentScreen?.pause()
-        currentView?.pause()
+        viewList.forEach {
+            it.pause()
+        }
         debugView?.pause()
     }
 
     override fun resume() {
         currentScreen?.resume()
-        currentView?.resume()
+        viewList.forEach {
+            it.pause()
+        }
         debugView?.resume()
     }
 
@@ -160,56 +183,60 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
     }
 
     override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-        for (processor in inputProcessors) {
-            if (processor.touchUp(screenX, screenY, pointer, button))
+        for (view in viewList) {
+            if (view.touchUp(screenX, screenY, pointer, button))
                 return true
         }
 
-        return false
+        return currentScreen?.touchUp(screenX, screenY, pointer, button) ?: false
     }
 
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
         mouseMoved = true
-        for (processor in inputProcessors) {
-            if (processor.mouseMoved(screenX, screenY))
+        for (view in viewList) {
+            if (view.mouseMoved(screenX, screenY))
                 return true
         }
 
-        return false
+        return currentScreen?.mouseMoved(screenX, screenY) ?: false
     }
 
     override fun keyTyped(character: Char): Boolean {
-        for (processor in inputProcessors) {
-            if (processor.keyTyped(character))
+        for (view in viewList) {
+            if (view.keyTyped(character))
                 return true
         }
 
-        return false
+        return currentScreen?.keyTyped(character) ?: false
     }
 
     override fun scrolled(amount: Int): Boolean {
-        for (processor in inputProcessors) {
-            if (processor.scrolled(amount))
+        for (view in viewList) {
+            if (view.scrolled(amount))
                 return true
         }
 
-        return false
+        return currentScreen?.scrolled(amount) ?: false
     }
 
     override fun keyUp(keycode: Int): Boolean {
-        for (processor in inputProcessors) {
-            if (processor.keyUp(keycode))
+        for (view in viewList) {
+            if (view.keyUp(keycode))
                 return true
+        }
+
+        if (currentScreen?.keyUp(keycode) == true) {
+            return true
         }
 
         if (debug) {
             if (keycode == Input.Keys.F11) {
                 if (currentScreen is TestScreen) {
+                    destroyAllViews()
                     setScreen(FieldScreen())
-                    setView(null)
                 } else {
                     setScreen(TestScreen())
-                    setView(AbstractView.createView<TestView>())
+                    showView(AbstractView.createView<TestView>())
                 }
 
                 return true
@@ -231,12 +258,12 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
     }
 
     override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
-        for (processor in inputProcessors) {
-            if (processor.touchDragged(screenX, screenY, pointer))
+        for (view in viewList) {
+            if (view.touchDragged(screenX, screenY, pointer))
                 return true
         }
 
-        return false
+        return currentScreen?.touchDragged(screenX, screenY, pointer) ?: false
     }
 
     override fun keyDown(keycode: Int): Boolean {
@@ -244,26 +271,28 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
             unfocusAll()
         }
 
-        for (processor in inputProcessors) {
-            if (processor.keyDown(keycode))
+        for (view in viewList) {
+            if (view.keyDown(keycode))
                 return true
         }
 
-        return false
+        return currentScreen?.keyDown(keycode) ?: false
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
         unfocusAll()
-        for (processor in inputProcessors) {
-            if (processor.touchDown(screenX, screenY, pointer, button))
+        for (view in viewList) {
+            if (view.touchDown(screenX, screenY, pointer, button))
                 return true
         }
 
-        return false
+        return currentScreen?.touchDown(screenX, screenY, pointer, button) ?: false
     }
 
     private fun unfocusAll() {
-        currentView?.stage?.unfocusAll()
+        viewList.forEach {
+            it.stage?.unfocusAll()
+        }
     }
 
     fun focusChanged() {

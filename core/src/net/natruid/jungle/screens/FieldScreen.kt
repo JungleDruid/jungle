@@ -5,10 +5,12 @@ import com.artemis.WorldConfigurationBuilder
 import com.artemis.managers.TagManager
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
+import net.natruid.jungle.components.ViewManageSystem
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.systems.*
 import net.natruid.jungle.utils.Faction
 import net.natruid.jungle.utils.extensions.forEach
+import net.natruid.jungle.views.SkillBarView
 import kotlin.random.Random
 
 class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
@@ -20,6 +22,7 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
     PathfinderSystem(),
     PathFollowingSystem(),
     CameraMovementSystem(),
+    ViewManageSystem(),
     RenderSystem()
 ).build()) {
     init {
@@ -31,6 +34,7 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
         world.getSystem(UnitManagementSystem::class.java)
             .addUnit(faction = Faction.PLAYER)
         world.getSystem(RenderSystem::class.java).sort()
+        world.getSystem(ViewManageSystem::class.java).show<SkillBarView>()
         world.getSystem(CombatTurnSystem::class.java).start()
     }
 
@@ -46,6 +50,7 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
         if (keycode == Input.Keys.R) {
             world.getSystem(UnitManagementSystem::class.java).reset()
             world.getSystem(CombatTurnSystem::class.java).reset()
+            world.getSystem(ViewManageSystem::class.java).hideAll()
             world.aspectSubscriptionManager.get(Aspect.all()).entities.forEach {
                 world.delete(it)
             }

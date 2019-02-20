@@ -1,10 +1,8 @@
 package net.natruid.jungle.views
 
-import com.badlogic.gdx.files.FileHandle
 import com.github.czyzby.lml.annotation.LmlActor
 import com.kotcrab.vis.ui.widget.VisLabel
 import net.natruid.jungle.core.Jungle
-import net.natruid.jungle.utils.Scout
 
 class DebugView : AbstractView() {
     companion object {
@@ -20,10 +18,6 @@ class DebugView : AbstractView() {
     lateinit var ramLabel: VisLabel
     @LmlActor("renderCallsLabel")
     lateinit var rcLabel: VisLabel
-
-    override fun getTemplateFile(): FileHandle {
-        return Scout["assets/templates/debug.lml"]
-    }
 
     override fun getViewId(): String {
         return "debug"
