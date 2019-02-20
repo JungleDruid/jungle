@@ -8,6 +8,8 @@ abstract class SortedIteratingSystem(aspect: Aspect.Builder)
     private val entities = ArrayList<Int>()
     private var needSorting = false
 
+    val sortedEntityIds get() = entities as List<Int>
+
     abstract val comparator: Comparator<in Int>
 
     override fun inserted(entityId: Int) {

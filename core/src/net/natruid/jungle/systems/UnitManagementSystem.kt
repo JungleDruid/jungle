@@ -1,6 +1,6 @@
 package net.natruid.jungle.systems
 
-import com.artemis.BaseSystem
+import com.artemis.Aspect
 import com.artemis.ComponentMapper
 import com.artemis.managers.TagManager
 import com.badlogic.gdx.InputProcessor
@@ -10,8 +10,23 @@ import net.natruid.jungle.components.*
 import net.natruid.jungle.core.Marsh
 import net.natruid.jungle.utils.*
 import java.util.*
+import kotlin.math.ceil
 
-class UnitManagementSystem : BaseSystem(), InputProcessor {
+class UnitManagementSystem : SortedIteratingSystem(
+    Aspect.all(TransformComponent::class.java, UnitComponent::class.java)
+), InputProcessor {
+    override val comparator by lazy {
+        Comparator<Int> { p0, p1 ->
+            val f0 = mUnit[p0].faction.value
+            val f1 = mUnit[p1].faction.value
+            when {
+                f0 < f1 -> 1
+                f0 > f1 -> -1
+                else -> 0
+            }
+        }
+    }
+
     private lateinit var mUnit: ComponentMapper<UnitComponent>
     private lateinit var mTransform: ComponentMapper<TransformComponent>
     private lateinit var mPathFollower: ComponentMapper<PathFollowerComponent>
@@ -22,7 +37,10 @@ class UnitManagementSystem : BaseSystem(), InputProcessor {
     private lateinit var sTile: TileSystem
     private lateinit var sPathfinder: PathfinderSystem
     private lateinit var sIndicator: IndicatorSystem
+    private lateinit var sCombatTurn: CombatTurnSystem
     private lateinit var sTag: TagManager
+
+    private var unitsHasTurn: Int = 0
     private var selectedUnit
         get() = sTag.getEntityId("SELECTED_UNIT")
         set(value) {
@@ -30,13 +48,9 @@ class UnitManagementSystem : BaseSystem(), InputProcessor {
             else sTag.unregister("SELECTED_UNIT")
         }
 
-    fun clean() {
+    fun reset() {
         selectedUnit = -1
-    }
-
-    override fun dispose() {
-        clean()
-        super.dispose()
+        unitsHasTurn = 0
     }
 
     fun getUnit(coord: Point): Int {
@@ -78,10 +92,11 @@ class UnitManagementSystem : BaseSystem(), InputProcessor {
         }
         mTile[tile].unit = entityId
         calculateStats(entityId)
+        sCombatTurn.addFaction(faction)
         return entityId
     }
 
-    fun moveUnit(unit: Int, goal: Point, path: Deque<Int>) {
+    fun moveUnit(unit: Int, goal: Point, path: Deque<PathNode>) {
         if (!sTile.isCoordValid(goal)) return
         if (unit < 0) return
         mPathFollower.create(unit).apply {
@@ -94,8 +109,8 @@ class UnitManagementSystem : BaseSystem(), InputProcessor {
         val dest = path.peekLast()
         val cUnit = mUnit[unit]
         mTile[sTile[cUnit.coord]]!!.unit = -1
-        cUnit.coord = mTile[dest].coord
-        mTile[dest]!!.unit = unit
+        cUnit.coord = mTile[dest.tile].coord
+        mTile[dest.tile]!!.unit = unit
     }
 
     fun freeMoveUnit(unit: Int, goal: Point) {
@@ -147,6 +162,43 @@ class UnitManagementSystem : BaseSystem(), InputProcessor {
         cStats.dirty = false
     }
 
+    fun giveTurn(faction: Faction): Boolean {
+        val targetOrdinal = faction.ordinal
+        var hasUnit = false
+        for (unit in sortedEntityIds) {
+            val cUnit = mUnit[unit]
+            val ordinal = cUnit.faction.ordinal
+            if (ordinal > targetOrdinal) break
+            if (ordinal < targetOrdinal) continue
+
+            cUnit.ap = (cUnit.ap + 4 + mStats[unit].ap).coerceAtMost(Constants.MAX_AP)
+            cUnit.hasTurn = true
+
+            unitsHasTurn += 1
+            hasUnit = true
+        }
+
+        return hasUnit
+    }
+
+    private inline fun useAp(unit: Int, ap: Int, function: () -> Unit): Boolean {
+        if (unit < 0) return false
+        val cUnit = mUnit[unit]
+        if (cUnit.ap < ap) return false
+        function()
+        cUnit.ap -= ap
+        if (cUnit.ap == 0) endTurn(unit)
+        return true
+    }
+
+    fun endTurn(unit: Int) {
+        mUnit[unit].hasTurn = false
+        unitsHasTurn -= 1
+        if (unitsHasTurn == 0) {
+            sCombatTurn.nextTurn()
+        }
+    }
+
     private fun showMoveArea(unit: Int) {
         if (unit < 0) return
 
@@ -156,7 +208,7 @@ class UnitManagementSystem : BaseSystem(), InputProcessor {
             hideMoveArea(unit)
             if (!sIndicator.hasResult(unit, IndicatorType.MOVE_AREA)) {
                 calculateStats(unit)
-                val movement = mStats[unit].speed / 100f * 4
+                val movement = mStats[unit].speed * cUnit.ap + cUnit.extraMovement
                 sIndicator.addResult(unit, IndicatorType.MOVE_AREA, sPathfinder.area(tile, movement))
             }
             sIndicator.show(unit, IndicatorType.MOVE_AREA)
@@ -188,11 +240,21 @@ class UnitManagementSystem : BaseSystem(), InputProcessor {
             val path = sIndicator.getPathTo(mouseCoord, unit)
             hideMoveArea(unit)
             if (path != null) {
-                moveUnit(unit, mouseCoord, path)
+                val cUnit = mUnit[unit]
+                var cost = path.last.cost
+                var apCost = 0
+                if (cost > cUnit.extraMovement) {
+                    cost -= cUnit.extraMovement
+                    val movementPerAp = mStats[unit].speed
+                    apCost = ceil(cost / movementPerAp).toInt()
+                    cUnit.extraMovement = movementPerAp * apCost - cost
+                } else {
+                    cUnit.extraMovement -= cost
+                }
                 sIndicator.remove(unit, IndicatorType.MOVE_AREA)
-            } else {
-                sIndicator.remove(unit, IndicatorType.MOVE_AREA)
-                freeMoveUnit(unit, mouseCoord)
+                useAp(unit, apCost) {
+                    moveUnit(unit, mouseCoord, path)
+                }
             }
             selectedUnit = -1
             return true
@@ -239,5 +301,5 @@ class UnitManagementSystem : BaseSystem(), InputProcessor {
         return false
     }
 
-    override fun processSystem() {}
+    override fun process(entityId: Int) {}
 }

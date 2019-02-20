@@ -5,7 +5,7 @@ import net.natruid.jungle.utils.StatType
 
 class StatsComponent : Component() {
     inline val hp get() = values[StatType.HP.ordinal]
-    inline val speed get() = values[StatType.SPEED.ordinal]
+    inline val speed get() = values[StatType.SPEED.ordinal] / 100f
     inline val damage get() = values[StatType.DAMAGE.ordinal]
     inline val heal get() = values[StatType.HEAL.ordinal]
     inline val accuracy get() = values[StatType.ACCURACY.ordinal]

@@ -15,6 +15,7 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
     TagManager(),
     TileSystem(),
     UnitManagementSystem(),
+    CombatTurnSystem(),
     IndicatorSystem(),
     PathfinderSystem(),
     PathFollowingSystem(),
@@ -30,6 +31,7 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
         world.getSystem(UnitManagementSystem::class.java)
             .addUnit(faction = Faction.PLAYER)
         world.getSystem(RenderSystem::class.java).sort()
+        world.getSystem(CombatTurnSystem::class.java).start()
     }
 
     override fun show() {
@@ -42,7 +44,8 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
     override fun keyUp(keycode: Int): Boolean {
         super.keyUp(keycode)
         if (keycode == Input.Keys.R) {
-            world.getSystem(UnitManagementSystem::class.java).clean()
+            world.getSystem(UnitManagementSystem::class.java).reset()
+            world.getSystem(CombatTurnSystem::class.java).reset()
             world.aspectSubscriptionManager.get(Aspect.all()).entities.forEach {
                 world.delete(it)
             }

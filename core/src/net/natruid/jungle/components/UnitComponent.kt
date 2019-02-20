@@ -9,4 +9,7 @@ class UnitComponent : Component() {
     var faction: Faction = Faction.NONE
     var level: Int = 0
     var exp: Int = 0
+    var ap: Int = 0
+    var extraMovement: Float = 0f
+    var hasTurn: Boolean = false
 }

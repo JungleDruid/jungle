@@ -9,4 +9,5 @@ object Constants {
     const val UP = 1.shl(1)
     const val LEFT = 1.shl(2)
     const val DOWN = 1.shl(3)
+    const val MAX_AP = 6
 }

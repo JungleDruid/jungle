@@ -144,7 +144,7 @@ class PathfinderSystem : BaseSystem() {
         from: Int,
         goal: Int,
         diagonal: Boolean = true
-    ): Deque<Int>? {
+    ): Deque<PathNode>? {
         init(from)
         while (!frontier.isEmpty) {
             val current = frontier.pop()
@@ -156,14 +156,14 @@ class PathfinderSystem : BaseSystem() {
         return null
     }
 
-    fun extractPath(pathNodes: Iterable<PathNode>, goal: Point): Deque<Int>? {
+    fun extractPath(pathNodes: Iterable<PathNode>, goal: Point): Deque<PathNode>? {
         for (node in pathNodes) {
             if (goal == mTile[node.tile].coord) {
-                val path = LinkedList<Int>()
-                var prevNode: PathNode? = node
-                while (prevNode != null) {
-                    path.addFirst(prevNode.tile)
-                    prevNode = prevNode.prev
+                val path = LinkedList<PathNode>()
+                var current: PathNode? = node
+                while (current != null) {
+                    path.addFirst(current)
+                    current = current.prev
                 }
                 return path
             }

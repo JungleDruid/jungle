@@ -24,7 +24,7 @@ class PathFollowingSystem : IteratingSystem(Aspect.all(
         val transform = mTransform[entityId]
         val pathFollower = mPathFollower[entityId]
         val path = pathFollower.path ?: return
-        val destination = mTransform[path.peek()].position
+        val destination = mTransform[path.peek().tile].position
         val v = destination - transform.position
         val len2 = v.len2()
         if (len2 != 0f && len2 != 1f) {

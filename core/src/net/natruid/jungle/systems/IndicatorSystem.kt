@@ -116,17 +116,17 @@ class IndicatorSystem : BaseEntitySystem(Aspect.all(
         }
     }
 
-    fun getPathTo(coord: Point, entityId: Int): Deque<Int>? {
+    fun getPathTo(coord: Point, entityId: Int): Deque<PathNode>? {
         val result = resultMap[entityId]?.get(IndicatorType.MOVE_AREA) ?: return null
         return sPathfinder.extractPath(result.asIterable(), coord)
     }
 
     fun showPathTo(coord: Point, entityId: Int): Boolean {
         val path = getPathTo(coord, entityId) ?: return false
-        for (tile in path) {
+        for (node in path) {
             world.create().let { indicator ->
                 mTransform.create(indicator).apply {
-                    position = mTransform[tile].position
+                    position = mTransform[node.tile].position
                     z = Constants.Z_PATH_INDICATOR
                 }
                 mRect.create(indicator).apply {
