@@ -42,7 +42,7 @@ class UnitManagementSystem : SortedIteratingSystem(
     private lateinit var sViewManage: ViewManageSystem
     private lateinit var sTag: TagManager
 
-    private var unitsHasTurn: Int = 0
+    private var unitsHasTurn = -1
     private var selectedUnit
         get() = sTag.getEntityId("SELECTED_UNIT")
         set(value) {
@@ -52,7 +52,7 @@ class UnitManagementSystem : SortedIteratingSystem(
 
     fun reset() {
         selectedUnit = -1
-        unitsHasTurn = 0
+        unitsHasTurn = -1
     }
 
     fun getUnit(coord: Point): Int {
@@ -71,7 +71,7 @@ class UnitManagementSystem : SortedIteratingSystem(
             z = Constants.Z_UNIT
         }
         mUnit.create(entityId).apply {
-            this.coord = coord
+            this.tile = tile
             this.faction = faction
         }
         mAttributes.create(entityId).apply {
@@ -98,8 +98,15 @@ class UnitManagementSystem : SortedIteratingSystem(
         return entityId
     }
 
-    fun moveUnit(unit: Int, goal: Point, path: Deque<PathNode>) {
-        if (!sTile.isCoordValid(goal)) return
+    fun moveUnit(unit: Int, tile: Int): Boolean {
+        val cUnit = mUnit[unit]
+        val area = sPathfinder.area(cUnit.tile, getMovement(unit))
+        val path = sPathfinder.extractPath(area.asIterable(), tile) ?: return false
+        moveUnit(unit, path)
+        return true
+    }
+
+    fun moveUnit(unit: Int, path: Deque<PathNode>, free: Boolean = false) {
         if (unit < 0) return
         mPathFollower.create(unit).apply {
             if (this.path == null) {
@@ -110,15 +117,17 @@ class UnitManagementSystem : SortedIteratingSystem(
         }
         val dest = path.peekLast()
         val cUnit = mUnit[unit]
-        mTile[sTile[cUnit.coord]]!!.unit = -1
-        cUnit.coord = mTile[dest.tile].coord
-        mTile[dest.tile]!!.unit = unit
+        useAp(unit, if (free) 0 else getMovementCost(unit, dest.cost)) {
+            mTile[cUnit.tile]!!.unit = -1
+            cUnit.tile = dest.tile
+            mTile[dest.tile]!!.unit = unit
+        }
     }
 
     fun freeMoveUnit(unit: Int, goal: Point) {
         val cUnit = mUnit[unit] ?: return
-        val path = sPathfinder.path(sTile[cUnit.coord], sTile[goal]) ?: return
-        moveUnit(unit, goal, path)
+        val path = sPathfinder.path(cUnit.tile, sTile[goal]) ?: return
+        moveUnit(unit, path, true)
     }
 
     private val statMultipliers = Array(StatType.size) { 1f }
@@ -167,6 +176,7 @@ class UnitManagementSystem : SortedIteratingSystem(
     fun giveTurn(faction: Faction): Boolean {
         val targetOrdinal = faction.ordinal
         var hasUnit = false
+        unitsHasTurn = 0
         for (unit in sortedEntityIds) {
             val cUnit = mUnit[unit]
             val ordinal = cUnit.faction.ordinal
@@ -183,11 +193,13 @@ class UnitManagementSystem : SortedIteratingSystem(
         return hasUnit
     }
 
-    private inline fun useAp(unit: Int, ap: Int, function: () -> Unit): Boolean {
-        if (unit < 0) return false
+    fun hasAp(unit: Int, ap: Int): Boolean {
+        if (mUnit[unit].ap < ap) return false
+        return true
+    }
+
+    fun removeAp(unit: Int, ap: Int): Boolean {
         val cUnit = mUnit[unit]
-        if (cUnit.ap < ap) return false
-        function()
         cUnit.ap -= ap
         sViewManage.get<SkillBarView>()?.setAp(cUnit.ap)
         if (cUnit.ap == 0) {
@@ -197,25 +209,33 @@ class UnitManagementSystem : SortedIteratingSystem(
         return false
     }
 
+    inline fun useAp(unit: Int, ap: Int, function: () -> Unit): Boolean {
+        if (ap > 0 && !hasAp(unit, ap)) return false
+        function()
+        if (ap <= 0) return false
+        return removeAp(unit, ap)
+    }
+
     fun endTurn(unit: Int) {
         mUnit[unit].hasTurn = false
         unitsHasTurn -= 1
-        if (unitsHasTurn == 0) {
-            sCombatTurn.nextTurn()
-        }
+    }
+
+    fun getMovement(unit: Int): Float {
+        val cUnit = mUnit[unit]
+        return mStats[unit].speed * cUnit.ap + cUnit.extraMovement
     }
 
     private fun showMoveArea(unit: Int) {
         if (unit < 0) return
 
         val cUnit = mUnit[unit]
-        val tile = sTile[cUnit.coord]
+        val tile = cUnit.tile
         if (tile >= 0) {
             hideMoveArea(unit)
             if (!sIndicator.hasResult(unit, IndicatorType.MOVE_AREA)) {
                 calculateStats(unit)
-                val movement = mStats[unit].speed * cUnit.ap + cUnit.extraMovement
-                sIndicator.addResult(unit, IndicatorType.MOVE_AREA, sPathfinder.area(tile, movement))
+                sIndicator.addResult(unit, IndicatorType.MOVE_AREA, sPathfinder.area(tile, getMovement(unit)))
             }
             sIndicator.show(unit, IndicatorType.MOVE_AREA)
         }
@@ -254,20 +274,16 @@ class UnitManagementSystem : SortedIteratingSystem(
             when (button) {
                 0 -> {
                     unit = selectedUnit
-                    val path = sIndicator.getPathTo(mouseCoord, unit)
+                    val path = sIndicator.getPathTo(sTile[mouseCoord], unit)
                     if (path != null) {
                         sIndicator.remove(unit, IndicatorType.MOVE_AREA)
-                        val turnEnded = useAp(unit, getMovementCost(unit, path.last.cost)) {
-                            moveUnit(unit, mouseCoord, path)
-                        }
-                        if (turnEnded) {
-                            deselectUnit()
-                        } else {
+                        moveUnit(unit, path)
+                        if (mUnit[unit].hasTurn) {
                             showMoveArea(unit)
+                            return true
                         }
-                    } else {
-                        deselectUnit()
                     }
+                    deselectUnit()
                     return true
                 }
                 1 -> {
@@ -312,7 +328,7 @@ class UnitManagementSystem : SortedIteratingSystem(
             if (selectedUnit >= 0) {
                 sIndicator.hide(selectedUnit, IndicatorType.MOVE_PATH)
                 if (mouseCoord != null) {
-                    val cost = sIndicator.showPathTo(mouseCoord, selectedUnit)
+                    val cost = sIndicator.showPathTo(sTile[mouseCoord], selectedUnit)
                     if (cost >= 0) {
                         sViewManage.get<SkillBarView>()?.setAp(
                             mUnit[selectedUnit].ap,
@@ -346,5 +362,9 @@ class UnitManagementSystem : SortedIteratingSystem(
         return false
     }
 
-    override fun process(entityId: Int) {}
+    override fun process(entityId: Int) {
+        if (unitsHasTurn == 0) {
+            sCombatTurn.nextTurn()
+        }
+    }
 }

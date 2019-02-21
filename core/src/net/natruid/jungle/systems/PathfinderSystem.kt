@@ -149,16 +149,16 @@ class PathfinderSystem : BaseSystem() {
         while (!frontier.isEmpty) {
             val current = frontier.pop()
             if (searchNeighbors(current, goal = goal, buildingRoad = false))
-                return extractPath(visited.values, mTile[goal].coord)!!
+                return extractPath(visited.values, goal)!!
             if (diagonal && searchNeighbors(current, true, goal = goal, buildingRoad = false))
-                return extractPath(visited.values, mTile[goal].coord)!!
+                return extractPath(visited.values, goal)!!
         }
         return null
     }
 
-    fun extractPath(pathNodes: Iterable<PathNode>, goal: Point): Deque<PathNode>? {
+    fun extractPath(pathNodes: Iterable<PathNode>, goal: Int): Deque<PathNode>? {
         for (node in pathNodes) {
-            if (goal == mTile[node.tile].coord) {
+            if (goal == node.tile) {
                 val path = LinkedList<PathNode>()
                 var current: PathNode? = node
                 while (current != null) {

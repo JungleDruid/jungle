@@ -1,11 +1,12 @@
 package net.natruid.jungle.components
 
 import com.artemis.Component
+import com.artemis.annotations.EntityId
 import net.natruid.jungle.utils.Faction
-import net.natruid.jungle.utils.Point
 
 class UnitComponent : Component() {
-    var coord: Point = Point()
+    @EntityId
+    var tile: Int = -1
     var faction: Faction = Faction.NONE
     var level: Int = 0
     var exp: Int = 0

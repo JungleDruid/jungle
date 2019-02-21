@@ -9,7 +9,10 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Align
 import net.natruid.jungle.components.*
 import net.natruid.jungle.systems.TileSystem.Companion.tileSize
-import net.natruid.jungle.utils.*
+import net.natruid.jungle.utils.Constants
+import net.natruid.jungle.utils.IndicatorType
+import net.natruid.jungle.utils.Logger
+import net.natruid.jungle.utils.PathNode
 import java.text.DecimalFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -98,13 +101,13 @@ class IndicatorSystem : BaseSystem() {
         }
     }
 
-    fun getPathTo(coord: Point, entityId: Int): Deque<PathNode>? {
+    fun getPathTo(goal: Int, entityId: Int): Deque<PathNode>? {
         val result = mIndicatorOwner[entityId]?.resultMap?.get(IndicatorType.MOVE_AREA) ?: return null
-        return sPathfinder.extractPath(result.asIterable(), coord)
+        return sPathfinder.extractPath(result.asIterable(), goal)
     }
 
-    fun showPathTo(coord: Point, entityId: Int): Float {
-        val path = getPathTo(coord, entityId) ?: return Float.MIN_VALUE
+    fun showPathTo(goal: Int, entityId: Int): Float {
+        val path = getPathTo(goal, entityId) ?: return Float.MIN_VALUE
         remove(entityId, IndicatorType.MOVE_PATH)
         for (node in path) {
             world.create().let { indicator ->
