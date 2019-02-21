@@ -430,6 +430,7 @@ class TileSystem : BaseSystem(), InputProcessor {
         }
         mott.visible = true
         mott.position = mTransform[this[currentCoord]].position
+
         return false
     }
 

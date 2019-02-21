@@ -18,11 +18,11 @@ class UnitManagementSystem : SortedIteratingSystem(
 ), InputProcessor {
     override val comparator by lazy {
         Comparator<Int> { p0, p1 ->
-            val f0 = mUnit[p0].faction.value
-            val f1 = mUnit[p1].faction.value
+            val f0 = mUnit[p0].faction.ordinal
+            val f1 = mUnit[p1].faction.ordinal
             when {
-                f0 < f1 -> 1
-                f0 > f1 -> -1
+                f0 > f1 -> 1
+                f0 < f1 -> -1
                 else -> 0
             }
         }
@@ -223,47 +223,67 @@ class UnitManagementSystem : SortedIteratingSystem(
 
     private fun hideMoveArea(unit: Int) {
         sIndicator.hide(unit, IndicatorType.MOVE_AREA)
+        sIndicator.hide(unit, IndicatorType.MOVE_PATH)
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
         val mouseCoord = sTile.mouseCoord ?: return false
 
         var unit = getUnit(mouseCoord)
-        if (unit >= 0) {
+        if (unit >= 0 && button == 0) {
             when (mUnit[unit].faction) {
                 Faction.NONE -> {
                 }
                 Faction.PLAYER -> {
-                    showMoveArea(unit)
-                    selectedUnit = unit
-                    sViewManage.get<SkillBarView>()?.setAp(mUnit[unit].ap)
+                    if (mUnit[unit].hasTurn) {
+                        showMoveArea(unit)
+                        selectedUnit = unit
+                        sViewManage.get<SkillBarView>()?.setAp(mUnit[unit].ap)
+                    }
                 }
                 Faction.ENEMY -> {
+                    if (mUnit[unit].hasTurn) {
+                        showMoveArea(unit)
+                        selectedUnit = unit
+                        sViewManage.get<SkillBarView>()?.setAp(mUnit[unit].ap)
+                    }
                 }
             }
             return true
         } else if (selectedUnit >= 0) {
-            unit = selectedUnit
-            val path = sIndicator.getPathTo(mouseCoord, unit)
-            hideMoveArea(unit)
-            if (path != null) {
-                sIndicator.remove(unit, IndicatorType.MOVE_AREA)
-                if (useAp(unit, getMovementCost(unit, path.last.cost)) {
-                        moveUnit(unit, mouseCoord, path)
-                    }) {
-                    sViewManage.get<SkillBarView>()?.hideAp()
-                    selectedUnit = -1
-                } else {
-                    showMoveArea(unit)
+            when (button) {
+                0 -> {
+                    unit = selectedUnit
+                    val path = sIndicator.getPathTo(mouseCoord, unit)
+                    if (path != null) {
+                        sIndicator.remove(unit, IndicatorType.MOVE_AREA)
+                        val turnEnded = useAp(unit, getMovementCost(unit, path.last.cost)) {
+                            moveUnit(unit, mouseCoord, path)
+                        }
+                        if (turnEnded) {
+                            deselectUnit()
+                        } else {
+                            showMoveArea(unit)
+                        }
+                    } else {
+                        deselectUnit()
+                    }
+                    return true
                 }
-            } else {
-                selectedUnit = -1
-                sViewManage.get<SkillBarView>()?.hideAp()
+                1 -> {
+                    deselectUnit()
+                    return true
+                }
             }
-            return true
         }
 
         return false
+    }
+
+    private fun deselectUnit() {
+        hideMoveArea(selectedUnit)
+        selectedUnit = -1
+        sViewManage.get<SkillBarView>()?.hideAp()
     }
 
     private fun getMovementCost(unit: Int, cost: Float, preview: Boolean = false): Int {

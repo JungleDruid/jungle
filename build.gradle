@@ -53,6 +53,7 @@ project(":desktop") {
     dependencies {
         compile project(":core")
         compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+        compile "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
         compile "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
         compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
         compile "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
@@ -64,6 +65,7 @@ project(":core") {
 
     dependencies {
         compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+        compile "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
         compile "com.badlogicgames.gdx:gdx:$gdxVersion"
         compile "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
 

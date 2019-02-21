@@ -9,6 +9,7 @@ import net.natruid.jungle.components.ViewManageSystem
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.systems.*
 import net.natruid.jungle.utils.Faction
+import net.natruid.jungle.utils.Point
 import net.natruid.jungle.utils.extensions.forEach
 import net.natruid.jungle.views.SkillBarView
 import kotlin.random.Random
@@ -31,8 +32,10 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
 
     private fun init(seed: Long = Random.nextLong()) {
         world.getSystem(TileSystem::class.java).create(20, 20, seed)
-        world.getSystem(UnitManagementSystem::class.java)
-            .addUnit(faction = Faction.PLAYER)
+        world.getSystem(UnitManagementSystem::class.java).apply {
+            addUnit(faction = Faction.PLAYER)
+            addUnit(Point(5, 5), Faction.ENEMY)
+        }
         world.getSystem(RenderSystem::class.java).sort()
         world.getSystem(ViewManageSystem::class.java).show<SkillBarView>()
         world.getSystem(CombatTurnSystem::class.java).start()

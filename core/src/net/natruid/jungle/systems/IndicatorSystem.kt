@@ -1,28 +1,20 @@
 package net.natruid.jungle.systems
 
-import com.artemis.Aspect
-import com.artemis.BaseEntitySystem
+import com.artemis.BaseSystem
+import com.artemis.Component
 import com.artemis.ComponentMapper
+import com.artemis.utils.Bag
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Align
 import net.natruid.jungle.components.*
 import net.natruid.jungle.systems.TileSystem.Companion.tileSize
-import net.natruid.jungle.utils.Constants
-import net.natruid.jungle.utils.IndicatorType
-import net.natruid.jungle.utils.PathNode
-import net.natruid.jungle.utils.Point
+import net.natruid.jungle.utils.*
 import java.text.DecimalFormat
 import java.util.*
 import kotlin.collections.ArrayList
 
-class IndicatorSystem : BaseEntitySystem(Aspect.all(
-    IndicatorComponent::class.java,
-    TransformComponent::class.java
-).one(
-    RectComponent::class.java,
-    TextureComponent::class.java
-)) {
+class IndicatorSystem : BaseSystem() {
     companion object {
         private val formatter = DecimalFormat("#.#")
     }
@@ -89,7 +81,20 @@ class IndicatorSystem : BaseEntitySystem(Aspect.all(
 
     fun hide(entityId: Int, indicatorType: IndicatorType) {
         mIndicatorOwner[entityId]?.indicatorMap?.get(indicatorType)?.forEach {
-            mTransform[it]?.visible = false
+            if (!mIndicator.has(it)) {
+                Logger.warn { "Entity $it doesn't have indicator component." }
+                val bag = Bag<Component>()
+                world.componentManager.getComponentsFor(it, bag)
+                var first = true
+                bag.forEach { c ->
+                    if (!first) print(", ")
+                    print(c::class.simpleName?.replace("Component", ""))
+                    first = false
+                }
+                println()
+            } else {
+                mTransform[it]?.visible = false
+            }
         }
     }
 
@@ -100,6 +105,7 @@ class IndicatorSystem : BaseEntitySystem(Aspect.all(
 
     fun showPathTo(coord: Point, entityId: Int): Float {
         val path = getPathTo(coord, entityId) ?: return Float.MIN_VALUE
+        remove(entityId, IndicatorType.MOVE_PATH)
         for (node in path) {
             world.create().let { indicator ->
                 mTransform.create(indicator).apply {
@@ -120,6 +126,7 @@ class IndicatorSystem : BaseEntitySystem(Aspect.all(
             }
         }
         mIndicatorOwner[entityId].indicatorMap[IndicatorType.MOVE_PATH] = entityArrayBuilder.toIntArray()
+        entityArrayBuilder.clear()
         return path.last.cost
     }
 
