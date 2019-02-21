@@ -12,7 +12,7 @@ import kotlin.collections.set
 
 class PathfinderSystem : BaseSystem() {
     private lateinit var mTile: ComponentMapper<TileComponent>
-    private lateinit var sTile: TileSystem
+    private lateinit var tileSystem: TileSystem
     private val frontier = BinaryHeap<PathNode>()
     private val visited = HashMap<Int, PathNode>()
     private val walkables = ArrayList<Boolean>(4)
@@ -50,11 +50,11 @@ class PathfinderSystem : BaseSystem() {
                 searchDirection.set(it.coord)
                 searchDirection *= 2
                 searchDirection -= mTile[current.prev!!.tile].coord
-                val next = sTile[searchDirection]
+                val next = tileSystem[searchDirection]
                 if (next >= 0) searchQueue.add(next)
             } else {
                 var roadCount = 0
-                for (next in sTile.neighbors(it.coord, diagonal)) {
+                for (next in tileSystem.neighbors(it.coord, diagonal)) {
                     searchQueue.add(next)
                     if (buildingRoad) {
                         if (next >= 0) {

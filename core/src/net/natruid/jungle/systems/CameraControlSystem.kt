@@ -11,7 +11,7 @@ import net.natruid.jungle.utils.Point
 import kotlin.math.max
 import kotlin.math.min
 
-class CameraMovementSystem : BaseSystem(), InputProcessor {
+class CameraControlSystem : BaseSystem(), InputProcessor {
     private val camera = Jungle.instance.camera
     private val cropRect = Jungle.instance.renderer.cropRect
     private val speed = 512f

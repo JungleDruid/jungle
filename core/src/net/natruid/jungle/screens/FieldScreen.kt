@@ -17,12 +17,12 @@ import kotlin.random.Random
 class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
     TagManager(),
     TileSystem(),
-    UnitManagementSystem(),
+    UnitManageSystem(),
     CombatTurnSystem(),
-    IndicatorSystem(),
+    IndicateSystem(),
     PathfinderSystem(),
-    PathFollowingSystem(),
-    CameraMovementSystem(),
+    PathFollowSystem(),
+    CameraControlSystem(),
     ViewManageSystem(),
     RenderSystem()
 ).build()) {
@@ -32,7 +32,7 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
 
     private fun init(seed: Long = Random.nextLong()) {
         world.getSystem(TileSystem::class.java).create(20, 20, seed)
-        world.getSystem(UnitManagementSystem::class.java).apply {
+        world.getSystem(UnitManageSystem::class.java).apply {
             addUnit(faction = Faction.PLAYER)
             addUnit(Point(5, 5), Faction.ENEMY)
         }
@@ -51,7 +51,7 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
     override fun keyUp(keycode: Int): Boolean {
         super.keyUp(keycode)
         if (keycode == Input.Keys.R) {
-            world.getSystem(UnitManagementSystem::class.java).reset()
+            world.getSystem(UnitManageSystem::class.java).reset()
             world.getSystem(CombatTurnSystem::class.java).reset()
             world.getSystem(ViewManageSystem::class.java).hideAll()
             world.aspectSubscriptionManager.get(Aspect.all()).entities.forEach {

@@ -8,12 +8,13 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.utils.Align
 import net.natruid.jungle.components.*
 import net.natruid.jungle.core.Marsh
+import net.natruid.jungle.systems.abstracts.SortedIteratingSystem
 import net.natruid.jungle.utils.*
 import net.natruid.jungle.views.SkillBarView
 import java.util.*
 import kotlin.math.ceil
 
-class UnitManagementSystem : SortedIteratingSystem(
+class UnitManageSystem : SortedIteratingSystem(
     Aspect.all(TransformComponent::class.java, UnitComponent::class.java)
 ), InputProcessor {
     override val comparator by lazy {
@@ -35,19 +36,19 @@ class UnitManagementSystem : SortedIteratingSystem(
     private lateinit var mLabel: ComponentMapper<LabelComponent>
     private lateinit var mStats: ComponentMapper<StatsComponent>
     private lateinit var mAttributes: ComponentMapper<AttributesComponent>
-    private lateinit var sTile: TileSystem
-    private lateinit var sPathfinder: PathfinderSystem
-    private lateinit var sIndicator: IndicatorSystem
-    private lateinit var sCombatTurn: CombatTurnSystem
-    private lateinit var sViewManage: ViewManageSystem
-    private lateinit var sTag: TagManager
+    private lateinit var tileSystem: TileSystem
+    private lateinit var pathfinderSystem: PathfinderSystem
+    private lateinit var indicateSystem: IndicateSystem
+    private lateinit var combatTurnSystem: CombatTurnSystem
+    private lateinit var viewManageSystem: ViewManageSystem
+    private lateinit var tagManager: TagManager
 
     private var unitsHasTurn = -1
     private var selectedUnit
-        get() = sTag.getEntityId("SELECTED_UNIT")
+        get() = tagManager.getEntityId("SELECTED_UNIT")
         set(value) {
-            if (value >= 0) sTag.register("SELECTED_UNIT", value)
-            else sTag.unregister("SELECTED_UNIT")
+            if (value >= 0) tagManager.register("SELECTED_UNIT", value)
+            else tagManager.unregister("SELECTED_UNIT")
         }
 
     fun reset() {
@@ -56,14 +57,14 @@ class UnitManagementSystem : SortedIteratingSystem(
     }
 
     fun getUnit(coord: Point): Int {
-        return mTile[sTile[coord]]?.unit ?: -1
+        return mTile[tileSystem[coord]]?.unit ?: -1
     }
 
     fun addUnit(
         coord: Point = Point(),
         faction: Faction = Faction.NONE
     ): Int {
-        val tile = sTile[coord]
+        val tile = tileSystem[coord]
         assert(tile >= 0)
         val entityId = world.create()
         mTransform.create(entityId).apply {
@@ -94,14 +95,14 @@ class UnitManagementSystem : SortedIteratingSystem(
         }
         mTile[tile].unit = entityId
         calculateStats(entityId)
-        sCombatTurn.addFaction(faction)
+        combatTurnSystem.addFaction(faction)
         return entityId
     }
 
     fun moveUnit(unit: Int, tile: Int): Boolean {
         val cUnit = mUnit[unit]
-        val area = sPathfinder.area(cUnit.tile, getMovement(unit))
-        val path = sPathfinder.extractPath(area.asIterable(), tile) ?: return false
+        val area = pathfinderSystem.area(cUnit.tile, getMovement(unit))
+        val path = pathfinderSystem.extractPath(area.asIterable(), tile) ?: return false
         moveUnit(unit, path)
         return true
     }
@@ -126,7 +127,7 @@ class UnitManagementSystem : SortedIteratingSystem(
 
     fun freeMoveUnit(unit: Int, goal: Point) {
         val cUnit = mUnit[unit] ?: return
-        val path = sPathfinder.path(cUnit.tile, sTile[goal]) ?: return
+        val path = pathfinderSystem.path(cUnit.tile, tileSystem[goal]) ?: return
         moveUnit(unit, path, true)
     }
 
@@ -201,7 +202,7 @@ class UnitManagementSystem : SortedIteratingSystem(
     fun removeAp(unit: Int, ap: Int): Boolean {
         val cUnit = mUnit[unit]
         cUnit.ap -= ap
-        sViewManage.get<SkillBarView>()?.setAp(cUnit.ap)
+        viewManageSystem.get<SkillBarView>()?.setAp(cUnit.ap)
         if (cUnit.ap == 0) {
             endTurn(unit)
             return true
@@ -233,21 +234,21 @@ class UnitManagementSystem : SortedIteratingSystem(
         val tile = cUnit.tile
         if (tile >= 0) {
             hideMoveArea(unit)
-            if (!sIndicator.hasResult(unit, IndicatorType.MOVE_AREA)) {
+            if (!indicateSystem.hasResult(unit, IndicatorType.MOVE_AREA)) {
                 calculateStats(unit)
-                sIndicator.addResult(unit, IndicatorType.MOVE_AREA, sPathfinder.area(tile, getMovement(unit)))
+                indicateSystem.addResult(unit, IndicatorType.MOVE_AREA, pathfinderSystem.area(tile, getMovement(unit)))
             }
-            sIndicator.show(unit, IndicatorType.MOVE_AREA)
+            indicateSystem.show(unit, IndicatorType.MOVE_AREA)
         }
     }
 
     private fun hideMoveArea(unit: Int) {
-        sIndicator.hide(unit, IndicatorType.MOVE_AREA)
-        sIndicator.hide(unit, IndicatorType.MOVE_PATH)
+        indicateSystem.hide(unit, IndicatorType.MOVE_AREA)
+        indicateSystem.hide(unit, IndicatorType.MOVE_PATH)
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-        val mouseCoord = sTile.mouseCoord ?: return false
+        val mouseCoord = tileSystem.mouseCoord ?: return false
 
         var unit = getUnit(mouseCoord)
         if (unit >= 0 && button == 0) {
@@ -258,14 +259,14 @@ class UnitManagementSystem : SortedIteratingSystem(
                     if (mUnit[unit].hasTurn) {
                         showMoveArea(unit)
                         selectedUnit = unit
-                        sViewManage.get<SkillBarView>()?.setAp(mUnit[unit].ap)
+                        viewManageSystem.get<SkillBarView>()?.setAp(mUnit[unit].ap)
                     }
                 }
                 Faction.ENEMY -> {
                     if (mUnit[unit].hasTurn) {
                         showMoveArea(unit)
                         selectedUnit = unit
-                        sViewManage.get<SkillBarView>()?.setAp(mUnit[unit].ap)
+                        viewManageSystem.get<SkillBarView>()?.setAp(mUnit[unit].ap)
                     }
                 }
             }
@@ -274,9 +275,9 @@ class UnitManagementSystem : SortedIteratingSystem(
             when (button) {
                 0 -> {
                     unit = selectedUnit
-                    val path = sIndicator.getPathTo(sTile[mouseCoord], unit)
+                    val path = indicateSystem.getPathTo(tileSystem[mouseCoord], unit)
                     if (path != null) {
-                        sIndicator.remove(unit, IndicatorType.MOVE_AREA)
+                        indicateSystem.remove(unit, IndicatorType.MOVE_AREA)
                         moveUnit(unit, path)
                         if (mUnit[unit].hasTurn) {
                             showMoveArea(unit)
@@ -299,7 +300,7 @@ class UnitManagementSystem : SortedIteratingSystem(
     private fun deselectUnit() {
         hideMoveArea(selectedUnit)
         selectedUnit = -1
-        sViewManage.get<SkillBarView>()?.hideAp()
+        viewManageSystem.get<SkillBarView>()?.hideAp()
     }
 
     private fun getMovementCost(unit: Int, cost: Float, preview: Boolean = false): Int {
@@ -323,14 +324,14 @@ class UnitManagementSystem : SortedIteratingSystem(
 
     private var lastCoord: Point? = null
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
-        val mouseCoord = sTile.mouseCoord
+        val mouseCoord = tileSystem.mouseCoord
         if (lastCoord != mouseCoord) {
             if (selectedUnit >= 0) {
-                sIndicator.hide(selectedUnit, IndicatorType.MOVE_PATH)
+                indicateSystem.hide(selectedUnit, IndicatorType.MOVE_PATH)
                 if (mouseCoord != null) {
-                    val cost = sIndicator.showPathTo(sTile[mouseCoord], selectedUnit)
+                    val cost = indicateSystem.showPathTo(tileSystem[mouseCoord], selectedUnit)
                     if (cost >= 0) {
-                        sViewManage.get<SkillBarView>()?.setAp(
+                        viewManageSystem.get<SkillBarView>()?.setAp(
                             mUnit[selectedUnit].ap,
                             getMovementCost(selectedUnit, cost, true)
                         )
@@ -364,7 +365,7 @@ class UnitManagementSystem : SortedIteratingSystem(
 
     override fun process(entityId: Int) {
         if (unitsHasTurn == 0) {
-            sCombatTurn.nextTurn()
+            combatTurnSystem.nextTurn()
         }
     }
 }

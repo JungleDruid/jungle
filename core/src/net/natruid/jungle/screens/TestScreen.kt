@@ -7,12 +7,12 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion
 import net.natruid.jungle.components.LabelComponent
 import net.natruid.jungle.components.TextureComponent
 import net.natruid.jungle.components.TransformComponent
-import net.natruid.jungle.systems.CameraMovementSystem
+import net.natruid.jungle.systems.CameraControlSystem
 import net.natruid.jungle.systems.RenderSystem
 import net.natruid.jungle.utils.Scout
 
 class TestScreen : AbstractScreen(WorldConfigurationBuilder().with(
-    CameraMovementSystem(),
+    CameraControlSystem(),
     RenderSystem()
 ).build()) {
     init {

@@ -13,7 +13,7 @@ class CombatTurnSystem : BaseSystem() {
     private var started = false
     private var shouldStart = false
 
-    private lateinit var sUnit: UnitManagementSystem
+    private lateinit var unitManageSystem: UnitManageSystem
 
     fun start() {
         shouldStart = true
@@ -38,7 +38,7 @@ class CombatTurnSystem : BaseSystem() {
 
         val nextFaction = factionList[currentFactionIndex]
         Logger.debug { "Turn ended. Next faction: $nextFaction" }
-        sUnit.giveTurn(nextFaction)
+        unitManageSystem.giveTurn(nextFaction)
     }
 
     fun reset() {
@@ -50,7 +50,7 @@ class CombatTurnSystem : BaseSystem() {
 
     override fun processSystem() {
         if (shouldStart && !started) {
-            sUnit.giveTurn(factionList[currentFactionIndex])
+            unitManageSystem.giveTurn(factionList[currentFactionIndex])
             started = false
             shouldStart = false
         }

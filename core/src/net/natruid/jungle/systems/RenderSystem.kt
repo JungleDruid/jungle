@@ -9,6 +9,7 @@ import com.badlogic.gdx.utils.Align
 import net.natruid.jungle.components.*
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.core.Marsh
+import net.natruid.jungle.systems.abstracts.SortedIteratingSystem
 import net.natruid.jungle.utils.Layer
 import net.natruid.jungle.utils.RendererType
 

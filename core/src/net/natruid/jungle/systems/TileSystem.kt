@@ -51,12 +51,12 @@ class TileSystem : BaseSystem(), InputProcessor {
     private lateinit var mObstacle: ComponentMapper<ObstacleComponent>
     private lateinit var mShader: ComponentMapper<ShaderComponent>
     private lateinit var tileEntities: Array<IntArray>
-    private lateinit var sTag: TagManager
+    private lateinit var tagManager: TagManager
     private var mouseOnTile
-        get() = sTag.getEntityId(TAG_MOUSE_ON_TILE)
+        get() = tagManager.getEntityId(TAG_MOUSE_ON_TILE)
         set(value) {
-            if (value >= 0) sTag.register(TAG_MOUSE_ON_TILE, value)
-            else sTag.unregister(TAG_MOUSE_ON_TILE)
+            if (value >= 0) tagManager.register(TAG_MOUSE_ON_TILE, value)
+            else tagManager.unregister(TAG_MOUSE_ON_TILE)
         }
     private val renderer = Jungle.instance.renderer
     private val shapeRenderer = renderer.shapeRenderer
@@ -326,7 +326,7 @@ class TileSystem : BaseSystem(), InputProcessor {
             }
         }
         world.create().let { entityId ->
-            sTag.register("GridRenderer", entityId)
+            tagManager.register("GridRenderer", entityId)
             val visible = mTransform[entityId]?.visible ?: false
             mTransform.create(entityId).visible = visible
             mRenderable.create(entityId).renderCallback = gridRenderCallback
@@ -450,7 +450,7 @@ class TileSystem : BaseSystem(), InputProcessor {
 
     override fun keyUp(keycode: Int): Boolean {
         if (keycode == Input.Keys.APOSTROPHE) {
-            val gt = mTransform[sTag.getEntityId("GridRenderer")]
+            val gt = mTransform[tagManager.getEntityId("GridRenderer")]
             if (gt != null) {
                 gt.visible = !gt.visible
             }
@@ -482,7 +482,7 @@ class TileSystem : BaseSystem(), InputProcessor {
         columns = 0
         rows = 0
         mouseOnTile = -1
-        sTag.unregister(TAG_GRID_RENDERER)
+        tagManager.unregister(TAG_GRID_RENDERER)
         renderer.cancelCrop()
     }
 

@@ -28,7 +28,7 @@ class MapGenerator(
     ).build(world)
     private lateinit var mTile: ComponentMapper<TileComponent>
     private lateinit var mObstacle: ComponentMapper<ObstacleComponent>
-    private lateinit var sPathfinder: PathfinderSystem
+    private lateinit var pathfinderSystem: PathfinderSystem
     private lateinit var map: Array<IntArray>
     val random = RandomXS128(seed)
     private val emptyTiles = IntBag(columns * rows)
@@ -205,7 +205,7 @@ class MapGenerator(
 
         var minCost = Float.MAX_VALUE
         var end: PathNode? = null
-        val area = sPathfinder.area(start, null, diagonal = false, buildingRoad = true)
+        val area = pathfinderSystem.area(start, null, diagonal = false, buildingRoad = true)
         for (node in area) {
             val coord = mTile[node.tile].coord
             val endX = !vertical && coord.x == (if (reversed) 0 else columns - 1)

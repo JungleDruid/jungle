@@ -1,4 +1,4 @@
-package net.natruid.jungle.systems
+package net.natruid.jungle.systems.abstracts
 
 import com.artemis.Aspect
 import com.artemis.BaseEntitySystem

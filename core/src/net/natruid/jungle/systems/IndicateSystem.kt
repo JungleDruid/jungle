@@ -17,12 +17,12 @@ import java.text.DecimalFormat
 import java.util.*
 import kotlin.collections.ArrayList
 
-class IndicatorSystem : BaseSystem() {
+class IndicateSystem : BaseSystem() {
     companion object {
         private val formatter = DecimalFormat("#.#")
     }
 
-    private lateinit var sPathfinder: PathfinderSystem
+    private lateinit var pathfinderSystem: PathfinderSystem
     private lateinit var mTransform: ComponentMapper<TransformComponent>
     private lateinit var mRect: ComponentMapper<RectComponent>
     private lateinit var mLabel: ComponentMapper<LabelComponent>
@@ -103,7 +103,7 @@ class IndicatorSystem : BaseSystem() {
 
     fun getPathTo(goal: Int, entityId: Int): Deque<PathNode>? {
         val result = mIndicatorOwner[entityId]?.resultMap?.get(IndicatorType.MOVE_AREA) ?: return null
-        return sPathfinder.extractPath(result.asIterable(), goal)
+        return pathfinderSystem.extractPath(result.asIterable(), goal)
     }
 
     fun showPathTo(goal: Int, entityId: Int): Float {

@@ -9,7 +9,7 @@ import ktx.math.timesAssign
 import net.natruid.jungle.components.PathFollowerComponent
 import net.natruid.jungle.components.TransformComponent
 
-class PathFollowingSystem : IteratingSystem(Aspect.all(
+class PathFollowSystem : IteratingSystem(Aspect.all(
     TransformComponent::class.java,
     PathFollowerComponent::class.java
 )) {
