@@ -152,7 +152,7 @@ class TileSystem : BaseSystem(), InputProcessor {
     private val rockTexture = TextureRegion(Texture(Scout["assets/img/tiles/rock.png"]))
 
     fun create(columns: Int, rows: Int, seed: Long = Random.nextLong()) {
-        clean()
+        reset()
         this.columns = columns
         this.rows = rows
         this.seed = seed
@@ -344,6 +344,12 @@ class TileSystem : BaseSystem(), InputProcessor {
                 color = mouseOnTileColor
             }
         }
+        renderer.crop(
+            -halfTileSize.toFloat(),
+            -halfTileSize.toFloat(),
+            (columns * tileSize).toFloat(),
+            (rows * tileSize).toFloat()
+        )
     }
 
     private fun renderGrid() {
@@ -468,15 +474,16 @@ class TileSystem : BaseSystem(), InputProcessor {
     }
 
     override fun dispose() {
-        clean()
+        reset()
         super.dispose()
     }
 
-    private fun clean() {
+    private fun reset() {
         columns = 0
         rows = 0
         mouseOnTile = -1
         sTag.unregister(TAG_GRID_RENDERER)
+        renderer.cancelCrop()
     }
 
     override fun processSystem() {

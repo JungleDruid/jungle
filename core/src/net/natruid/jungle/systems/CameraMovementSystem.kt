@@ -13,6 +13,7 @@ import kotlin.math.min
 
 class CameraMovementSystem : BaseSystem(), InputProcessor {
     private val camera = Jungle.instance.camera
+    private val cropRect = Jungle.instance.renderer.cropRect
     private val speed = 512f
     private val maxZoom = 2f
     private val minZoom = 0.25f
@@ -30,13 +31,22 @@ class CameraMovementSystem : BaseSystem(), InputProcessor {
                 val x = (Gdx.input.x - Gdx.graphics.width / 2) * -diff
                 val y = (Gdx.input.y - Gdx.graphics.height / 2) * diff
                 camera.translate(x, y)
+                clamp()
                 camera.update()
             }
         }
 
+    private fun clamp() {
+        camera.position.apply {
+            x = x.coerceIn(cropRect.x, cropRect.x + cropRect.width)
+            y = y.coerceIn(cropRect.y, cropRect.y + cropRect.height)
+        }
+    }
+
     override fun processSystem() {
         if (!velocity.isZero) {
             camera.translate(velocity * speed * world.delta * zoom)
+            clamp()
             camera.update()
             if (Jungle.instance.mouseMoved) Jungle.instance.mouseMoved(Gdx.input.x, Gdx.input.y)
         }
