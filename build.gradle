@@ -29,7 +29,8 @@ allprojects {
 
         artemisVersion = '2.2.0'
 
-        ktxVersion = "1.9.8-b5"
+        ktxVersion = "1.9.9-b1"
+        kotlinCoroutineVersion = "1.1.1"
         visuiVersion = "1.4.2"
         gdxLmlVersion = "1.9.1.9.8-SNAPSHOT"
     }
@@ -66,6 +67,7 @@ project(":core") {
     dependencies {
         compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
         compile "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+        compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutineVersion"
         compile "com.badlogicgames.gdx:gdx:$gdxVersion"
         compile "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
 
@@ -80,6 +82,7 @@ project(":core") {
         compile group: "io.github.libktx", name: "ktx-actors", version: "$ktxVersion"
         compile group: "io.github.libktx", name: "ktx-vis", version: "$ktxVersion"
         compile group: "io.github.libktx", name: "ktx-i18n", version: "$ktxVersion"
+        compile group: "io.github.libktx", name: "ktx-async", version: "$ktxVersion"
         compile "com.kotcrab.vis:vis-ui:$visuiVersion"
         compile "com.github.czyzby:gdx-lml-vis:$gdxLmlVersion"
     }

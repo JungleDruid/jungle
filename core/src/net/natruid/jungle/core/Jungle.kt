@@ -10,9 +10,12 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.github.czyzby.lml.parser.LmlParser
 import com.github.czyzby.lml.vis.util.VisLml
 import com.kotcrab.vis.ui.VisUI
+import kotlinx.coroutines.launch
 import ktx.assets.disposeSafely
+import ktx.async.KtxAsync
 import net.natruid.jungle.screens.AbstractScreen
 import net.natruid.jungle.screens.FieldScreen
+import net.natruid.jungle.screens.LoadingScreen
 import net.natruid.jungle.screens.TestScreen
 import net.natruid.jungle.utils.*
 import net.natruid.jungle.views.AbstractView
@@ -25,6 +28,7 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
     val renderer by lazy { RendererHelper() }
     val camera by lazy { OrthographicCamera() }
     val uiViewport by lazy { ScreenViewport() }
+    val loadingScreen by lazy { LoadingScreen() }
 
     var mouseMoved = false
         private set
@@ -46,32 +50,43 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
     }
 
     override fun create() {
-        Logger.stopwatch("Initialization") {
-            Logger.debug { "Initializing..." }
-            client.init()
+        KtxAsync.initiate()
+        loadingScreen.init(5)
 
-            Logger.catch("Data loading failed.") {
-                Marsh.load()
+        KtxAsync.launch {
+            Logger.stopwatch("Initialization") {
+                Logger.debug { "Initializing..." }
+
+                client.init()
+                loadingScreen.progress()
+
+                Logger.catch("Data loading failed.") {
+                    Marsh.load()
+                }
+                loadingScreen.progress()
+
+                Logger.catch("Skin loading failed.") {
+                    VisUI.load(Bark("assets/ui/jungle.json"))
+                }
+                loadingScreen.progress()
+
+                Logger.catch("I18n bundle loading failed.") {
+                    val bundle = Marsh.I18N["assets/locale/UI"]
+                    client.setTitle(bundle["title"])
+                }
+                loadingScreen.progress()
+
+                setScreen(FieldScreen())
+                if (debug) {
+                    debugView = AbstractView.createView()
+                    DebugView.show = true
+                }
+                Gdx.graphics.setVSync(vSync)
+                Logger.info { "Game initialized." }
+                loadingScreen.finish()
+
+                Gdx.input.inputProcessor = this@Jungle
             }
-
-            Gdx.input.inputProcessor = this
-
-            Logger.catch("Skin loading failed.") {
-                VisUI.load(Bark("assets/ui/jungle.json"))
-            }
-
-            Logger.catch("I18n bundle loading failed.") {
-                val bundle = Marsh.I18N["assets/locale/UI"]
-                client.setTitle(bundle["title"])
-            }
-
-            setScreen(FieldScreen())
-            if (debug) {
-                debugView = AbstractView.createView()
-                DebugView.show = true
-            }
-            Gdx.graphics.setVSync(vSync)
-            Logger.info { "Game initialized." }
         }
     }
 
@@ -81,6 +96,13 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
 
         val delta = Gdx.graphics.deltaTime
         time += delta
+
+        if (!loadingScreen.done) {
+            loadingScreen.render(delta)
+            Sync.sync(10)
+            return
+        }
+
         currentScreen?.render(delta)
         viewList.forEach {
             it.render(delta)
@@ -99,6 +121,7 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
     }
 
     override fun dispose() {
+        loadingScreen.dispose()
         currentScreen?.dispose()
         viewList.forEach {
             it.dispose()
