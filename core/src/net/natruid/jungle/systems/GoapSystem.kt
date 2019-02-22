@@ -2,6 +2,7 @@ package net.natruid.jungle.systems
 
 import com.artemis.Aspect
 import com.artemis.ComponentMapper
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import ktx.async.KtxAsync
 import ktx.async.skipFrame
@@ -36,6 +37,7 @@ class GoapSystem : SortedIteratingSystem(Aspect.all(GoapComponent::class.java)) 
     private var firstIndex = Int.MAX_VALUE
     private var lastIndex = Int.MIN_VALUE
     private var currentNode: GoapNode? = null
+    private var currentJob: Job? = null
 
     private var phase = Phase.STOPPED
 
@@ -43,6 +45,15 @@ class GoapSystem : SortedIteratingSystem(Aspect.all(GoapComponent::class.java)) 
         if (phase == Phase.READY) return
         if (phase != Phase.STOPPED) error("GoapSystem has not stopped yet: $phase")
         phase = Phase.READY
+    }
+
+    fun reset() {
+        currentJob?.cancel()
+        currentJob = null
+        worldState.clear()
+        allies = null
+        enemies = null
+        phase = Phase.STOPPED
     }
 
     private fun inState(state: Map<GoapType, Boolean>, precondition: Pair<GoapType, Boolean>): Boolean {
@@ -85,7 +96,7 @@ class GoapSystem : SortedIteratingSystem(Aspect.all(GoapComponent::class.java)) 
                 if (combatTurnSystem.faction == Faction.PLAYER) return
                 phase = Phase.PLANNING
                 calculateIndex()
-                KtxAsync.launch {
+                currentJob = KtxAsync.launch {
                     phase = if (plan()) Phase.PERFORMING else Phase.STOPPING
                 }
             }
@@ -103,7 +114,7 @@ class GoapSystem : SortedIteratingSystem(Aspect.all(GoapComponent::class.java)) 
                 }
                 if (hasTurn) {
                     phase = Phase.PLANNING
-                    KtxAsync.launch {
+                    currentJob = KtxAsync.launch {
                         while (!pathFollowSystem.ready) skipFrame()
                         phase = if (plan()) Phase.PERFORMING else Phase.STOPPING
                     }

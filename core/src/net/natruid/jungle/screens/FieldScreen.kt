@@ -53,6 +53,7 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
     override fun keyUp(keycode: Int): Boolean {
         super.keyUp(keycode)
         if (keycode == Input.Keys.R) {
+            world.getSystem(GoapSystem::class.java).reset()
             world.getSystem(UnitManageSystem::class.java).reset()
             world.getSystem(CombatTurnSystem::class.java).reset()
             world.getSystem(ViewManageSystem::class.java).hideAll()
