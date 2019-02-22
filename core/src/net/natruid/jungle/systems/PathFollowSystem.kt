@@ -17,6 +17,8 @@ class PathFollowSystem : IteratingSystem(Aspect.all(
         private const val speed = 1000f
     }
 
+    val ready get() = entityIds.isEmpty
+
     private lateinit var mTransform: ComponentMapper<TransformComponent>
     private lateinit var mPathFollower: ComponentMapper<PathFollowerComponent>
 

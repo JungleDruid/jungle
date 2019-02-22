@@ -12,6 +12,11 @@ abstract class SortedIteratingSystem(aspect: Aspect.Builder)
 
     abstract val comparator: Comparator<in Int>
 
+    override fun begin() {
+        super.begin()
+        world.inject(comparator)
+    }
+
     override fun inserted(entityId: Int) {
         super.inserted(entityId)
         entities.add(entityId)

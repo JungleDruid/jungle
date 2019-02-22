@@ -19,6 +19,7 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
     TileSystem(),
     UnitManageSystem(),
     CombatTurnSystem(),
+    GoapSystem(),
     IndicateSystem(),
     PathfinderSystem(),
     PathFollowSystem(),
@@ -35,6 +36,7 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
         world.getSystem(UnitManageSystem::class.java).apply {
             addUnit(faction = Faction.PLAYER)
             addUnit(Point(5, 5), Faction.ENEMY)
+            addUnit(Point(10, 10), Faction.ENEMY)
         }
         world.getSystem(RenderSystem::class.java).sort()
         world.getSystem(ViewManageSystem::class.java).show<SkillBarView>()

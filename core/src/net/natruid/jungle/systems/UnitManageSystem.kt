@@ -2,7 +2,9 @@ package net.natruid.jungle.systems
 
 import com.artemis.Aspect
 import com.artemis.ComponentMapper
+import com.artemis.annotations.EntityId
 import com.artemis.managers.TagManager
+import com.badlogic.gdx.Input.Keys
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.utils.Align
@@ -10,24 +12,16 @@ import net.natruid.jungle.components.*
 import net.natruid.jungle.core.Marsh
 import net.natruid.jungle.systems.abstracts.SortedIteratingSystem
 import net.natruid.jungle.utils.*
+import net.natruid.jungle.utils.ai.actions.MoveTowardTargetAction
 import net.natruid.jungle.views.SkillBarView
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.ceil
 
 class UnitManageSystem : SortedIteratingSystem(
     Aspect.all(TransformComponent::class.java, UnitComponent::class.java)
 ), InputProcessor {
-    override val comparator by lazy {
-        Comparator<Int> { p0, p1 ->
-            val f0 = mUnit[p0].faction.ordinal
-            val f1 = mUnit[p1].faction.ordinal
-            when {
-                f0 > f1 -> 1
-                f0 < f1 -> -1
-                else -> 0
-            }
-        }
-    }
+    override val comparator = FactionComparator()
 
     private lateinit var mUnit: ComponentMapper<UnitComponent>
     private lateinit var mTransform: ComponentMapper<TransformComponent>
@@ -36,6 +30,7 @@ class UnitManageSystem : SortedIteratingSystem(
     private lateinit var mLabel: ComponentMapper<LabelComponent>
     private lateinit var mStats: ComponentMapper<StatsComponent>
     private lateinit var mAttributes: ComponentMapper<AttributesComponent>
+    private lateinit var mGoap: ComponentMapper<GoapComponent>
     private lateinit var tileSystem: TileSystem
     private lateinit var pathfinderSystem: PathfinderSystem
     private lateinit var indicateSystem: IndicateSystem
@@ -44,12 +39,8 @@ class UnitManageSystem : SortedIteratingSystem(
     private lateinit var tagManager: TagManager
 
     private var unitsHasTurn = -1
-    private var selectedUnit
-        get() = tagManager.getEntityId("SELECTED_UNIT")
-        set(value) {
-            if (value >= 0) tagManager.register("SELECTED_UNIT", value)
-            else tagManager.unregister("SELECTED_UNIT")
-        }
+    @EntityId
+    private var selectedUnit = -1
 
     fun reset() {
         selectedUnit = -1
@@ -76,7 +67,10 @@ class UnitManageSystem : SortedIteratingSystem(
             this.faction = faction
         }
         mAttributes.create(entityId).apply {
-            base.fill(12)
+            if (faction == Faction.PLAYER)
+                base.fill(16)
+            else
+                base.fill(6)
         }
         mStats.create(entityId)
         mLabel.create(entityId).apply {
@@ -92,6 +86,11 @@ class UnitManageSystem : SortedIteratingSystem(
                 Faction.ENEMY -> "Ｄ"
             }
             align = Align.center
+        }
+        if (faction != Faction.PLAYER) {
+            mGoap.create(entityId).availableActions.add(MoveTowardTargetAction())
+        } else {
+            tagManager.register("PLAYER", entityId)
         }
         mTile[tile].unit = entityId
         calculateStats(entityId)
@@ -203,7 +202,7 @@ class UnitManageSystem : SortedIteratingSystem(
         val cUnit = mUnit[unit]
         cUnit.ap -= ap
         viewManageSystem.get<SkillBarView>()?.setAp(cUnit.ap)
-        if (cUnit.ap == 0) {
+        if (cUnit.ap <= 0) {
             endTurn(unit)
             return true
         }
@@ -218,13 +217,40 @@ class UnitManageSystem : SortedIteratingSystem(
     }
 
     fun endTurn(unit: Int) {
-        mUnit[unit].hasTurn = false
+        val cUnit = mUnit[unit]
+        if (!cUnit.hasTurn) return
+        cUnit.hasTurn = false
         unitsHasTurn -= 1
     }
 
     fun getMovement(unit: Int): Float {
         val cUnit = mUnit[unit]
         return mStats[unit].speed * cUnit.ap + cUnit.extraMovement
+    }
+
+    fun hasEnemy(unit: Int): Boolean {
+        val faction = mUnit[unit].faction
+        for (id in sortedEntityIds) {
+            if (mUnit[id].faction != faction) return true
+        }
+
+        return false
+    }
+
+    fun getAllies(faction: Faction): IntArray {
+        val list = ArrayList<Int>()
+        for (id in sortedEntityIds) {
+            if (mUnit[id].faction == faction) list.add(id)
+        }
+        return list.toIntArray()
+    }
+
+    fun getEnemies(faction: Faction): IntArray {
+        val list = ArrayList<Int>()
+        for (id in sortedEntityIds) {
+            if (mUnit[id].faction != faction) list.add(id)
+        }
+        return list.toIntArray()
     }
 
     private fun showMoveArea(unit: Int) {
@@ -263,11 +289,6 @@ class UnitManageSystem : SortedIteratingSystem(
                     }
                 }
                 Faction.ENEMY -> {
-                    if (mUnit[unit].hasTurn) {
-                        showMoveArea(unit)
-                        selectedUnit = unit
-                        viewManageSystem.get<SkillBarView>()?.setAp(mUnit[unit].ap)
-                    }
                 }
             }
             return true
@@ -360,6 +381,11 @@ class UnitManageSystem : SortedIteratingSystem(
     }
 
     override fun keyDown(keycode: Int): Boolean {
+        if (keycode == Keys.E && selectedUnit >= 0) {
+            indicateSystem.remove(selectedUnit, IndicatorType.MOVE_AREA)
+            endTurn(selectedUnit)
+            return true
+        }
         return false
     }
 
