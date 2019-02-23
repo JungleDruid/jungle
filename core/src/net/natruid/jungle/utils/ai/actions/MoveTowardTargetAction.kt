@@ -25,6 +25,7 @@ class MoveTowardTargetAction : GoapAction() {
         if (cache.containsKey(self)) return cache[self]?.last?.cost
 
         var path: Deque<PathNode>? = null
+        var score = 0f
         var cost = Float.MAX_VALUE
         for (enemy in goapSystem.enemies!!) {
             val path1 = pathfinderSystem.path(mUnit[self].tile, mUnit[enemy].tile) ?: continue
@@ -41,10 +42,11 @@ class MoveTowardTargetAction : GoapAction() {
             val movement = unitManageSystem.getMovement(self)
             while (path.isNotEmpty() && (path.last.cost > movement || mTile[path.last.tile]?.unit != -1)) {
                 path.removeLast()
+                score -= 0.01f
             }
             cache[self] = path
             if (path.isEmpty()) return null
-            return path.last.cost
+            return score - path.last.cost
         }
         return null
     }

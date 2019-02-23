@@ -28,7 +28,7 @@ class GoapSystem : SortedIteratingSystem(Aspect.all(GoapComponent::class.java)) 
     private lateinit var mUnit: ComponentMapper<UnitComponent>
     private lateinit var mGoap: ComponentMapper<GoapComponent>
 
-    private val goals = mapOf(Pair(Pair(GoapType.CLOSER_TO_ENEMY, true), 5))
+    private val goals = setOf(Pair(GoapType.CLOSER_TO_ENEMY, true))
     private val worldState = HashMap<GoapType, Boolean>()
     var allies: IntArray? = null
         private set
@@ -151,61 +151,63 @@ class GoapSystem : SortedIteratingSystem(Aspect.all(GoapComponent::class.java)) 
             false
         }
 
-        val leaves = HashMap<Int, GoapNode>()
-        for ((goal, score) in goals) {
+        var bestNode: GoapNode? = null
+        for ((index, goal) in goals.withIndex()) {
             loopAgents { id ->
+                val score = (goals.size - index) * 10f
                 val agent = mGoap[id]
                 val start = GoapNode(id, null, 0f, agent.state, null)
-                val success = buildGraph(start, leaves, agent.availableActions, goal, score)
-                if (!success) {
+                val result = buildGraph(start, agent.availableActions, goal, score)
+                if (result == null) {
                     Logger.debug { "No plan!" }
+                } else if ((bestNode?.score ?: Float.MIN_VALUE) < result.score) {
+                    bestNode = result
                 }
                 false
             }
         }
 
-        currentNode = null
-        var highestScore = Int.MIN_VALUE
-        for ((score, leaf) in leaves) {
-            if (highestScore < score) {
-                currentNode = leaf
-                highestScore = score
-            }
-        }
+        currentNode = bestNode
 
-        return currentNode != null
+        return bestNode != null
     }
 
     private suspend fun buildGraph(
         parent: GoapNode,
-        leaves: HashMap<Int, GoapNode>,
         usableActions: Set<GoapAction>,
         goal: Pair<GoapType, Boolean>,
-        score: Int
-    ): Boolean {
-        var found = false
+        score: Float
+    ): GoapNode? {
+        var bestNode: GoapNode? = null
 
         usableActions.forEach { action ->
             skipFrame()
             val available = inState(parent.state, action.preconditions)
-            val cost = action.check(parent.agentId) ?: return@forEach
-            if (available && cost >= 0) {
+            val actionScore = action.check(parent.agentId) ?: return@forEach
+            if (available) {
                 val currentState = populateState(parent.state, action.effects)
-                val node = GoapNode(parent.agentId, parent, parent.cost + cost, currentState, action)
+                val achieved = inState(currentState, goal)
+                val node = GoapNode(
+                    parent.agentId,
+                    parent,
+                    actionScore + if (achieved) score else 0f,
+                    currentState,
+                    action
+                )
 
-                if (inState(currentState, goal)) {
-                    val old = leaves[score]
-                    if (old == null || old.cost > node.cost) leaves[score] = node
-                    found = true
+                if (achieved) {
+                    if ((bestNode?.score ?: Float.MIN_VALUE) < node.score) bestNode = node
                 } else if (usableActions.size > 1) {
                     val subset = HashSet(usableActions)
                     subset.remove(action)
-                    if (buildGraph(node, leaves, subset, goal, score)) found = true
+                    val result = buildGraph(node, subset, goal, score)
+                    if (result != null && result.score > (bestNode?.score ?: Float.MIN_VALUE))
+                        bestNode = result
                 }
             }
         }
 
-        return found
+        return bestNode
     }
 
     private fun populateState(
