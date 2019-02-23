@@ -6,4 +6,5 @@ import java.util.*
 
 class PathFollowerComponent : Component() {
     var path: Deque<PathNode>? = null
+    var callback: (() -> Unit)? = null
 }

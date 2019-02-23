@@ -25,6 +25,8 @@ import net.natruid.jungle.utils.Constants.UP
 import net.natruid.jungle.utils.Constants.Z_MOUSE_ON_TILE
 import net.natruid.jungle.utils.Constants.Z_OBSTACLE
 import net.natruid.jungle.utils.extensions.forEach
+import kotlin.math.abs
+import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
@@ -350,6 +352,14 @@ class TileSystem : BaseSystem(), InputProcessor {
             (columns * tileSize).toFloat(),
             (rows * tileSize).toFloat()
         )
+    }
+
+    fun getDistance(tile1: Int, tile2: Int): Float {
+        val coord1 = mTile[tile1].coord
+        val coord2 = mTile[tile2].coord
+        val x = abs(coord1.x - coord2.x)
+        val y = abs(coord1.y - coord2.y)
+        return min(x, y) * 1.5f + abs(x - y)
     }
 
     private fun renderGrid() {

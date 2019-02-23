@@ -75,7 +75,7 @@ class GoapSystem : SortedIteratingSystem(Aspect.all(GoapComponent::class.java)) 
         return true
     }
 
-    private fun calculateIndex() {
+    private fun calculateIndex(): Boolean {
         firstIndex = Int.MAX_VALUE
         lastIndex = Int.MIN_VALUE
         val currentFaction = combatTurnSystem.faction
@@ -88,14 +88,18 @@ class GoapSystem : SortedIteratingSystem(Aspect.all(GoapComponent::class.java)) 
                 if (index > lastIndex) lastIndex = index
             }
         }
+        return firstIndex != Int.MAX_VALUE && lastIndex != Int.MIN_VALUE
     }
 
     override fun processSystem() {
         when (phase) {
             Phase.READY -> {
                 if (combatTurnSystem.faction == Faction.PLAYER) return
+                if (!calculateIndex()) {
+                    phase = Phase.STOPPED
+                    return
+                }
                 phase = Phase.PLANNING
-                calculateIndex()
                 currentJob = KtxAsync.launch {
                     phase = if (plan()) Phase.PERFORMING else Phase.STOPPING
                 }

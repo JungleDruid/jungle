@@ -31,6 +31,7 @@ class UnitManageSystem : SortedIteratingSystem(
     private lateinit var mStats: ComponentMapper<StatsComponent>
     private lateinit var mAttributes: ComponentMapper<AttributesComponent>
     private lateinit var mGoap: ComponentMapper<GoapComponent>
+    private lateinit var mAnimation: ComponentMapper<AnimationComponent>
     private lateinit var tileSystem: TileSystem
     private lateinit var pathfinderSystem: PathfinderSystem
     private lateinit var indicateSystem: IndicateSystem
@@ -94,6 +95,7 @@ class UnitManageSystem : SortedIteratingSystem(
         }
         mTile[tile].unit = entityId
         calculateStats(entityId)
+        mUnit[entityId].hp = mStats[entityId].hp
         combatTurnSystem.addFaction(faction)
         return entityId
     }
@@ -106,7 +108,7 @@ class UnitManageSystem : SortedIteratingSystem(
         return true
     }
 
-    fun moveUnit(unit: Int, path: Deque<PathNode>, free: Boolean = false) {
+    fun moveUnit(unit: Int, path: Deque<PathNode>, free: Boolean = false, callback: (() -> Unit)? = null) {
         if (unit < 0) return
         mPathFollower.create(unit).apply {
             if (this.path == null) {
@@ -114,10 +116,12 @@ class UnitManageSystem : SortedIteratingSystem(
             } else {
                 this.path!!.addAll(path)
             }
+            this.callback = callback
         }
         val dest = path.peekLast()
         val cUnit = mUnit[unit]
         useAp(unit, if (free) 0 else getMovementCost(unit, dest.cost)) {
+            indicateSystem.remove(unit, IndicatorType.MOVE_AREA)
             mTile[cUnit.tile]!!.unit = -1
             cUnit.tile = dest.tile
             mTile[dest.tile]!!.unit = unit
@@ -128,6 +132,61 @@ class UnitManageSystem : SortedIteratingSystem(
         val cUnit = mUnit[unit] ?: return
         val path = pathfinderSystem.path(cUnit.tile, tileSystem[goal]) ?: return
         moveUnit(unit, path, true)
+    }
+
+    fun moveAndAttack(unit: Int, target: Int): Boolean {
+        val movement = getMovement(unit, 2)
+        val tile1 = mUnit[unit].tile
+        val tile2 = mUnit[target].tile
+        if (tileSystem.getDistance(tile1, tile2) > movement) return false
+        val area = pathfinderSystem.area(tile1, movement)
+        var cost = Float.MAX_VALUE
+        var dest = -1
+        for (node in area) {
+            if (node.cost < cost) {
+                if (tileSystem.getDistance(tile2, node.tile) == 1f) {
+                    dest = node.tile
+                    cost = node.cost
+                }
+            }
+        }
+        if (dest < 0) return false
+        moveUnit(
+            unit,
+            pathfinderSystem.extractPath(area.asIterable(), dest)!!,
+            callback = { attack(unit, target) }
+        )
+        return true
+    }
+
+    fun attack(unit: Int, target: Int): Boolean {
+        return useAp(unit, 2) {
+            mAnimation.create(unit).let {
+                it.target = target
+                it.type = AnimationType.ATTACK
+                it.callback = { damage(unit, target, 10) }
+            }
+        }
+    }
+
+    fun damage(unit: Int, target: Int, amount: Int) {
+        Logger.debug { "$unit deals $amount damage to $target" }
+        mUnit[target].let {
+            it.hp -= amount
+            if (it.hp <= 0) {
+                kill(unit, target)
+            }
+        }
+    }
+
+    fun kill(unit: Int, target: Int) {
+        Logger.debug { "$unit kills $target" }
+        val cUnit = mUnit[target]
+        val faction = cUnit.faction
+        val last = sortedEntityIds.count { mUnit[it].faction == faction } <= 1
+        mTile[cUnit.tile].unit = -1
+        world.delete(target)
+        if (last) combatTurnSystem.removeFaction(faction)
     }
 
     private val statMultipliers = Array(StatType.size) { 1f }
@@ -221,11 +280,14 @@ class UnitManageSystem : SortedIteratingSystem(
         if (!cUnit.hasTurn) return
         cUnit.hasTurn = false
         unitsHasTurn -= 1
+        if (selectedUnit == unit) {
+            deselectUnit()
+        }
     }
 
-    fun getMovement(unit: Int): Float {
+    fun getMovement(unit: Int, preservedAp: Int = 0): Float {
         val cUnit = mUnit[unit]
-        return mStats[unit].speed * cUnit.ap + cUnit.extraMovement
+        return mStats[unit].speed * (cUnit.ap - preservedAp) + cUnit.extraMovement
     }
 
     fun hasEnemy(unit: Int): Boolean {
@@ -282,13 +344,18 @@ class UnitManageSystem : SortedIteratingSystem(
                 Faction.NONE -> {
                 }
                 Faction.PLAYER -> {
-                    if (mUnit[unit].hasTurn) {
+                    if (selectedUnit != unit && mUnit[unit].hasTurn) {
                         showMoveArea(unit)
                         selectedUnit = unit
                         viewManageSystem.get<SkillBarView>()?.setAp(mUnit[unit].ap)
                     }
                 }
                 Faction.ENEMY -> {
+                    if (selectedUnit >= 0) {
+                        hideMoveArea(selectedUnit)
+                        moveAndAttack(selectedUnit, unit)
+                        deselectUnit()
+                    }
                 }
             }
             return true
@@ -319,6 +386,7 @@ class UnitManageSystem : SortedIteratingSystem(
     }
 
     private fun deselectUnit() {
+        if (selectedUnit < 0) return
         hideMoveArea(selectedUnit)
         selectedUnit = -1
         viewManageSystem.get<SkillBarView>()?.hideAp()
