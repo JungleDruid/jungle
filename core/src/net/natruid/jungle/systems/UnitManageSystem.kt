@@ -42,6 +42,8 @@ class UnitManageSystem : SortedIteratingSystem(
     private var unitsHasTurn = -1
     @EntityId
     private var selectedUnit = -1
+    @EntityId
+    private var nextSelect = -1
 
     fun reset() {
         selectedUnit = -1
@@ -164,7 +166,7 @@ class UnitManageSystem : SortedIteratingSystem(
             mAnimation.create(unit).let {
                 it.target = target
                 it.type = AnimationType.ATTACK
-                it.callback = { damage(unit, target, 10) }
+                it.callback = { damage(unit, target, (10f * mStats[unit].damage).toInt()) }
             }
         }
     }
@@ -345,16 +347,14 @@ class UnitManageSystem : SortedIteratingSystem(
                 }
                 Faction.PLAYER -> {
                     if (selectedUnit != unit && mUnit[unit].hasTurn) {
-                        showMoveArea(unit)
-                        selectedUnit = unit
-                        viewManageSystem.get<SkillBarView>()?.setAp(mUnit[unit].ap)
+                        select(unit)
                     }
                 }
                 Faction.ENEMY -> {
                     if (selectedUnit >= 0) {
                         hideMoveArea(selectedUnit)
                         moveAndAttack(selectedUnit, unit)
-                        deselectUnit()
+                        deselectUnit(selectedUnit)
                     }
                 }
             }
@@ -385,11 +385,18 @@ class UnitManageSystem : SortedIteratingSystem(
         return false
     }
 
-    private fun deselectUnit() {
+    private fun select(unit: Int) {
+        showMoveArea(unit)
+        selectedUnit = unit
+        viewManageSystem.get<SkillBarView>()?.setAp(mUnit[unit].ap)
+    }
+
+    private fun deselectUnit(next: Int = -1) {
         if (selectedUnit < 0) return
         hideMoveArea(selectedUnit)
         selectedUnit = -1
         viewManageSystem.get<SkillBarView>()?.hideAp()
+        nextSelect = next
     }
 
     private fun getMovementCost(unit: Int, cost: Float, preview: Boolean = false): Int {
@@ -460,6 +467,15 @@ class UnitManageSystem : SortedIteratingSystem(
     override fun process(entityId: Int) {
         if (unitsHasTurn == 0) {
             combatTurnSystem.nextTurn()
+        } else if (nextSelect >= 0) {
+            if (mUnit[nextSelect].hasTurn) {
+                if (!mPathFollower.has(nextSelect) && !mAnimation.has(nextSelect)) {
+                    select(nextSelect)
+                    nextSelect = -1
+                }
+            } else {
+                nextSelect = -1
+            }
         }
     }
 }
