@@ -11,6 +11,6 @@ class BehaviorComponent : Component() {
     val targets = ArrayList<Int>()
     var moveArea: Area? = null
     var fullMoveArea: Area? = null
-    val execution = LinkedList<BehaviorAction>()
+    var execution: BehaviorAction? = null
     var score: Float = 0f
 }

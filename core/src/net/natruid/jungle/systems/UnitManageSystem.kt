@@ -15,7 +15,9 @@ import net.natruid.jungle.systems.abstracts.SortedIteratingSystem
 import net.natruid.jungle.utils.*
 import net.natruid.jungle.utils.ai.BehaviorTree
 import net.natruid.jungle.utils.ai.SequenceSelector
+import net.natruid.jungle.utils.ai.actions.AttackAction
 import net.natruid.jungle.utils.ai.actions.MoveTowardUnitAction
+import net.natruid.jungle.utils.ai.conditions.HasUnitInAttackRangeCondition
 import net.natruid.jungle.utils.ai.conditions.SimpleUnitTargeter
 import net.natruid.jungle.views.SkillBarView
 import kotlin.math.ceil
@@ -97,12 +99,21 @@ class UnitManageSystem : SortedIteratingSystem(
         if (faction != Faction.PLAYER) {
             mBehavior.create(entityId).tree = BehaviorTree().apply {
                 name = "Move Close"
-                addBehaviors(SequenceSelector().apply {
-                    addBehaviors(
-                        SimpleUnitTargeter(UnitTargetType.HOSTILE, UnitCondition.CLOSE),
-                        MoveTowardUnitAction(2)
-                    )
-                })
+                addBehaviors(
+                    SequenceSelector().apply {
+                        name = "attack"
+                        addBehaviors(
+                            HasUnitInAttackRangeCondition(true),
+                            AttackAction()
+                        )
+                    },
+                    SequenceSelector().apply {
+                        addBehaviors(
+                            SimpleUnitTargeter(UnitTargetType.HOSTILE, UnitCondition.CLOSE),
+                            MoveTowardUnitAction(2)
+                        )
+                    }
+                )
             }
         } else {
             tagManager.register("PLAYER", entityId)
@@ -147,21 +158,25 @@ class UnitManageSystem : SortedIteratingSystem(
         moveUnit(unit, path, true)
     }
 
-    fun moveAndAttack(unit: Int, target: Int): Boolean {
+    fun getMoveAndAttackPath(unit: Int, target: Int): Path? {
         val tile1 = mUnit[unit].tile
         val tile2 = mUnit[target].tile
-        if (tileSystem.getDistance(tile1, tile2) == 1f) return attack(unit, target)
         val movement = getMovement(unit, 2)
-        if (tileSystem.getDistance(tile1, tile2) > movement) return false
+        if (tileSystem.getDistance(tile1, tile2) > movement + 1f) return null
         val area = pathfinderSystem.area(tile1, movement)
-        val path = pathfinderSystem.extractPath(
+        return pathfinderSystem.extractPath(
             area = area,
             goal = tile2,
             unit = unit,
             maxCost = movement,
             type = ExtractPathType.LOWEST_COST,
             inRange = 1f
-        ) ?: return false
+        ) ?: return null
+    }
+
+    fun moveAndAttack(unit: Int, target: Int, preview: Boolean = false): Boolean {
+        val path = getMoveAndAttackPath(unit, target) ?: return false
+        if (preview) return true
         moveUnit(
             unit,
             path,
@@ -175,9 +190,14 @@ class UnitManageSystem : SortedIteratingSystem(
             mAnimation.create(unit).let {
                 it.target = target
                 it.type = AnimationType.ATTACK
-                it.callback = { damage(unit, target, (10f * mStats[unit].damage).toInt()) }
+                it.callback = { damage(unit, target, getDamage(unit, target)) }
             }
         }
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    fun getDamage(unit: Int, target: Int): Int {
+        return (10f * mStats[unit].damage).toInt()
     }
 
     fun damage(unit: Int, target: Int, amount: Int) {
@@ -413,7 +433,7 @@ class UnitManageSystem : SortedIteratingSystem(
         nextSelect = next
     }
 
-    private fun getMovementCost(unit: Int, cost: Float, preview: Boolean = false): Int {
+    fun getMovementCost(unit: Int, cost: Float, preview: Boolean = false): Int {
         val cUnit = mUnit[unit]
         var apCost = 0
         if (cost > cUnit.extraMovement) {

@@ -33,7 +33,11 @@ class MoveTowardUnitAction(private val preserveAp: Int = 0) : BehaviorAction() {
         }
         val newDist = tileSystem.getDistance(mUnit[target].tile, path.last.tile)
         this.path = path
-        return 0f - newDist
+        return behaviorSystem.getScore(
+            "move forward",
+            unitManageSystem.getMovementCost(self, path.last.cost, true),
+            -newDist
+        )
     }
 
     override fun execute(): Boolean {

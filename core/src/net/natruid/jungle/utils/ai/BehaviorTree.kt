@@ -1,6 +1,6 @@
 package net.natruid.jungle.utils.ai
 
-class BehaviorTree : PrioritySelector() {
+class BehaviorTree : BehaviorBranch() {
     var overrideBehavior: String = ""
 
     override fun run(): Boolean {
@@ -9,7 +9,11 @@ class BehaviorTree : PrioritySelector() {
                 if (child.name == overrideBehavior) return child.run()
             }
         }
-        return super.run()
+        var hasOne = false
+        for (child in children) {
+            if (child.run()) hasOne = true
+        }
+        return hasOne
     }
 
     override fun reset() {
@@ -19,7 +23,7 @@ class BehaviorTree : PrioritySelector() {
             it.moveArea = null
             it.fullMoveArea = null
             it.score = 0f
-            it.execution.clear()
+            it.execution = null
         }
         super.reset()
     }

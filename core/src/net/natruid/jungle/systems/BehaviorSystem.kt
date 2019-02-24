@@ -34,7 +34,9 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
     private var lastIndex = Int.MIN_VALUE
     private var entitySize = 0
     private var currentJob: Job? = null
+    private val asyncJobs = HashSet<Deferred<Pair<Int, Float>?>>()
     private var currentUnit = -1
+    private val scoreMap = mapOf(Pair("kill", 1000f), Pair("damage", 100f))
 
     fun prepare() {
         if (phase == Phase.READY) return
@@ -46,6 +48,8 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
         unitGroup.clear()
         currentJob?.cancel()
         currentJob = null
+        asyncJobs.forEach { it.cancel() }
+        asyncJobs.clear()
         currentUnit = -1
         phase = Phase.STOPPED
     }
@@ -97,25 +101,23 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
             Phase.PERFORMING -> {
                 assert(currentUnit >= 0)
                 val unit = currentUnit
-                if (mBehavior[unit].execution.isNotEmpty()) {
-                    mBehavior[unit].execution.remove().execute()
+                mBehavior[unit].execution?.execute()
+                mBehavior[unit].execution = null
+                var hasTurn = false
+                loopAgents { id ->
+                    if (mUnit[id].hasTurn) {
+                        hasTurn = true
+                        true
+                    } else false
+                }
+                if (hasTurn) {
+                    phase = Phase.PLANNING
+                    currentJob = KtxAsync.launch {
+                        while (!animateSystem.ready) skipFrame()
+                        phase = if (plan()) Phase.PERFORMING else Phase.STOPPING
+                    }
                 } else {
-                    var hasTurn = false
-                    loopAgents { id ->
-                        if (mUnit[id].hasTurn) {
-                            hasTurn = true
-                            true
-                        } else false
-                    }
-                    if (hasTurn) {
-                        phase = Phase.PLANNING
-                        currentJob = KtxAsync.launch {
-                            while (!animateSystem.ready) skipFrame()
-                            phase = if (plan()) Phase.PERFORMING else Phase.STOPPING
-                        }
-                    } else {
-                        phase = Phase.STOPPED
-                    }
+                    phase = Phase.STOPPED
                 }
             }
             Phase.STOPPING -> {
@@ -139,9 +141,8 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
 
         var bestUnit = -1
         var highestScore = 0f
-        val jobs = HashSet<Deferred<Pair<Int, Float>?>>()
         loopAgents { id ->
-            jobs.add(KtxAsync.async {
+            asyncJobs.add(KtxAsync.async {
                 val agent = mBehavior[id]
                 val success = agent.tree.run()
                 if (success) {
@@ -152,7 +153,7 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
             })
             false
         }
-        for (job in jobs) {
+        for (job in asyncJobs) {
             val (id, score) = job.await() ?: continue
             if (bestUnit < 0 || highestScore < score) {
                 bestUnit = id
@@ -160,6 +161,7 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
             }
         }
 
+        asyncJobs.clear()
         currentUnit = bestUnit
 
         return bestUnit >= 0
@@ -203,12 +205,19 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
 
     fun getUnit(self: Int, targetType: UnitTargetType, condition: UnitCondition): Int {
         val group = getUnitGroup(targetType)
+        (group as ArrayList).removeIf { mUnit[it] == null }
         return when (condition) {
             UnitCondition.WEAK -> group.minBy { mUnit[it].hp }
             UnitCondition.STRONG -> group.maxBy { mUnit[it].hp }
             UnitCondition.CLOSE -> group.minBy { tileSystem.getDistance(mUnit[it].tile, mUnit[self].tile) }
             UnitCondition.FAR -> group.maxBy { tileSystem.getDistance(mUnit[it].tile, mUnit[self].tile) }
         } ?: -1
+    }
+
+    fun getScore(result: String, apCost: Int, amount: Float): Float {
+        var score = scoreMap[result] ?: 0f
+        score += (amount - apCost) / 100f
+        return score
     }
 
     override fun process(entityId: Int) {}

@@ -4,8 +4,10 @@ abstract class BehaviorAction : BehaviorLeaf() {
     override fun run(): Boolean {
         val score = evaluate() ?: return false
         val behaviorComponent = mBehavior[self]
-        behaviorComponent.score += score
-        behaviorComponent.execution.add(this)
+        if (score > behaviorComponent.score || behaviorComponent.execution == null) {
+            behaviorComponent.score = score
+            behaviorComponent.execution = this
+        }
         return true
     }
 

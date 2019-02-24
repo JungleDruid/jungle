@@ -51,7 +51,7 @@ class CombatTurnSystem : BaseSystem() {
             }
             Phase.NEXT_TURN -> {
                 if (!pathFollowSystem.ready) return
-                if (currentFactionIndex == factionList.size - 1) {
+                if (currentFactionIndex >= factionList.size - 1) {
                     turn += 1
                     currentFactionIndex = 0
                 } else {
