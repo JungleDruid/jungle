@@ -1,12 +1,13 @@
 package net.natruid.jungle.utils.ai.actions
 
-import com.artemis.ComponentMapper
-import net.natruid.jungle.components.TileComponent
+import net.natruid.jungle.systems.TileSystem
+import net.natruid.jungle.utils.ExtractPathType
+import net.natruid.jungle.utils.Logger
 import net.natruid.jungle.utils.Path
 import net.natruid.jungle.utils.ai.BehaviorAction
 
 class MoveTowardUnitAction(private val preserveAp: Int = 0) : BehaviorAction() {
-    private lateinit var mTile: ComponentMapper<TileComponent>
+    private lateinit var tileSystem: TileSystem
 
     private var path: Path? = null
 
@@ -15,19 +16,30 @@ class MoveTowardUnitAction(private val preserveAp: Int = 0) : BehaviorAction() {
         assert(target >= 0)
         val area = getFullMoveArea()
         val maxMovement = unitManageSystem.getMovement(self, preserveAp)
-        val path = pathfinderSystem.extractPath(area, mUnit[target].tile, true) ?: return null
-        if (path.isEmpty()) return null
-        val cost = path.last.cost
-        while (path.isNotEmpty() && (path.last.cost > maxMovement || mTile[path.last.tile]!!.unit >= 0)) {
-            path.removeLast()
+        val path = pathfinderSystem.extractPath(
+            area = area,
+            goal = mUnit[target].tile,
+            unit = self,
+            type = ExtractPathType.CLOSEST,
+            maxCost = maxMovement
+        )
+        if (path == null || path.isEmpty()) {
+            Logger.debug { "$self cannot find path" }
+            return null
         }
+        if (path.last.tile == mUnit[self].tile) {
+            Logger.debug { "$self is already at the destination" }
+            return null
+        }
+        val newDist = tileSystem.getDistance(mUnit[target].tile, path.last.tile)
         this.path = path
-        if (path.isEmpty()) return null
-        return path.last.cost - cost
+        return 0f - newDist
     }
 
     override fun execute(): Boolean {
+        Logger.debug { "$self moving with path size: ${path!!.size}" }
         unitManageSystem.moveUnit(self, path!!)
+        mBehavior[self].fullMoveArea = null
         return true
     }
 

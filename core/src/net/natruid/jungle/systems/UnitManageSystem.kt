@@ -9,6 +9,7 @@ import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.utils.Align
 import net.natruid.jungle.components.*
+import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.core.Marsh
 import net.natruid.jungle.systems.abstracts.SortedIteratingSystem
 import net.natruid.jungle.utils.*
@@ -38,6 +39,7 @@ class UnitManageSystem : SortedIteratingSystem(
     private lateinit var indicateSystem: IndicateSystem
     private lateinit var combatTurnSystem: CombatTurnSystem
     private lateinit var viewManageSystem: ViewManageSystem
+    private lateinit var animateSystem: AnimateSystem
     private lateinit var tagManager: TagManager
 
     private var unitsHasTurn = -1
@@ -98,7 +100,7 @@ class UnitManageSystem : SortedIteratingSystem(
                 addBehaviors(SequenceSelector().apply {
                     addBehaviors(
                         SimpleUnitTargeter(UnitTargetType.HOSTILE, UnitCondition.CLOSE),
-                        MoveTowardUnitAction()
+                        MoveTowardUnitAction(2)
                     )
                 })
             }
@@ -122,18 +124,17 @@ class UnitManageSystem : SortedIteratingSystem(
 
     fun moveUnit(unit: Int, path: Path, free: Boolean = false, callback: (() -> Unit)? = null) {
         if (unit < 0) return
-        mPathFollower.create(unit).apply {
-            if (this.path == null) {
-                this.path = path
-            } else {
-                this.path!!.addAll(path)
-            }
-            this.callback = callback
-        }
         val dest = path.peekLast()
         val cUnit = mUnit[unit]
         useAp(unit, if (free) 0 else getMovementCost(unit, dest.cost)) {
-            indicateSystem.remove(unit, IndicatorType.MOVE_AREA)
+            mPathFollower.create(unit).apply {
+                if (this.path == null) {
+                    this.path = path
+                } else {
+                    this.path!!.addAll(path)
+                }
+                this.callback = callback
+            }
             mTile[cUnit.tile]!!.unit = -1
             cUnit.tile = dest.tile
             mTile[dest.tile]!!.unit = unit
@@ -147,25 +148,23 @@ class UnitManageSystem : SortedIteratingSystem(
     }
 
     fun moveAndAttack(unit: Int, target: Int): Boolean {
-        val movement = getMovement(unit, 2)
         val tile1 = mUnit[unit].tile
         val tile2 = mUnit[target].tile
+        if (tileSystem.getDistance(tile1, tile2) == 1f) return attack(unit, target)
+        val movement = getMovement(unit, 2)
         if (tileSystem.getDistance(tile1, tile2) > movement) return false
         val area = pathfinderSystem.area(tile1, movement)
-        var cost = Float.MAX_VALUE
-        var dest = -1
-        for (node in area) {
-            if (node.cost < cost) {
-                if (tileSystem.getDistance(tile2, node.tile) == 1f) {
-                    dest = node.tile
-                    cost = node.cost
-                }
-            }
-        }
-        if (dest < 0) return false
+        val path = pathfinderSystem.extractPath(
+            area = area,
+            goal = tile2,
+            unit = unit,
+            maxCost = movement,
+            type = ExtractPathType.LOWEST_COST,
+            inRange = 1f
+        ) ?: return false
         moveUnit(
             unit,
-            pathfinderSystem.extractPath(area, dest)!!,
+            path,
             callback = { attack(unit, target) }
         )
         return true
@@ -273,6 +272,7 @@ class UnitManageSystem : SortedIteratingSystem(
         val cUnit = mUnit[unit]
         cUnit.ap -= ap
         viewManageSystem.get<SkillBarView>()?.setAp(cUnit.ap)
+        indicateSystem.remove(unit, IndicatorType.MOVE_AREA)
         if (cUnit.ap <= 0) {
             endTurn(unit)
             return true
@@ -448,6 +448,10 @@ class UnitManageSystem : SortedIteratingSystem(
                     }
                 }
             }
+            if (mouseCoord != null) {
+                val tile = tileSystem[mouseCoord]
+                Jungle.instance.debugView?.unitLabel?.setText("Unit: ${mTile[tile].unit}")
+            }
             lastCoord = mouseCoord
         }
         return false
@@ -480,7 +484,7 @@ class UnitManageSystem : SortedIteratingSystem(
 
     override fun process(entityId: Int) {
         if (unitsHasTurn == 0) {
-            combatTurnSystem.nextTurn()
+            if (animateSystem.ready) combatTurnSystem.nextTurn()
         } else if (nextSelect >= 0) {
             if (mUnit[nextSelect].hasTurn) {
                 if (!mPathFollower.has(nextSelect) && !mAnimation.has(nextSelect)) {

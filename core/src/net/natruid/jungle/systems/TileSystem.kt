@@ -442,10 +442,13 @@ class TileSystem : BaseSystem(), InputProcessor {
         mouseCoord = currentCoord
         if (currentCoord == null) {
             mott.visible = false
+            Jungle.instance.debugView?.tileLabel?.setText("Tile: -1")
             return false
         }
         mott.visible = true
         mott.position = mTransform[this[currentCoord]].position
+
+        Jungle.instance.debugView?.tileLabel?.setText("Tile: ${this[currentCoord]} $currentCoord")
 
         return false
     }

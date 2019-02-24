@@ -53,3 +53,5 @@ enum class AnimationType { ATTACK }
 enum class UnitTargetType { ANY, FRIENDLY, HOSTILE }
 
 enum class UnitCondition { WEAK, STRONG, CLOSE, FAR }
+
+enum class ExtractPathType { EXACT, CLOSEST, LOWEST_COST }

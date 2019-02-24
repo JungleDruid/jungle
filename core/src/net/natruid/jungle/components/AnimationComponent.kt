@@ -9,5 +9,5 @@ class AnimationComponent : Component() {
     var target = -1
     var type: AnimationType? = null
     var callback: (() -> Unit)? = null
-    var progress = 0
+    var time = 0f
 }

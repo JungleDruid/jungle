@@ -2,14 +2,19 @@ package net.natruid.jungle.systems
 
 import com.artemis.Aspect
 import com.artemis.ComponentMapper
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import ktx.async.KtxAsync
 import ktx.async.skipFrame
 import net.natruid.jungle.components.BehaviorComponent
 import net.natruid.jungle.components.UnitComponent
 import net.natruid.jungle.systems.abstracts.SortedIteratingSystem
-import net.natruid.jungle.utils.*
+import net.natruid.jungle.utils.Faction
+import net.natruid.jungle.utils.FactionComparator
+import net.natruid.jungle.utils.UnitCondition
+import net.natruid.jungle.utils.UnitTargetType
 
 class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class.java)) {
     override val comparator = FactionComparator()
@@ -18,7 +23,7 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
 
     private lateinit var unitManageSystem: UnitManageSystem
     private lateinit var combatTurnSystem: CombatTurnSystem
-    private lateinit var pathFollowSystem: PathFollowSystem
+    private lateinit var animateSystem: AnimateSystem
     private lateinit var tileSystem: TileSystem
     private lateinit var mUnit: ComponentMapper<UnitComponent>
     private lateinit var mBehavior: ComponentMapper<BehaviorComponent>
@@ -27,6 +32,7 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
     private var phase = Phase.STOPPED
     private var firstIndex = Int.MAX_VALUE
     private var lastIndex = Int.MIN_VALUE
+    private var entitySize = 0
     private var currentJob: Job? = null
     private var currentUnit = -1
 
@@ -47,6 +53,7 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
     private fun calculateIndex(): Boolean {
         firstIndex = Int.MAX_VALUE
         lastIndex = Int.MIN_VALUE
+        entitySize = sortedEntityIds.size
         val currentFaction = combatTurnSystem.faction
         for ((index, id) in sortedEntityIds.withIndex()) {
             val faction = mUnit[id].faction
@@ -62,6 +69,7 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
 
     private inline fun loopAgents(function: (id: Int) -> Boolean) {
         val ids = sortedEntityIds
+        if (entitySize != ids.size) calculateIndex()
         for (i in firstIndex..lastIndex) {
             if (function(ids[i])) break
         }
@@ -71,17 +79,17 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
         when (phase) {
             Phase.READY -> {
                 if (combatTurnSystem.faction == Faction.PLAYER) return
-                if (!calculateIndex()) {
-                    phase = Phase.STOPPED
-                    return
-                }
                 phase = Phase.PLANNING
                 currentJob = KtxAsync.launch {
-                    loopAgents { id ->
-                        mBehavior[id].tree.init(world, id)
-                        false
+                    phase = if (!calculateIndex()) {
+                        Phase.STOPPED
+                    } else {
+                        loopAgents { id ->
+                            mBehavior[id].tree.init(world, id)
+                            false
+                        }
+                        if (plan()) Phase.PERFORMING else Phase.STOPPING
                     }
-                    phase = if (plan()) Phase.PERFORMING else Phase.STOPPING
                 }
             }
             Phase.PLANNING -> {
@@ -102,7 +110,7 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
                     if (hasTurn) {
                         phase = Phase.PLANNING
                         currentJob = KtxAsync.launch {
-                            while (!pathFollowSystem.ready) skipFrame()
+                            while (!animateSystem.ready) skipFrame()
                             phase = if (plan()) Phase.PERFORMING else Phase.STOPPING
                         }
                     } else {
@@ -122,7 +130,7 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
         }
     }
 
-    private fun plan(): Boolean {
+    private suspend fun plan(): Boolean {
         // init
         loopAgents { id ->
             mBehavior[id].tree.reset()
@@ -131,16 +139,25 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
 
         var bestUnit = -1
         var highestScore = 0f
+        val jobs = HashSet<Deferred<Pair<Int, Float>?>>()
         loopAgents { id ->
-            val agent = mBehavior[id]
-            val success = agent.tree.run()
-            if (!success) {
-                Logger.debug { "No plan!" }
-            } else if (bestUnit < 0 || highestScore < agent.score) {
-                bestUnit = id
-                highestScore = agent.score
-            }
+            jobs.add(KtxAsync.async {
+                val agent = mBehavior[id]
+                val success = agent.tree.run()
+                if (success) {
+                    Pair(id, agent.score)
+                } else {
+                    null
+                }
+            })
             false
+        }
+        for (job in jobs) {
+            val (id, score) = job.await() ?: continue
+            if (bestUnit < 0 || highestScore < score) {
+                bestUnit = id
+                highestScore = score
+            }
         }
 
         currentUnit = bestUnit

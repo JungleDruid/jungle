@@ -154,34 +154,70 @@ class PathfinderSystem : BaseSystem() {
         return null
     }
 
-    fun extractPath(area: Area, goal: Int, closest: Boolean = false): Path? {
-        return extractPath(area.asIterable(), goal, closest)
+    fun extractPath(
+        area: Area,
+        goal: Int,
+        unit: Int = -1,
+        type: ExtractPathType = ExtractPathType.EXACT,
+        maxCost: Float = Float.NaN,
+        inRange: Float = Float.NaN
+    ): Path? {
+        return extractPath(area.asIterable(), goal, unit, type, maxCost, inRange)
     }
 
-    private fun extractPath(pathNodes: Iterable<PathNode>, goal: Int, closest: Boolean = false): Path? {
-        for (node in pathNodes) {
-            if (goal == node.tile) {
-                return node.buildPath()
-            }
-        }
-
-        if (closest) {
-            var closestNode: PathNode? = null
-            var minDist = Float.MAX_VALUE
-            for (node in pathNodes) {
-                val dist = tileSystem.getDistance(node.tile, goal)
-                if (dist < minDist) {
-                    if (closestNode == null || node.cost < closestNode.cost) {
-                        closestNode = node
-                        minDist = dist
+    private fun extractPath(
+        pathNodes: Iterable<PathNode>,
+        goal: Int,
+        unit: Int = -1,
+        type: ExtractPathType = ExtractPathType.EXACT,
+        maxCost: Float = Float.NaN,
+        inRange: Float = Float.NaN
+    ): Path? {
+        if (type == ExtractPathType.EXACT || type == ExtractPathType.CLOSEST) {
+            if (unit < 0 || mTile[goal].unit < 0) {
+                for (node in pathNodes) {
+                    if (goal == node.tile) {
+                        return buildPath(node, unit, maxCost)
                     }
                 }
             }
-
-            if (closestNode != null) return closestNode.buildPath()
+            if (type == ExtractPathType.EXACT) return null
         }
 
+        var bestNode: PathNode? = null
+        var minDist = Float.MAX_VALUE
+        for (node in pathNodes) {
+            val unit1 = mTile[node.tile].unit
+            if (unit > 0 && unit1 >= 0 && unit != unit1) continue
+            val dist = tileSystem.getDistance(node.tile, goal)
+            if (!inRange.isNaN() && dist > inRange) continue
+            val better = if (bestNode == null) true else when (type) {
+                ExtractPathType.CLOSEST -> dist < minDist || dist == minDist && node.cost < bestNode.cost
+                ExtractPathType.LOWEST_COST -> node.cost < bestNode.cost
+                else -> error("IMPOSSIBLE! $type")
+            }
+            if (better) {
+                bestNode = node
+                minDist = dist
+            }
+        }
+
+        if (bestNode != null) return buildPath(bestNode, unit, maxCost)
+
         return null
+    }
+
+    private fun buildPath(node: PathNode, unit: Int = -1, maxCost: Float = Float.NaN): Path {
+        val path = LinkedList<PathNode>()
+        var current: PathNode? = node
+        while (current != null) {
+            val unit1 = mTile[current.tile].unit
+            if ((maxCost.isNaN() || current.cost <= maxCost) && (unit < 0 || unit1 < 0 || unit == unit1)) {
+                path.addFirst(current)
+            }
+            current = current.prev
+        }
+        return path
     }
 
     override fun processSystem() {}

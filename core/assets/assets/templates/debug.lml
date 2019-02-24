@@ -11,4 +11,10 @@
     <label id="renderCallsLabel" style="small" color="green" padleft="5" row="true" align="left">
         RC: 0
     </label>
+    <label id="tileLabel" style="small" color="green" padleft="5" row="true" align="left">
+        Tile: -1
+    </label>
+    <label id="unitLabel" style="small" color="green" padleft="5" row="true" align="left">
+        Unit: -1
+    </label>
 </table>

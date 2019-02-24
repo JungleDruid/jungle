@@ -18,6 +18,10 @@ class DebugView : AbstractView() {
     lateinit var ramLabel: VisLabel
     @LmlActor("renderCallsLabel")
     lateinit var rcLabel: VisLabel
+    @LmlActor("tileLabel")
+    lateinit var tileLabel: VisLabel
+    @LmlActor("unitLabel")
+    lateinit var unitLabel: VisLabel
 
     override fun getViewId(): String {
         return "debug"

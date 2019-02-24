@@ -19,31 +19,35 @@ class AnimateSystem : IteratingSystem(Aspect.all(
     private lateinit var mAnimation: ComponentMapper<AnimationComponent>
     private lateinit var mTransform: ComponentMapper<TransformComponent>
     private lateinit var mUnit: ComponentMapper<UnitComponent>
+    private lateinit var pathFollowSystem: PathFollowSystem
+
+    val ready get() = entityIds.isEmpty && pathFollowSystem.ready
 
     private fun move(self: Int, target: Int) {
         val pos = Vector2()
         pos.set(mTransform[target].position)
         pos -= mTransform[self].position
         pos.nor()
-        pos *= 6 * world.delta
+        pos *= 400f * world.delta
         pos += mTransform[self].position
         mTransform[self].position = pos
     }
 
     override fun process(entityId: Int) {
         mAnimation[entityId].let {
-            it.progress += 1
+            it.time += world.delta
             when (it.type) {
                 AnimationType.ATTACK -> {
-                    if (it.progress <= 5) {
+                    if (it.time <= 0.05f) {
                         move(entityId, it.target)
-                        if (it.progress >= 5) {
-                            it.callback?.invoke()
-                        }
                     } else {
+                        it.callback?.apply {
+                            invoke()
+                            it.callback = null
+                        }
                         val tile = mUnit[entityId].tile
                         move(entityId, tile)
-                        if (it.progress >= 10) {
+                        if (it.time >= 0.1f) {
                             mTransform[entityId].position = mTransform[tile].position
                             mAnimation.remove(entityId)
                         }

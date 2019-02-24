@@ -34,10 +34,11 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
         private set
     var time = 0f
         private set
+    var debugView: DebugView? = null
+        private set
 
     private var currentScreen: AbstractScreen? = null
     private val viewList = ArrayList<AbstractView>()
-    private var debugView: DebugView? = null
     private var targetFPS = 60
     private var backgroundFPS = 10
     private var pauseOnBackground = false
