@@ -1,10 +1,9 @@
 package net.natruid.jungle.components
 
 import com.artemis.Component
-import net.natruid.jungle.utils.PathNode
-import java.util.*
+import net.natruid.jungle.utils.Path
 
 class PathFollowerComponent : Component() {
-    var path: Deque<PathNode>? = null
+    var path: Path? = null
     var callback: (() -> Unit)? = null
 }

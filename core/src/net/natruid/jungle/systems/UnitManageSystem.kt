@@ -12,10 +12,11 @@ import net.natruid.jungle.components.*
 import net.natruid.jungle.core.Marsh
 import net.natruid.jungle.systems.abstracts.SortedIteratingSystem
 import net.natruid.jungle.utils.*
-import net.natruid.jungle.utils.ai.actions.MoveTowardTargetAction
+import net.natruid.jungle.utils.ai.BehaviorTree
+import net.natruid.jungle.utils.ai.SequenceSelector
+import net.natruid.jungle.utils.ai.actions.MoveTowardUnitAction
+import net.natruid.jungle.utils.ai.conditions.SimpleUnitTargeter
 import net.natruid.jungle.views.SkillBarView
-import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.math.ceil
 
 class UnitManageSystem : SortedIteratingSystem(
@@ -30,7 +31,7 @@ class UnitManageSystem : SortedIteratingSystem(
     private lateinit var mLabel: ComponentMapper<LabelComponent>
     private lateinit var mStats: ComponentMapper<StatsComponent>
     private lateinit var mAttributes: ComponentMapper<AttributesComponent>
-    private lateinit var mGoap: ComponentMapper<GoapComponent>
+    private lateinit var mBehavior: ComponentMapper<BehaviorComponent>
     private lateinit var mAnimation: ComponentMapper<AnimationComponent>
     private lateinit var tileSystem: TileSystem
     private lateinit var pathfinderSystem: PathfinderSystem
@@ -60,6 +61,7 @@ class UnitManageSystem : SortedIteratingSystem(
     ): Int {
         val tile = tileSystem[coord]
         assert(tile >= 0)
+        if (mTile[tile].unit >= 0) return -1
         val entityId = world.create()
         mTransform.create(entityId).apply {
             position = mTransform[tile].position
@@ -91,7 +93,15 @@ class UnitManageSystem : SortedIteratingSystem(
             align = Align.center
         }
         if (faction != Faction.PLAYER) {
-            mGoap.create(entityId).availableActions.add(MoveTowardTargetAction())
+            mBehavior.create(entityId).tree = BehaviorTree().apply {
+                name = "Move Close"
+                addBehaviors(SequenceSelector().apply {
+                    addBehaviors(
+                        SimpleUnitTargeter(UnitTargetType.HOSTILE, UnitCondition.CLOSE),
+                        MoveTowardUnitAction()
+                    )
+                })
+            }
         } else {
             tagManager.register("PLAYER", entityId)
         }
@@ -105,12 +115,12 @@ class UnitManageSystem : SortedIteratingSystem(
     fun moveUnit(unit: Int, tile: Int): Boolean {
         val cUnit = mUnit[unit]
         val area = pathfinderSystem.area(cUnit.tile, getMovement(unit))
-        val path = pathfinderSystem.extractPath(area.asIterable(), tile) ?: return false
+        val path = pathfinderSystem.extractPath(area, tile) ?: return false
         moveUnit(unit, path)
         return true
     }
 
-    fun moveUnit(unit: Int, path: Deque<PathNode>, free: Boolean = false, callback: (() -> Unit)? = null) {
+    fun moveUnit(unit: Int, path: Path, free: Boolean = false, callback: (() -> Unit)? = null) {
         if (unit < 0) return
         mPathFollower.create(unit).apply {
             if (this.path == null) {
@@ -155,7 +165,7 @@ class UnitManageSystem : SortedIteratingSystem(
         if (dest < 0) return false
         moveUnit(
             unit,
-            pathfinderSystem.extractPath(area.asIterable(), dest)!!,
+            pathfinderSystem.extractPath(area, dest)!!,
             callback = { attack(unit, target) }
         )
         return true
@@ -301,20 +311,24 @@ class UnitManageSystem : SortedIteratingSystem(
         return false
     }
 
-    fun getAllies(faction: Faction): IntArray {
+    fun getUnits(): List<Int> {
+        return sortedEntityIds.toList()
+    }
+
+    fun getAllies(faction: Faction): List<Int> {
         val list = ArrayList<Int>()
         for (id in sortedEntityIds) {
             if (mUnit[id].faction == faction) list.add(id)
         }
-        return list.toIntArray()
+        return list
     }
 
-    fun getEnemies(faction: Faction): IntArray {
+    fun getEnemies(faction: Faction): List<Int> {
         val list = ArrayList<Int>()
         for (id in sortedEntityIds) {
             if (mUnit[id].faction != faction) list.add(id)
         }
-        return list.toIntArray()
+        return list
     }
 
     private fun showMoveArea(unit: Int) {

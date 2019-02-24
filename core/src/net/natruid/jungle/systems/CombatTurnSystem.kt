@@ -17,7 +17,7 @@ class CombatTurnSystem : BaseSystem() {
     private var phase = Phase.NONE
 
     private lateinit var unitManageSystem: UnitManageSystem
-    private lateinit var goapSystem: GoapSystem
+    private lateinit var behaviorSystem: BehaviorSystem
     private lateinit var pathFollowSystem: PathFollowSystem
 
     fun start() {
@@ -61,7 +61,7 @@ class CombatTurnSystem : BaseSystem() {
                 val nextFaction = factionList[currentFactionIndex]
                 Logger.debug { "Turn ended. Next faction: $nextFaction" }
                 unitManageSystem.giveTurn(nextFaction)
-                goapSystem.prepare()
+                behaviorSystem.prepare()
                 phase = Phase.READY
             }
             else -> {

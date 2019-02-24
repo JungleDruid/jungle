@@ -4,9 +4,7 @@ import com.artemis.BaseSystem
 import com.artemis.ComponentMapper
 import com.badlogic.gdx.utils.BinaryHeap
 import net.natruid.jungle.components.TileComponent
-import net.natruid.jungle.utils.PathNode
-import net.natruid.jungle.utils.Point
-import net.natruid.jungle.utils.TerrainType
+import net.natruid.jungle.utils.*
 import java.util.*
 import kotlin.collections.set
 
@@ -126,7 +124,7 @@ class PathfinderSystem : BaseSystem() {
         maxCost: Float?,
         diagonal: Boolean = true,
         buildingRoad: Boolean = false
-    ): Array<PathNode> {
+    ): Area {
         init(from)
         while (!frontier.isEmpty) {
             val current = frontier.pop()
@@ -144,7 +142,7 @@ class PathfinderSystem : BaseSystem() {
         from: Int,
         goal: Int,
         diagonal: Boolean = true
-    ): Deque<PathNode>? {
+    ): Path? {
         init(from)
         while (!frontier.isEmpty) {
             val current = frontier.pop()
@@ -156,18 +154,33 @@ class PathfinderSystem : BaseSystem() {
         return null
     }
 
-    fun extractPath(pathNodes: Iterable<PathNode>, goal: Int): Deque<PathNode>? {
+    fun extractPath(area: Area, goal: Int, closest: Boolean = false): Path? {
+        return extractPath(area.asIterable(), goal, closest)
+    }
+
+    private fun extractPath(pathNodes: Iterable<PathNode>, goal: Int, closest: Boolean = false): Path? {
         for (node in pathNodes) {
             if (goal == node.tile) {
-                val path = LinkedList<PathNode>()
-                var current: PathNode? = node
-                while (current != null) {
-                    path.addFirst(current)
-                    current = current.prev
-                }
-                return path
+                return node.buildPath()
             }
         }
+
+        if (closest) {
+            var closestNode: PathNode? = null
+            var minDist = Float.MAX_VALUE
+            for (node in pathNodes) {
+                val dist = tileSystem.getDistance(node.tile, goal)
+                if (dist < minDist) {
+                    if (closestNode == null || node.cost < closestNode.cost) {
+                        closestNode = node
+                        minDist = dist
+                    }
+                }
+            }
+
+            if (closestNode != null) return closestNode.buildPath()
+        }
+
         return null
     }
 

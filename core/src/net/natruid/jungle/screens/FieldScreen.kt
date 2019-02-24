@@ -19,7 +19,7 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
     TileSystem(),
     UnitManageSystem(),
     CombatTurnSystem(),
-    GoapSystem(),
+    BehaviorSystem(),
     IndicateSystem(),
     PathfinderSystem(),
     PathFollowSystem(),
@@ -36,8 +36,11 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
         world.getSystem(TileSystem::class.java).create(20, 20, seed)
         world.getSystem(UnitManageSystem::class.java).apply {
             addUnit(faction = Faction.PLAYER)
-            addUnit(Point(5, 5), Faction.ENEMY)
-            addUnit(Point(10, 10), Faction.ENEMY)
+            var count = 0
+            while (count < 20) {
+                if (addUnit(Point(Random.nextInt(20), Random.nextInt(20)), Faction.ENEMY) >= 0)
+                    count += 1
+            }
         }
         world.getSystem(RenderSystem::class.java).sort()
         world.getSystem(ViewManageSystem::class.java).show<SkillBarView>()
@@ -54,7 +57,7 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
     override fun keyUp(keycode: Int): Boolean {
         super.keyUp(keycode)
         if (keycode == Input.Keys.R) {
-            world.getSystem(GoapSystem::class.java).reset()
+            world.getSystem(BehaviorSystem::class.java).reset()
             world.getSystem(UnitManageSystem::class.java).reset()
             world.getSystem(CombatTurnSystem::class.java).reset()
             world.getSystem(ViewManageSystem::class.java).hideAll()

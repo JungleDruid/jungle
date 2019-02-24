@@ -49,3 +49,7 @@ enum class StatType {
 enum class Faction(val value: Int) { NONE(0), PLAYER(1.shl(0)), ENEMY(1.shl(1)) }
 
 enum class AnimationType { ATTACK }
+
+enum class UnitTargetType { ANY, FRIENDLY, HOSTILE }
+
+enum class UnitCondition { WEAK, STRONG, CLOSE, FAR }
