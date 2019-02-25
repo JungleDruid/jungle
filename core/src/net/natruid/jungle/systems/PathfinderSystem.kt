@@ -31,7 +31,7 @@ class PathfinderSystem : BaseSystem() {
         current: PathNode,
         diagonal: Boolean = false,
         maxCost: Float? = null,
-        goal: Int? = null,
+        goal: Int = -1,
         buildingRoad: Boolean = false
     ): Boolean {
         if (!diagonal) {
@@ -106,12 +106,8 @@ class PathfinderSystem : BaseSystem() {
                     nextNode.prev = current
                 }
                 var priority = nextCost
-                if (goal != null) {
-                    priority += heuristic(
-                        mTile[goal].coord,
-                        nextTileComponent!!.coord,
-                        if (diagonal) .5f else 0f
-                    )
+                if (goal >= 0) {
+                    priority += heuristic(goal, next, if (nextTileComponent!!.hasRoad) -0.5f else 0f)
                 }
                 frontier.add(node, priority)
             }
@@ -134,22 +130,25 @@ class PathfinderSystem : BaseSystem() {
         return visited.values.toTypedArray()
     }
 
-    private fun heuristic(a: Point, b: Point, f: Float): Float {
-        return (Math.abs(a.x - b.x) + Math.abs(a.y - b.y)).toFloat() + f
+    private fun heuristic(a: Int, b: Int, f: Float): Float {
+        return tileSystem.getDistance(a, b) + f
     }
 
     fun path(
         from: Int,
         goal: Int,
-        diagonal: Boolean = true
+        diagonal: Boolean = true,
+        unit: Int = -1,
+        type: ExtractPathType = ExtractPathType.EXACT,
+        maxCost: Float = Float.NaN
     ): Path? {
         init(from)
         while (!frontier.isEmpty) {
             val current = frontier.pop()
-            if (searchNeighbors(current, goal = goal, buildingRoad = false))
-                return extractPath(visited.values, goal)!!
-            if (diagonal && searchNeighbors(current, true, goal = goal, buildingRoad = false))
-                return extractPath(visited.values, goal)!!
+            repeat(if (diagonal) 2 else 1) { i ->
+                if (searchNeighbors(current, i > 0, goal = goal, buildingRoad = false))
+                    return extractPath(visited.values, goal, unit, type, maxCost)
+            }
         }
         return null
     }
