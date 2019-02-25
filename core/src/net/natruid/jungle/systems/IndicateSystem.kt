@@ -23,6 +23,7 @@ class IndicateSystem : BaseSystem() {
     private lateinit var mLabel: ComponentMapper<LabelComponent>
     private lateinit var mIndicator: ComponentMapper<IndicatorComponent>
     private lateinit var mIndicatorOwner: ComponentMapper<IndicatorOwnerComponent>
+    private lateinit var mUI: ComponentMapper<UIComponent>
     private val moveAreaColor = Color(0f, 1f, 1f, .4f)
 
     fun addResult(entityId: Int, indicatorType: IndicatorType, pathfinderResult: Area) {
@@ -60,16 +61,27 @@ class IndicateSystem : BaseSystem() {
                         type = ShapeRenderer.ShapeType.Filled
                         color = moveAreaColor
                     }
-                    mLabel.create(indicator).apply {
-                        text = formatter.format(p.cost)
-                        align = Align.center
-                        fontName = "big"
-                    }
                     mIndicator.create(indicator).apply {
                         this.entityId = entityId
                         type = indicatorType
                     }
                     entityArrayBuilder.add(indicator)
+                }
+                world.create().let { indicatorText ->
+                    mTransform.create(indicatorText).apply {
+                        position = mTransform[tile].position
+                    }
+                    mLabel.create(indicatorText).apply {
+                        text = formatter.format(p.cost)
+                        align = Align.center
+                        fontName = "small"
+                    }
+                    mIndicator.create(indicatorText).apply {
+                        this.entityId = entityId
+                        type = indicatorType
+                    }
+                    mUI.create(indicatorText)
+                    entityArrayBuilder.add(indicatorText)
                 }
             }
         }

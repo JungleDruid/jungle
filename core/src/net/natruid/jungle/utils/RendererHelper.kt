@@ -19,38 +19,42 @@ class RendererHelper : Disposable {
     var batchDraws = 0
     var batchBegins = 0
 
-    private var current = RendererType.NONE
+    private var rendererType = RendererType.NONE
     private var shapeType = ShapeRenderer.ShapeType.Line
+    private var camera: OrthographicCamera? = null
     private val projection = Vector3()
-    val cropRect = Rectangle()
-    private var cropping = false
-    private var cropped = false
+    private var crop: Rectangle? = null
 
     fun begin(
         camera: OrthographicCamera,
         rendererType: RendererType,
         shapeType: ShapeRenderer.ShapeType = ShapeRenderer.ShapeType.Line,
-        shaderProgram: ShaderProgram = Shader.defaultShaderProgram
+        shaderProgram: ShaderProgram = Shader.defaultShaderProgram,
+        crop: Rectangle? = null
     ) {
         if (rendererType == RendererType.SPRITE_BATCH) batchDraws += 1
         if (rendererType == RendererType.SPRITE_BATCH && batch.shader != shaderProgram) batch.shader = shaderProgram
-        if (current == rendererType && (rendererType != RendererType.SHAPE_RENDERER || this.shapeType == shapeType)) return
+        if (this.rendererType == rendererType) {
+            if (this.camera == camera && (this.crop == crop || this.crop?.equals(crop) == true)) {
+                if (rendererType != RendererType.SHAPE_RENDERER) return
+                if (this.shapeType == shapeType) return
+            }
+        }
 
         end()
 
         when (rendererType) {
             RendererType.SPRITE_BATCH -> {
-                if (cropping) {
+                if (crop != null) {
                     Gdx.gl.glEnable(GL20.GL_SCISSOR_TEST)
-                    projection.set(cropRect.x, cropRect.y, 0f)
+                    projection.set(crop.x, crop.y, 0f)
                     camera.project(projection)
                     Gdx.gl.glScissor(
                         projection.x.toInt(),
                         projection.y.toInt(),
-                        (cropRect.width / camera.zoom).toInt(),
-                        (cropRect.height / camera.zoom).toInt()
+                        (crop.width / camera.zoom).toInt(),
+                        (crop.height / camera.zoom).toInt()
                     )
-                    cropped = true
                 }
                 batchBegins += 1
                 batch.color = Color.WHITE
@@ -72,18 +76,19 @@ class RendererHelper : Disposable {
             }
         }
 
-        current = rendererType
+        this.rendererType = rendererType
+        this.camera = camera
+        this.crop = crop
     }
 
     fun end() {
-        when (current) {
+        when (rendererType) {
             RendererType.SPRITE_BATCH -> {
                 batch.end()
                 batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
                 batch.color = Color.WHITE
-                if (cropped) {
+                if (crop != null) {
                     Gdx.gl.glDisable(GL20.GL_SCISSOR_TEST)
-                    cropped = false
                 }
                 if (batch.shader != Shader.defaultShaderProgram) batch.shader = Shader.defaultShaderProgram
             }
@@ -96,16 +101,7 @@ class RendererHelper : Disposable {
             }
         }
 
-        current = RendererType.NONE
-    }
-
-    fun crop(x: Float, y: Float, width: Float, height: Float) {
-        cropRect.set(x, y, width, height)
-        cropping = true
-    }
-
-    fun cancelCrop() {
-        cropping = false
+        rendererType = RendererType.NONE
     }
 
     override fun dispose() {

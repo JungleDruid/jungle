@@ -27,6 +27,7 @@ import java.util.*
 class Jungle(private val client: Client, debug: Boolean = false) : ApplicationListener, InputProcessor {
     val renderer by lazy { RendererHelper() }
     val camera by lazy { OrthographicCamera() }
+    val uiCamera by lazy { OrthographicCamera() }
     val uiViewport by lazy { ScreenViewport() }
     val loadingScreen by lazy { LoadingScreen() }
 
@@ -202,6 +203,10 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
         camera.viewportWidth = width.toFloat()
         camera.viewportHeight = height.toFloat()
         camera.update()
+        uiCamera.viewportWidth = width.toFloat()
+        uiCamera.viewportHeight = height.toFloat()
+        uiCamera.position.set(width / 2f, height / 2f, 0f)
+        uiCamera.update()
         uiViewport.update(width, height, true)
         currentScreen?.resize(width, height)
     }

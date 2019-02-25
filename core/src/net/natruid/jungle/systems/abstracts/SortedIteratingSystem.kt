@@ -33,9 +33,11 @@ abstract class SortedIteratingSystem(aspect: Aspect.Builder)
             entities.sortWith(comparator)
             needSorting = false
         }
+        preProcess()
         for (entity in entities) {
             process(entity)
         }
+        postProcess()
     }
 
     fun sort() {
@@ -43,4 +45,7 @@ abstract class SortedIteratingSystem(aspect: Aspect.Builder)
     }
 
     abstract fun process(entityId: Int)
+
+    open fun preProcess() {}
+    open fun postProcess() {}
 }

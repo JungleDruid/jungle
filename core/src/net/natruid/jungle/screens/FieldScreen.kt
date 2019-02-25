@@ -26,7 +26,8 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
     AnimateSystem(),
     CameraControlSystem(),
     ViewManageSystem(),
-    RenderSystem()
+    RenderSystem(),
+    UIRenderSystem()
 ).build()) {
     init {
         init()

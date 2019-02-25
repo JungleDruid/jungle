@@ -45,6 +45,7 @@ class TileSystem : BaseSystem(), InputProcessor {
 
     private val halfTileSize = tileSize / 2
 
+    private lateinit var cameraControlSystem: CameraControlSystem
     private lateinit var mTile: ComponentMapper<TileComponent>
     private lateinit var mTransform: ComponentMapper<TransformComponent>
     private lateinit var mTexture: ComponentMapper<TextureComponent>
@@ -88,6 +89,7 @@ class TileSystem : BaseSystem(), InputProcessor {
             it.setUniformf("bound", 0.45f)
         }
     }
+    private val tileCropComponent = CropComponent()
 
     operator fun get(coord: Point): Int {
         if (!isCoordValid(coord)) return -1
@@ -188,10 +190,14 @@ class TileSystem : BaseSystem(), InputProcessor {
                         }
                     }
                 }
-                when {
-                    cTile.terrainType == TerrainType.WATER -> world.edit(tile).add(waterTileShaderComponent)
-                    else -> world.edit(tile).add(tileShaderComponent)
-                }
+
+                world.edit(tile)
+                    .add(when {
+                        cTile.terrainType == TerrainType.WATER -> waterTileShaderComponent
+                        else -> tileShaderComponent
+                    })
+                    .add(tileCropComponent)
+
                 if (cTile.hasRoad) {
                     // create road or bridge
                     world.create().let { road ->
@@ -346,12 +352,15 @@ class TileSystem : BaseSystem(), InputProcessor {
                 color = mouseOnTileColor
             }
         }
-        renderer.crop(
-            -halfTileSize.toFloat(),
-            -halfTileSize.toFloat(),
-            (columns * tileSize).toFloat(),
-            (rows * tileSize).toFloat()
-        )
+        tileCropComponent.rect.let {
+            it.set(
+                -halfTileSize.toFloat(),
+                -halfTileSize.toFloat(),
+                (columns * tileSize).toFloat(),
+                (rows * tileSize).toFloat()
+            )
+            cameraControlSystem.cropRect = it
+        }
     }
 
     fun getDistance(tile1: Int, tile2: Int): Float {
@@ -496,7 +505,7 @@ class TileSystem : BaseSystem(), InputProcessor {
         rows = 0
         mouseOnTile = -1
         tagManager.unregister(TAG_GRID_RENDERER)
-        renderer.cancelCrop()
+        cameraControlSystem.cropRect = null
     }
 
     override fun processSystem() {

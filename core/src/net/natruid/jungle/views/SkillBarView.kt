@@ -8,6 +8,7 @@ import com.badlogic.gdx.utils.Pool
 import com.badlogic.gdx.utils.Pools
 import com.github.czyzby.lml.annotation.LmlActor
 import com.kotcrab.vis.ui.widget.VisTable
+import net.natruid.jungle.core.Jungle
 
 class SkillBarView : AbstractView() {
     @LmlActor("apBar")
@@ -65,6 +66,7 @@ class SkillBarView : AbstractView() {
 
         override fun draw(batch: Batch, parentAlpha: Float) {
             batch.end()
+            shapeRenderer.projectionMatrix = Jungle.instance.uiViewport.camera.combined
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
             shapeRenderer.color = color
             shapeRenderer.circle(x + width / 2, y + height / 2, 10f)

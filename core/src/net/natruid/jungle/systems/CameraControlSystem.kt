@@ -4,6 +4,7 @@ import com.artemis.BaseSystem
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
+import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector2
 import ktx.math.times
 import net.natruid.jungle.core.Jungle
@@ -12,8 +13,9 @@ import kotlin.math.max
 import kotlin.math.min
 
 class CameraControlSystem : BaseSystem(), InputProcessor {
+    var cropRect: Rectangle? = null
+
     private val camera = Jungle.instance.camera
-    private val cropRect = Jungle.instance.renderer.cropRect
     private val speed = 512f
     private val maxZoom = 2f
     private val minZoom = 0.25f
@@ -37,9 +39,11 @@ class CameraControlSystem : BaseSystem(), InputProcessor {
         }
 
     private fun clamp() {
-        camera.position.apply {
-            x = x.coerceIn(cropRect.x, cropRect.x + cropRect.width)
-            y = y.coerceIn(cropRect.y, cropRect.y + cropRect.height)
+        cropRect?.let {
+            camera.position.apply {
+                x = x.coerceIn(it.x, it.x + it.width)
+                y = y.coerceIn(it.y, it.y + it.height)
+            }
         }
     }
 
