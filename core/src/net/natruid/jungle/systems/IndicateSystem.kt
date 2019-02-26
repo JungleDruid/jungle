@@ -52,14 +52,14 @@ class IndicateSystem : BaseSystem() {
             p.tile.let { tile ->
                 world.create().let { indicator ->
                     mTransform.create(indicator).apply {
-                        position = mTransform[tile].position
+                        position.set(mTransform[tile].position)
                         z = Constants.Z_PATH_INDICATOR
                     }
                     mRect.create(indicator).apply {
                         width = TileSystem.tileSize.toFloat()
                         height = tileSize.toFloat()
                         type = ShapeRenderer.ShapeType.Filled
-                        color = moveAreaColor
+                        color.set(moveAreaColor)
                     }
                     mIndicator.create(indicator).apply {
                         this.entityId = entityId
@@ -69,7 +69,7 @@ class IndicateSystem : BaseSystem() {
                 }
                 world.create().let { indicatorText ->
                     mTransform.create(indicatorText).apply {
-                        position = mTransform[tile].position
+                        position.set(mTransform[tile].position)
                     }
                     mLabel.create(indicatorText).apply {
                         text = formatter.format(p.cost)
@@ -119,14 +119,14 @@ class IndicateSystem : BaseSystem() {
         for (node in path) {
             world.create().let { indicator ->
                 mTransform.create(indicator).apply {
-                    position = mTransform[node.tile].position
+                    position.set(mTransform[node.tile].position)
                     z = Constants.Z_PATH_INDICATOR
                 }
                 mRect.create(indicator).apply {
                     width = tileSize.toFloat()
                     height = tileSize.toFloat()
                     type = ShapeRenderer.ShapeType.Filled
-                    color = moveAreaColor
+                    color.set(moveAreaColor)
                 }
                 mIndicator.create(indicator).apply {
                     this.entityId = entityId

@@ -13,5 +13,5 @@ class TextureComponent : Component() {
         }
     var flipX: Boolean = false
     var flipY: Boolean = false
-    var color: Color = Color.WHITE
+    val color: Color = Color(Color.WHITE)
 }

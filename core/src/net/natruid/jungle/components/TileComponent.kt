@@ -6,7 +6,7 @@ import net.natruid.jungle.utils.Point
 import net.natruid.jungle.utils.TerrainType
 
 class TileComponent : Component() {
-    var coord: Point = Point()
+    val coord: Point = Point()
     var terrainType: TerrainType = TerrainType.NONE
     var hasRoad: Boolean = false
     @EntityId

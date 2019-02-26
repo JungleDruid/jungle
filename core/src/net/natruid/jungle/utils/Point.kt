@@ -2,13 +2,13 @@ package net.natruid.jungle.utils
 
 data class Point(var x: Int, var y: Int) {
     companion object {
-        private val adjacent = arrayOf(
+        val adjacent = arrayOf(
             ImmutablePoint(Point(1, 0)),
             ImmutablePoint(Point(0, 1)),
             ImmutablePoint(Point(-1, 0)),
             ImmutablePoint(Point(0, -1))
         )
-        private val diagonals = arrayOf(
+        val diagonals = arrayOf(
             ImmutablePoint(Point(1, 1)),
             ImmutablePoint(Point(-1, 1)),
             ImmutablePoint(Point(-1, -1)),
@@ -18,14 +18,16 @@ data class Point(var x: Int, var y: Int) {
 
     constructor() : this(0, 0)
 
-    fun set(x: Int, y: Int) {
+    fun set(x: Int, y: Int): Point {
         this.x = x
         this.y = y
+        return this
     }
 
-    fun set(target: Point) {
+    fun set(target: Point): Point {
         this.x = target.x
         this.y = target.y
+        return this
     }
 
     override fun toString(): String {
@@ -34,12 +36,6 @@ data class Point(var x: Int, var y: Int) {
 
     fun neighbor(index: Int, diagonal: Boolean = false): Point {
         return this + if (diagonal) diagonals[index] else adjacent[index]
-    }
-
-    fun neighbors(diagonal: Boolean = false): Array<Point> {
-        return Array(4) {
-            neighbor(it, diagonal)
-        }
     }
 
     operator fun plusAssign(other: Point) {

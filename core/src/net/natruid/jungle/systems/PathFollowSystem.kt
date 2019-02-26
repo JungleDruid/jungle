@@ -35,9 +35,9 @@ class PathFollowSystem : IteratingSystem(Aspect.all(
         v *= speed * world.delta
         if (len2 > v.len2()) {
             v += transform.position
-            transform.position = v
+            transform.position.set(v)
         } else {
-            transform.position = destination
+            transform.position.set(destination)
         }
 
         if (transform.position == destination) {

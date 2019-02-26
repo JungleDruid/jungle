@@ -12,7 +12,6 @@ import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Vector3
 import ktx.graphics.use
 import net.natruid.jungle.components.*
@@ -110,12 +109,9 @@ class TileSystem : BaseSystem(), InputProcessor {
         return x >= 0 && y >= 0 && x < columns && y < rows
     }
 
-    fun neighbors(entityId: Int, diagonal: Boolean = false): IntArray {
-        return neighbors(mTile[entityId].coord, diagonal)
-    }
-
-    fun neighbors(coord: Point, diagonal: Boolean = false): IntArray {
-        return IntArray(4) { this[coord.neighbor(it, diagonal)] }
+    fun neighbor(x: Int, y: Int, index: Int, diagonal: Boolean = false): Int {
+        val p = if (diagonal) Point.diagonals[index] else Point.adjacent[index]
+        return this[x + p.x, y + p.y]
     }
 
     fun up(coord: Point): Int {
@@ -168,7 +164,7 @@ class TileSystem : BaseSystem(), InputProcessor {
             for (x in 0 until columns) {
                 val tile = tileEntities[x][y]
                 val cTile = mTile[tile]
-                mTransform[tile].position = Vector2(x * tileSize.toFloat(), y * tileSize.toFloat())
+                mTransform[tile].position.set(x * tileSize.toFloat(), y * tileSize.toFloat())
                 mTexture[tile].apply {
                     region = when (cTile.terrainType) {
                         TerrainType.NONE -> dirtTexture
@@ -176,7 +172,7 @@ class TileSystem : BaseSystem(), InputProcessor {
                         TerrainType.GRASS -> grassTexture
                         TerrainType.WATER -> waterTexture
                     }
-                    color = when (cTile.terrainType) {
+                    color.set(when (cTile.terrainType) {
                         TerrainType.WATER ->
                             Color(1f, 1f, 1f, .7f)
                         else -> {
@@ -188,7 +184,7 @@ class TileSystem : BaseSystem(), InputProcessor {
                                 1f
                             )
                         }
-                    }
+                    })
                 }
 
                 world.edit(tile)
@@ -203,7 +199,7 @@ class TileSystem : BaseSystem(), InputProcessor {
                     world.create().let { road ->
                         mTransform.create(road).apply {
                             mTransform[tile].let {
-                                position = it.position
+                                position.set(it.position)
                                 z = it.z + 0.1f
                             }
                             val coord = cTile.coord
@@ -310,7 +306,7 @@ class TileSystem : BaseSystem(), InputProcessor {
                     val obstacle = cTile.obstacle
                     val cObstacle = mObstacle[obstacle]
                     mTransform.create(obstacle).apply {
-                        position = mTransform[tile].position
+                        position.set(mTransform[tile].position)
                         z = Z_OBSTACLE
                         scale.set(
                             generator.random.nextFloat() * 0.2f + 0.9f,
@@ -349,7 +345,7 @@ class TileSystem : BaseSystem(), InputProcessor {
                 width = tileSize.toFloat()
                 height = tileSize.toFloat()
                 type = ShapeRenderer.ShapeType.Filled
-                color = mouseOnTileColor
+                color.set(mouseOnTileColor)
             }
         }
         tileCropComponent.rect.let {
@@ -416,21 +412,20 @@ class TileSystem : BaseSystem(), InputProcessor {
         }
     }
 
-    private fun screenToCoord(screenX: Int, screenY: Int): Point? {
+    private val projection = Vector3()
+
+    private fun screenToCoord(screenCoord: Point): Point? {
         if (columns == 0) return null
 
+        val (screenX, screenY) = screenCoord
         val camera = Jungle.instance.camera
-        val projection = Vector3(screenX.toFloat(), screenY.toFloat(), 0f)
+        projection.set(screenX.toFloat(), screenY.toFloat(), 0f)
         camera.unproject(projection)
         val x = projection.x.roundToInt() + halfTileSize
         val y = projection.y.roundToInt() + halfTileSize
         if (x < 0 || x >= columns * tileSize || y < 0 || y >= rows * tileSize) return null
 
-        return Point(x / tileSize, y / tileSize)
-    }
-
-    private fun screenToCoord(screenCoord: Point): Point? {
-        return screenToCoord(screenCoord.x, screenCoord.y)
+        return screenCoord.set(x / tileSize, y / tileSize)
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
@@ -441,21 +436,26 @@ class TileSystem : BaseSystem(), InputProcessor {
         return false
     }
 
+    private val tempCoords = arrayOf(Point(), Point())
+    private var tempCoordsIndex = 0
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
         if (!this.checkProcessing()) return false
 
-        val currentCoord = screenToCoord(Point(screenX, screenY))
+        val currentCoord = screenToCoord(
+            tempCoords[tempCoordsIndex].set(screenX, screenY))
+
         if (currentCoord == mouseCoord) return false
         val mott = mTransform[mouseOnTile] ?: return false
 
         mouseCoord = currentCoord
+        tempCoordsIndex = 1 - tempCoordsIndex
         if (currentCoord == null) {
             mott.visible = false
             Jungle.instance.debugView?.tileLabel?.setText("Tile: -1")
             return false
         }
         mott.visible = true
-        mott.position = mTransform[this[currentCoord]].position
+        mott.position.set(mTransform[this[currentCoord]].position)
 
         Jungle.instance.debugView?.tileLabel?.setText("Tile: ${this[currentCoord]} $currentCoord")
 

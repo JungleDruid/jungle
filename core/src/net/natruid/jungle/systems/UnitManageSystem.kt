@@ -60,15 +60,16 @@ class UnitManageSystem : SortedIteratingSystem(
     }
 
     fun addUnit(
-        coord: Point = Point(),
+        x: Int,
+        y: Int,
         faction: Faction = Faction.NONE
     ): Int {
-        val tile = tileSystem[coord]
+        val tile = tileSystem[x, y]
         assert(tile >= 0)
         if (mTile[tile].unit >= 0) return -1
         val entityId = world.create()
         mTransform.create(entityId).apply {
-            position = mTransform[tile].position
+            position.set(mTransform[tile].position)
             z = Constants.Z_UNIT
         }
         mUnit.create(entityId).apply {
@@ -85,11 +86,11 @@ class UnitManageSystem : SortedIteratingSystem(
         mStats.create(entityId)
         mLabel.create(entityId).apply {
             fontName = "huge"
-            color = when (faction) {
+            color.set(when (faction) {
                 Faction.NONE -> Color.GRAY
                 Faction.PLAYER -> Color.GREEN
                 Faction.ENEMY -> Color.RED
-            }
+            })
             text = when (faction) {
                 Faction.NONE -> "？"
                 Faction.PLAYER -> "Ｎ"

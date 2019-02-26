@@ -52,7 +52,8 @@ class PathfinderSystem : BaseSystem() {
                 if (next >= 0) searchQueue.add(next)
             } else {
                 var roadCount = 0
-                for (next in tileSystem.neighbors(it.coord, diagonal)) {
+                for (i in 0..3) {
+                    val next = tileSystem.neighbor(it.coord.x, it.coord.y, i, diagonal)
                     searchQueue.add(next)
                     if (buildingRoad) {
                         if (next >= 0) {

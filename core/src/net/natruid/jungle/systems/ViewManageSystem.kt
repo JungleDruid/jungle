@@ -1,4 +1,4 @@
-package net.natruid.jungle.components
+package net.natruid.jungle.systems
 
 import com.artemis.BaseSystem
 import ktx.assets.disposeSafely

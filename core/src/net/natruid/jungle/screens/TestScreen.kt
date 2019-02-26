@@ -23,7 +23,7 @@ class TestScreen : AbstractScreen(WorldConfigurationBuilder().with(
         }
         world.getMapper(LabelComponent::class.java).create(e).apply {
             text = "測試 test with a long text abcdefghijklmnopqrstuvwxyz"
-            color = Color.RED
+            color.set(Color.RED)
             width = 300f
         }
     }
