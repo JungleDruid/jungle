@@ -5,7 +5,6 @@ import com.artemis.WorldConfiguration
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.utils.Disposable
-import net.natruid.jungle.systems.RenderSystem
 
 abstract class AbstractScreen(configuration: WorldConfiguration) : Screen, InputProcessor, Disposable {
     protected val world = World(configuration)
@@ -99,7 +98,7 @@ abstract class AbstractScreen(configuration: WorldConfiguration) : Screen, Input
 
     override fun pause() {
         for (system in world.systems) {
-            if (system !is RenderSystem) system.isEnabled = false
+            system.isEnabled = false
         }
     }
 

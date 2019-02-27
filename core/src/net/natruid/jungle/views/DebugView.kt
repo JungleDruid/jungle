@@ -11,6 +11,7 @@ class DebugView : AbstractView() {
 
     private var fps = 0
     private var timer = 0f
+    private var threads = 0
 
     @LmlActor("fpsLabel")
     lateinit var fpsLabel: VisLabel
@@ -18,6 +19,8 @@ class DebugView : AbstractView() {
     lateinit var ramLabel: VisLabel
     @LmlActor("renderCallsLabel")
     lateinit var rcLabel: VisLabel
+    @LmlActor("threadsLabel")
+    lateinit var threadsLabel: VisLabel
     @LmlActor("tileLabel")
     lateinit var tileLabel: VisLabel
     @LmlActor("unitLabel")
@@ -34,6 +37,10 @@ class DebugView : AbstractView() {
 
         fps += 1
         timer += delta
+
+        Thread.activeCount().let {
+            if (it > threads) threads = it
+        }
         if (timer >= 1f) {
             timer -= 1f
             fpsLabel.setText("FPS: $fps")
@@ -44,6 +51,8 @@ class DebugView : AbstractView() {
             batch.totalRenderCalls = 0
             renderer.batchDraws = 0
             renderer.batchBegins = 0
+            threadsLabel.setText("Threads: $threads")
+            threads = 0
         }
 
         super.render(delta)

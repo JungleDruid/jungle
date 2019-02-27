@@ -112,7 +112,7 @@ class UnitManageSystem : SortedIteratingSystem(
                     SequenceSelector().apply {
                         addBehaviors(
                             SimpleUnitTargeter(UnitTargetType.HOSTILE, UnitCondition.CLOSE),
-                            MoveTowardUnitAction(2)
+                            MoveTowardUnitAction()
                         )
                     }
                 )

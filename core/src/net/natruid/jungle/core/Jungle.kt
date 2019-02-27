@@ -22,7 +22,6 @@ import net.natruid.jungle.views.AbstractView
 import net.natruid.jungle.views.DebugView
 import net.natruid.jungle.views.TestView
 import java.lang.management.ManagementFactory
-import java.util.*
 
 class Jungle(private val client: Client, debug: Boolean = false) : ApplicationListener, InputProcessor {
     val renderer by lazy { RendererHelper() }
@@ -42,9 +41,10 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
     private val viewList = ArrayList<AbstractView>()
     private var targetFPS = 60
     private var backgroundFPS = 10
-    private var pauseOnBackground = false
+    private var pauseOnBackground = true
     private var resizing = false
     private var vSync = true
+    private var paused = false
 
     init {
         instance = this
@@ -93,17 +93,23 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
     }
 
     override fun render() {
+        if (paused && loadingScreen.done) {
+            Sync.sync(1)
+            return
+        }
+
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
         val delta = Gdx.graphics.deltaTime
-        time += delta
 
         if (!loadingScreen.done) {
             loadingScreen.render(delta)
             Sync.sync(10)
             return
         }
+
+        time += delta
 
         currentScreen?.render(delta)
         viewList.forEach {
@@ -182,6 +188,7 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
     }
 
     override fun pause() {
+        paused = true
         mouseMoved = false
         currentScreen?.pause()
         viewList.forEach {
@@ -191,6 +198,7 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
     }
 
     override fun resume() {
+        paused = false
         currentScreen?.resume()
         viewList.forEach {
             it.pause()

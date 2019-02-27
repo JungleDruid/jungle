@@ -2,10 +2,10 @@ package net.natruid.jungle.systems
 
 import com.artemis.Aspect
 import com.artemis.ComponentMapper
-import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import ktx.async.KtxAsync
 import ktx.async.skipFrame
 import net.natruid.jungle.components.BehaviorComponent
@@ -34,7 +34,7 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
     private var lastIndex = Int.MIN_VALUE
     private var entitySize = 0
     private var currentJob: Job? = null
-    private val asyncJobs = HashSet<Deferred<Pair<Int, Float>?>>()
+    private var planJob: Job? = null
     private var currentUnit = -1
     private val scoreMap = mapOf(Pair("kill", 1000f), Pair("damage", 100f))
 
@@ -45,12 +45,16 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
     }
 
     fun reset() {
-        unitGroup.clear()
-        currentJob?.cancel()
-        currentJob = null
-        asyncJobs.forEach { it.cancel() }
-        asyncJobs.clear()
+        currentJob?.apply {
+            cancel()
+            currentJob = null
+        }
+        planJob?.apply {
+            cancel()
+            planJob = null
+        }
         currentUnit = -1
+        unitGroup.clear()
         phase = Phase.STOPPED
     }
 
@@ -132,6 +136,16 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
         }
     }
 
+    private var highestScore = 0f
+
+    @Synchronized
+    private fun setBestUnit(unit: Int, score: Float) {
+        if (currentUnit < 0 || highestScore < score) {
+            currentUnit = unit
+            highestScore = score
+        }
+    }
+
     private suspend fun plan(): Boolean {
         // init
         loopAgents { id ->
@@ -139,34 +153,31 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
             false
         }
 
-        var bestUnit = -1
-        var highestScore = 0f
-        loopAgents { id ->
-            asyncJobs.add(KtxAsync.async {
-                val agent = mBehavior[id]
-                val success = agent.tree.run()
-                if (success) {
-                    Pair(id, agent.score)
-                } else {
-                    null
+        highestScore = 0f
+        currentUnit = -1
+
+        planJob = GlobalScope.launch {
+            supervisorScope {
+                loopAgents { id ->
+                    launch {
+                        val agent = mBehavior[id]
+                        val success = agent.tree.run()
+                        if (success) {
+                            setBestUnit(id, agent.score)
+                        }
+                    }
+                    false
                 }
-            })
-            false
-        }
-        for (job in asyncJobs) {
-            val (id, score) = job.await() ?: continue
-            if (bestUnit < 0 || highestScore < score) {
-                bestUnit = id
-                highestScore = score
             }
         }
 
-        asyncJobs.clear()
-        currentUnit = bestUnit
+        planJob!!.join()
+        planJob = null
 
-        return bestUnit >= 0
+        return currentUnit >= 0
     }
 
+    @Synchronized
     fun getUnitGroup(targetType: UnitTargetType): List<Int> {
         var group = unitGroup[targetType]
         if (group == null) {
@@ -203,9 +214,9 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
         return list
     }
 
+    @Synchronized
     fun getUnit(self: Int, targetType: UnitTargetType, condition: UnitCondition): Int {
         val group = getUnitGroup(targetType)
-        (group as ArrayList).removeIf { mUnit[it] == null }
         return when (condition) {
             UnitCondition.WEAK -> group.minBy { mUnit[it].hp }
             UnitCondition.STRONG -> group.maxBy { mUnit[it].hp }
