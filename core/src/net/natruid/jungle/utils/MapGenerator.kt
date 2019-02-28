@@ -6,9 +6,10 @@ import com.artemis.World
 import com.artemis.utils.IntBag
 import com.badlogic.gdx.math.RandomXS128
 import net.natruid.jungle.components.ObstacleComponent
-import net.natruid.jungle.components.TextureComponent
 import net.natruid.jungle.components.TileComponent
-import net.natruid.jungle.components.TransformComponent
+import net.natruid.jungle.components.render.PosComponent
+import net.natruid.jungle.components.render.RenderComponent
+import net.natruid.jungle.components.render.TextureComponent
 import net.natruid.jungle.systems.PathfinderSystem
 import java.util.*
 import kotlin.math.max
@@ -23,7 +24,8 @@ class MapGenerator(
 ) {
     private val tileArchetype = ArchetypeBuilder().add(
         TileComponent::class.java,
-        TransformComponent::class.java,
+        RenderComponent::class.java,
+        PosComponent::class.java,
         TextureComponent::class.java
     ).build(world)
     private lateinit var mTile: ComponentMapper<TileComponent>

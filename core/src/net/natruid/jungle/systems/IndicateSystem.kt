@@ -5,9 +5,11 @@ import com.artemis.Component
 import com.artemis.ComponentMapper
 import com.artemis.utils.Bag
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Align
-import net.natruid.jungle.components.*
+import net.natruid.jungle.components.IndicatorComponent
+import net.natruid.jungle.components.IndicatorOwnerComponent
+import net.natruid.jungle.components.LabelComponent
+import net.natruid.jungle.components.render.*
 import net.natruid.jungle.systems.TileSystem.Companion.tileSize
 import net.natruid.jungle.utils.*
 import java.text.DecimalFormat
@@ -18,12 +20,14 @@ class IndicateSystem : BaseSystem() {
     }
 
     private lateinit var pathfinderSystem: PathfinderSystem
-    private lateinit var mTransform: ComponentMapper<TransformComponent>
+    private lateinit var mRender: ComponentMapper<RenderComponent>
+    private lateinit var mPos: ComponentMapper<PosComponent>
     private lateinit var mRect: ComponentMapper<RectComponent>
     private lateinit var mLabel: ComponentMapper<LabelComponent>
     private lateinit var mIndicator: ComponentMapper<IndicatorComponent>
     private lateinit var mIndicatorOwner: ComponentMapper<IndicatorOwnerComponent>
     private lateinit var mUI: ComponentMapper<UIComponent>
+    private lateinit var mInvisible: ComponentMapper<InvisibleComponent>
     private val moveAreaColor = Color(0f, 1f, 1f, .4f)
 
     fun addResult(entityId: Int, indicatorType: IndicatorType, pathfinderResult: Area) {
@@ -42,7 +46,7 @@ class IndicateSystem : BaseSystem() {
 
         val cOwner = mIndicatorOwner[entityId] ?: error("Cannot find indicator owner: $entityId")
         cOwner.indicatorMap[indicatorType]?.forEach {
-            mTransform[it]?.visible = true
+            mInvisible.remove(it)
         }?.apply { shown = true }
 
         if (shown) return
@@ -51,14 +55,13 @@ class IndicateSystem : BaseSystem() {
         for (p in result) {
             p.tile.let { tile ->
                 world.create().let { indicator ->
-                    mTransform.create(indicator).apply {
-                        position.set(mTransform[tile].position)
-                        z = Constants.Z_PATH_INDICATOR
+                    mRender.create(indicator).z = Constants.Z_PATH_INDICATOR
+                    mPos.create(indicator).apply {
+                        set(mPos[tile].xy)
                     }
                     mRect.create(indicator).apply {
                         width = TileSystem.tileSize.toFloat()
                         height = tileSize.toFloat()
-                        type = ShapeRenderer.ShapeType.Filled
                         color.set(moveAreaColor)
                     }
                     mIndicator.create(indicator).apply {
@@ -68,8 +71,9 @@ class IndicateSystem : BaseSystem() {
                     entityArrayBuilder.add(indicator)
                 }
                 world.create().let { indicatorText ->
-                    mTransform.create(indicatorText).apply {
-                        position.set(mTransform[tile].position)
+                    mRender.create(indicatorText).z = Constants.Z_PATH_INDICATOR + 0.1f
+                    mPos.create(indicatorText).apply {
+                        set(mPos[tile].xy)
                     }
                     mLabel.create(indicatorText).apply {
                         text = formatter.format(p.cost)
@@ -103,7 +107,7 @@ class IndicateSystem : BaseSystem() {
                 }
                 println()
             } else {
-                mTransform[it]?.visible = false
+                mInvisible.create(it)
             }
         }
     }
@@ -118,14 +122,13 @@ class IndicateSystem : BaseSystem() {
         remove(entityId, IndicatorType.MOVE_PATH)
         for (node in path) {
             world.create().let { indicator ->
-                mTransform.create(indicator).apply {
-                    position.set(mTransform[node.tile].position)
-                    z = Constants.Z_PATH_INDICATOR
+                mRender.create(indicator).z = Constants.Z_PATH_INDICATOR
+                mPos.create(indicator).apply {
+                    set(mPos[node.tile].xy)
                 }
                 mRect.create(indicator).apply {
                     width = tileSize.toFloat()
                     height = tileSize.toFloat()
-                    type = ShapeRenderer.ShapeType.Filled
                     color.set(moveAreaColor)
                 }
                 mIndicator.create(indicator).apply {

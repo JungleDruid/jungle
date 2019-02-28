@@ -5,19 +5,25 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import net.natruid.jungle.components.LabelComponent
-import net.natruid.jungle.components.TextureComponent
-import net.natruid.jungle.components.TransformComponent
-import net.natruid.jungle.systems.CameraControlSystem
-import net.natruid.jungle.systems.RenderSystem
+import net.natruid.jungle.components.render.PosComponent
+import net.natruid.jungle.components.render.RenderComponent
+import net.natruid.jungle.components.render.TextureComponent
+import net.natruid.jungle.systems.render.ImageRenderSystem
+import net.natruid.jungle.systems.render.LabelRenderSystem
 import net.natruid.jungle.utils.Scout
 
-class TestScreen : AbstractScreen(WorldConfigurationBuilder().with(
-    CameraControlSystem(),
-    RenderSystem()
-).build()) {
+class TestScreen : AbstractScreen() {
+    override fun getConfiguration(builder: WorldConfigurationBuilder): WorldConfigurationBuilder {
+        return builder.with(
+            ImageRenderSystem(),
+            LabelRenderSystem()
+        )
+    }
+
     init {
         val e = world.create()
-        world.getMapper(TransformComponent::class.java).create(e)
+        world.getMapper(RenderComponent::class.java).create(e)
+        world.getMapper(PosComponent::class.java).create(e)
         world.getMapper(TextureComponent::class.java).create(e).apply {
             region = TextureRegion(Texture(Scout["assets/img/test/badlogic.jpg"]))
         }

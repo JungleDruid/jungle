@@ -8,19 +8,7 @@ import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.utils.Scout
 import kotlin.reflect.KClass
 
-abstract class AbstractView : AbstractLmlView(Stage(Jungle.instance.uiViewport, Jungle.instance.renderer.batch)), InputProcessor {
-    private val renderer = Jungle.instance.renderer
-
-    override fun render(delta: Float) {
-        renderer.end()
-        super.render(delta)
-    }
-
-    override fun render() {
-        renderer.end()
-        super.render()
-    }
-
+abstract class AbstractView : AbstractLmlView(Stage(Jungle.instance.uiViewport)), InputProcessor {
     override fun getTemplateFile(): FileHandle {
         return Scout["assets/templates/$viewId.lml"]
     }

@@ -2,12 +2,14 @@ package net.natruid.jungle.views
 
 import com.github.czyzby.lml.annotation.LmlActor
 import com.kotcrab.vis.ui.widget.VisLabel
-import net.natruid.jungle.core.Jungle
+import net.natruid.jungle.utils.RendererHelper
 
 class DebugView : AbstractView() {
     companion object {
         var show = false
     }
+
+    var renderer: RendererHelper? = null
 
     private var fps = 0
     private var timer = 0f
@@ -32,8 +34,6 @@ class DebugView : AbstractView() {
 
     override fun render(delta: Float) {
         if (!show) return
-        val renderer = Jungle.instance.renderer
-        val batch = renderer.batch
 
         fps += 1
         timer += delta
@@ -46,13 +46,16 @@ class DebugView : AbstractView() {
             fpsLabel.setText("FPS: $fps")
             val runtime = Runtime.getRuntime()
             ramLabel.setText("RAM: ${(runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024}")
-            rcLabel.setText("RC: ${batch.totalRenderCalls / fps}/${renderer.batchDraws / fps} [${renderer.batchBegins / fps}]")
-            fps = 0
-            batch.totalRenderCalls = 0
-            renderer.batchDraws = 0
-            renderer.batchBegins = 0
             threadsLabel.setText("Threads: $threads")
+            fps = 0
             threads = 0
+        }
+        renderer?.let {
+            val batch = it.batch
+            rcLabel.setText("RC: ${batch.totalRenderCalls}/${it.begins} (${it.diffs})")
+            batch.totalRenderCalls = 0
+            it.begins = 0
+            it.diffs = 0
         }
 
         super.render(delta)

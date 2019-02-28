@@ -1,4 +1,4 @@
-package net.natruid.jungle.components
+package net.natruid.jungle.components.render
 
 import com.artemis.Component
 import com.badlogic.gdx.graphics.Color

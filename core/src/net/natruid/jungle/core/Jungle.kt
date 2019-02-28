@@ -5,7 +5,6 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.GL20
-import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.github.czyzby.lml.parser.LmlParser
 import com.github.czyzby.lml.vis.util.VisLml
@@ -17,16 +16,16 @@ import net.natruid.jungle.screens.AbstractScreen
 import net.natruid.jungle.screens.FieldScreen
 import net.natruid.jungle.screens.LoadingScreen
 import net.natruid.jungle.screens.TestScreen
-import net.natruid.jungle.utils.*
+import net.natruid.jungle.utils.Bark
+import net.natruid.jungle.utils.Client
+import net.natruid.jungle.utils.Logger
+import net.natruid.jungle.utils.Sync
 import net.natruid.jungle.views.AbstractView
 import net.natruid.jungle.views.DebugView
 import net.natruid.jungle.views.TestView
 import java.lang.management.ManagementFactory
 
 class Jungle(private val client: Client, debug: Boolean = false) : ApplicationListener, InputProcessor {
-    val renderer by lazy { RendererHelper() }
-    val camera by lazy { OrthographicCamera() }
-    val uiCamera by lazy { OrthographicCamera() }
     val uiViewport by lazy { ScreenViewport() }
     val loadingScreen by lazy { LoadingScreen() }
 
@@ -78,11 +77,11 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
                 }
                 loadingScreen.progress()
 
-                setScreen(FieldScreen())
                 if (debug) {
                     debugView = AbstractView.createView()
                     DebugView.show = true
                 }
+                setScreen(FieldScreen())
                 Gdx.graphics.setVSync(vSync)
                 Logger.info { "Game initialized." }
                 loadingScreen.finish()
@@ -116,7 +115,6 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
             it.render(delta)
         }
         debugView?.render(delta)
-        renderer.end()
 
         if (!resizing) {
             val f = if (client.isFocused() || backgroundFPS == 0) targetFPS else backgroundFPS
@@ -136,20 +134,10 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
         }
         viewList.clear()
         debugView?.dispose()
-        renderer.dispose()
         VisUI.dispose()
     }
 
-    private fun resetCamera() {
-        camera.zoom = 1f
-        camera.position.setZero()
-        camera.direction.set(0f, 0f, -1f)
-        camera.up.set(0f, 1f, 0f)
-        camera.update()
-    }
-
     private fun setScreen(screen: AbstractScreen) {
-        resetCamera()
         currentScreen?.disposeSafely()
 
         currentScreen = screen
@@ -208,13 +196,6 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
 
     override fun resize(width: Int, height: Int) {
         resizing = true
-        camera.viewportWidth = width.toFloat()
-        camera.viewportHeight = height.toFloat()
-        camera.update()
-        uiCamera.viewportWidth = width.toFloat()
-        uiCamera.viewportHeight = height.toFloat()
-        uiCamera.position.set(width / 2f, height / 2f, 0f)
-        uiCamera.update()
         uiViewport.update(width, height, true)
         currentScreen?.resize(width, height)
     }

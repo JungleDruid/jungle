@@ -1,13 +1,30 @@
 package net.natruid.jungle.screens
 
 import com.artemis.World
-import com.artemis.WorldConfiguration
+import com.artemis.WorldConfigurationBuilder
+import com.artemis.WorldConfigurationBuilder.Priority
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.utils.Disposable
+import net.natruid.jungle.systems.CameraSystem
+import net.natruid.jungle.systems.render.RenderBatchSystem
 
-abstract class AbstractScreen(configuration: WorldConfiguration) : Screen, InputProcessor, Disposable {
-    protected val world = World(configuration)
+abstract class AbstractScreen : Screen, InputProcessor, Disposable {
+    protected val renderBatchSystem = RenderBatchSystem()
+    protected lateinit var world: World
+
+    abstract fun getConfiguration(builder: WorldConfigurationBuilder): WorldConfigurationBuilder
+
+    init {
+        createWorld()
+    }
+
+    private fun createWorld() {
+        world = World(getConfiguration(WorldConfigurationBuilder())
+            .with(Priority.LOW, CameraSystem())
+            .with(Priority.LOW, renderBatchSystem)
+            .build())
+    }
 
     override fun render(delta: Float) {
         world.setDelta(delta)
@@ -18,7 +35,9 @@ abstract class AbstractScreen(configuration: WorldConfiguration) : Screen, Input
         world.dispose()
     }
 
-    override fun resize(width: Int, height: Int) {}
+    override fun resize(width: Int, height: Int) {
+        world.getSystem(CameraSystem::class.java).resize(width, height)
+    }
 
     override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
         for (system in world.systems) {
@@ -96,15 +115,7 @@ abstract class AbstractScreen(configuration: WorldConfiguration) : Screen, Input
 
     override fun show() {}
 
-    override fun pause() {
-        for (system in world.systems) {
-            system.isEnabled = false
-        }
-    }
+    override fun pause() {}
 
-    override fun resume() {
-        for (system in world.systems) {
-            system.isEnabled = true
-        }
-    }
+    override fun resume() {}
 }

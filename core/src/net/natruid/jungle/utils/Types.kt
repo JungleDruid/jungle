@@ -13,7 +13,7 @@ enum class IndicatorType { MOVE_AREA, MOVE_PATH }
 
 enum class ObstacleType { TREE, ROCK, WALL }
 
-enum class RendererType { NONE, SPRITE_BATCH, SHAPE_RENDERER }
+enum class RendererType { NONE, SPRITE_BATCH, SHAPE_POINT, SHAPE_LINE, SHAPE_FILLED }
 
 enum class ShaderUniformType(val value: Int) {
     UNKNOWN(0),

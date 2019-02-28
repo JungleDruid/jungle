@@ -28,6 +28,7 @@ allprojects {
 //      ashleyVersion = "1.7.3"
 
         artemisVersion = '2.2.0'
+        artemisContribVersion = '2.4.0'
 
         ktxVersion = "1.9.9-b1"
         kotlinCoroutineVersion = "1.1.1"
@@ -75,7 +76,7 @@ project(":core") {
         // Artemis-odb
         compile "net.onedaybeard.artemis:artemis-odb:$artemisVersion"
         compile "net.onedaybeard.artemis:artemis-odb-serializer-json-libgdx:$artemisVersion"
-        compile "net.mostlyoriginal.artemis-odb:contrib-eventbus:2.4.0"
+        compile "net.mostlyoriginal.artemis-odb:contrib-eventbus:$artemisContribVersion"
 
         compile group: "io.github.libktx", name: "ktx-freetype", version: "$ktxVersion"
         compile group: "io.github.libktx", name: "ktx-math", version: "$ktxVersion"

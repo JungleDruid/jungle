@@ -3,14 +3,15 @@ package net.natruid.jungle.systems
 import com.artemis.Aspect
 import com.artemis.ComponentMapper
 import com.artemis.systems.IteratingSystem
-import ktx.math.minus
+import com.badlogic.gdx.math.Vector2
+import ktx.math.minusAssign
 import ktx.math.plusAssign
 import ktx.math.timesAssign
 import net.natruid.jungle.components.PathFollowerComponent
-import net.natruid.jungle.components.TransformComponent
+import net.natruid.jungle.components.render.PosComponent
 
 class PathFollowSystem : IteratingSystem(Aspect.all(
-    TransformComponent::class.java,
+    PosComponent::class.java,
     PathFollowerComponent::class.java
 )) {
     companion object {
@@ -19,28 +20,31 @@ class PathFollowSystem : IteratingSystem(Aspect.all(
 
     val ready get() = entityIds.isEmpty
 
-    private lateinit var mTransform: ComponentMapper<TransformComponent>
+    private lateinit var mPos: ComponentMapper<PosComponent>
     private lateinit var mPathFollower: ComponentMapper<PathFollowerComponent>
 
+    private val v = Vector2()
+
     override fun process(entityId: Int) {
-        val transform = mTransform[entityId]
+        val pos = mPos[entityId]
         val pathFollower = mPathFollower[entityId]
         val path = pathFollower.path ?: return
-        val destination = mTransform[path.peek().tile].position
-        val v = destination - transform.position
+        val destination = mPos[path.peek().tile].xy
+        v.set(destination)
+        v -= pos.xy
         val len2 = v.len2()
         if (len2 != 0f && len2 != 1f) {
             v.scl(1f / Math.sqrt(len2.toDouble()).toFloat())
         }
         v *= speed * world.delta
         if (len2 > v.len2()) {
-            v += transform.position
-            transform.position.set(v)
+            v += pos.xy
+            pos.set(v)
         } else {
-            transform.position.set(destination)
+            pos.set(destination)
         }
 
-        if (transform.position == destination) {
+        if (pos.xy == destination) {
             if (path.size > 1) {
                 path.remove()
             } else {

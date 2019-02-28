@@ -4,6 +4,7 @@ import com.artemis.BaseSystem
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
+import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector2
 import ktx.math.times
@@ -12,10 +13,23 @@ import net.natruid.jungle.utils.Point
 import kotlin.math.max
 import kotlin.math.min
 
-class CameraControlSystem : BaseSystem(), InputProcessor {
+class CameraSystem : BaseSystem(), InputProcessor {
     var cropRect: Rectangle? = null
 
-    private val camera = Jungle.instance.camera
+    val camera by lazy {
+        Gdx.graphics.let {
+            OrthographicCamera(it.width.toFloat(), it.height.toFloat())
+        }
+    }
+    val uiCamera by lazy {
+        Gdx.graphics.let {
+            OrthographicCamera(it.width.toFloat(), it.height.toFloat()).apply {
+                position.set(viewportWidth / 2f, viewportHeight / 2f, 0f)
+                update()
+            }
+        }
+    }
+
     private val speed = 512f
     private val maxZoom = 2f
     private val minZoom = 0.25f
@@ -129,5 +143,15 @@ class CameraControlSystem : BaseSystem(), InputProcessor {
     override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
         dragStarted = false
         return false
+    }
+
+    fun resize(width: Int, height: Int) {
+        camera.viewportWidth = width.toFloat()
+        camera.viewportHeight = height.toFloat()
+        camera.update()
+        uiCamera.viewportWidth = width.toFloat()
+        uiCamera.viewportHeight = height.toFloat()
+        uiCamera.position.set(width / 2f, height / 2f, 0f)
+        uiCamera.update()
     }
 }

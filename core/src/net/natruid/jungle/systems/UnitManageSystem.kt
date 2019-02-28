@@ -11,6 +11,8 @@ import com.badlogic.gdx.utils.Align
 import net.mostlyoriginal.api.event.common.EventSystem
 import net.mostlyoriginal.api.event.common.Subscribe
 import net.natruid.jungle.components.*
+import net.natruid.jungle.components.render.PosComponent
+import net.natruid.jungle.components.render.RenderComponent
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.core.Marsh
 import net.natruid.jungle.events.UnitAttackEvent
@@ -29,12 +31,13 @@ import net.natruid.jungle.views.SkillBarView
 import kotlin.math.ceil
 
 class UnitManageSystem : SortedIteratingSystem(
-    Aspect.all(TransformComponent::class.java, UnitComponent::class.java)
+    Aspect.all(PosComponent::class.java, UnitComponent::class.java)
 ), InputProcessor {
     override val comparator = FactionComparator()
 
     private lateinit var mUnit: ComponentMapper<UnitComponent>
-    private lateinit var mTransform: ComponentMapper<TransformComponent>
+    private lateinit var mRender: ComponentMapper<RenderComponent>
+    private lateinit var mPos: ComponentMapper<PosComponent>
     private lateinit var mPathFollower: ComponentMapper<PathFollowerComponent>
     private lateinit var mTile: ComponentMapper<TileComponent>
     private lateinit var mLabel: ComponentMapper<LabelComponent>
@@ -75,9 +78,9 @@ class UnitManageSystem : SortedIteratingSystem(
         assert(tile >= 0)
         if (mTile[tile].unit >= 0) return -1
         val entityId = world.create()
-        mTransform.create(entityId).apply {
-            position.set(mTransform[tile].position)
-            z = Constants.Z_UNIT
+        mRender.create(entityId).z = Constants.Z_UNIT
+        mPos.create(entityId).apply {
+            set(mPos[tile])
         }
         mUnit.create(entityId).apply {
             this.tile = tile

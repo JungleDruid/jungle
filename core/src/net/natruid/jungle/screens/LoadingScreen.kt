@@ -5,15 +5,13 @@ import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import ktx.async.skipFrame
-import net.natruid.jungle.core.Jungle
 
 class LoadingScreen : Screen {
 
     var done = false
         private set
 
-    private val renderer by lazy { Jungle.instance.renderer }
-    private val shapeRenderer by lazy { renderer.shapeRenderer }
+    private val shapeRenderer = ShapeRenderer()
 
     private var maxProgress = 1
     private var progress = 0
@@ -42,7 +40,6 @@ class LoadingScreen : Screen {
         if (progress < maxProgress) {
             fakeProgress = (fakeProgress + 1f * delta).coerceAtMost(0.9f)
         }
-        renderer.end()
         shapeRenderer.color = Color.DARK_GRAY
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
         shapeRenderer.rect(100f, 100f, Gdx.graphics.width - 200f, 20f)

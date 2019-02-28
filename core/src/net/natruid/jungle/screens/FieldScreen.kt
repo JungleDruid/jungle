@@ -8,34 +8,42 @@ import com.badlogic.gdx.Input
 import net.mostlyoriginal.api.event.common.EventSystem
 import net.mostlyoriginal.api.event.common.SubscribeAnnotationFinder
 import net.mostlyoriginal.api.event.dispatcher.PollingPooledEventDispatcher
-import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.systems.*
+import net.natruid.jungle.systems.render.CustomRenderSystem
+import net.natruid.jungle.systems.render.ImageRenderSystem
+import net.natruid.jungle.systems.render.LabelRenderSystem
+import net.natruid.jungle.systems.render.RectRenderSystem
 import net.natruid.jungle.utils.Faction
 import net.natruid.jungle.utils.extensions.forEach
 import net.natruid.jungle.views.SkillBarView
 import kotlin.random.Random
 
-class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
-    EventSystem(PollingPooledEventDispatcher(), SubscribeAnnotationFinder()),
-    TagManager(),
-    TileSystem(),
-    UnitManageSystem(),
-    CombatTurnSystem(),
-    IndicateSystem(),
-    PathfinderSystem(),
-    PathFollowSystem(),
-    AnimateSystem(),
-    BehaviorSystem(),
-    CameraControlSystem(),
-    ViewManageSystem(),
-    RenderSystem(),
-    UIRenderSystem()
-).build()) {
+class FieldScreen : AbstractScreen() {
     init {
         init()
     }
 
-    private fun init(seed: Long = Random.nextLong()) {
+    override fun getConfiguration(builder: WorldConfigurationBuilder): WorldConfigurationBuilder {
+        return builder.with(
+            EventSystem(PollingPooledEventDispatcher(), SubscribeAnnotationFinder()),
+            TagManager(),
+            TileSystem(),
+            UnitManageSystem(),
+            CombatTurnSystem(),
+            IndicateSystem(),
+            PathfinderSystem(),
+            PathFollowSystem(),
+            AnimateSystem(),
+            BehaviorSystem(),
+            ViewManageSystem(),
+            ImageRenderSystem(),
+            LabelRenderSystem(),
+            RectRenderSystem(),
+            CustomRenderSystem()
+        )
+    }
+
+    fun init(seed: Long = Random.nextLong()) {
         world.getSystem(TileSystem::class.java).create(20, 20, seed)
         world.getSystem(UnitManageSystem::class.java).apply {
             addUnit(0, 0, faction = Faction.PLAYER)
@@ -45,14 +53,13 @@ class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
                     count += 1
             }
         }
-        world.getSystem(RenderSystem::class.java).sort()
         world.getSystem(ViewManageSystem::class.java).show<SkillBarView>()
         world.getSystem(CombatTurnSystem::class.java).start()
     }
 
     override fun show() {
         super.show()
-        val camera = Jungle.instance.camera
+        val camera = world.getSystem(CameraSystem::class.java).camera
         camera.translate(400f, 300f)
         camera.update()
     }
