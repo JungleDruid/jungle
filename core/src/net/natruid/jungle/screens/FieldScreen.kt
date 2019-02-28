@@ -5,6 +5,9 @@ import com.artemis.WorldConfigurationBuilder
 import com.artemis.managers.TagManager
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
+import net.mostlyoriginal.api.event.common.EventSystem
+import net.mostlyoriginal.api.event.common.SubscribeAnnotationFinder
+import net.mostlyoriginal.api.event.dispatcher.PollingPooledEventDispatcher
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.systems.*
 import net.natruid.jungle.utils.Faction
@@ -13,15 +16,16 @@ import net.natruid.jungle.views.SkillBarView
 import kotlin.random.Random
 
 class FieldScreen : AbstractScreen(WorldConfigurationBuilder().with(
+    EventSystem(PollingPooledEventDispatcher(), SubscribeAnnotationFinder()),
     TagManager(),
     TileSystem(),
     UnitManageSystem(),
     CombatTurnSystem(),
-    BehaviorSystem(),
     IndicateSystem(),
     PathfinderSystem(),
     PathFollowSystem(),
     AnimateSystem(),
+    BehaviorSystem(),
     CameraControlSystem(),
     ViewManageSystem(),
     RenderSystem(),

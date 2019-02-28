@@ -1,9 +1,11 @@
 package net.natruid.jungle.utils.ai.actions
 
+import net.natruid.jungle.events.UnitMoveEvent
 import net.natruid.jungle.systems.TileSystem
 import net.natruid.jungle.utils.ExtractPathType
 import net.natruid.jungle.utils.Path
 import net.natruid.jungle.utils.ai.BehaviorAction
+import net.natruid.jungle.utils.extensions.dispatch
 
 class MoveTowardUnitAction(private val preserveAp: Int = 0) : BehaviorAction() {
     private lateinit var tileSystem: TileSystem
@@ -40,8 +42,10 @@ class MoveTowardUnitAction(private val preserveAp: Int = 0) : BehaviorAction() {
 
     override fun execute(): Boolean {
 //        Logger.debug { "$self moving with path size: ${path!!.size}" }
-        unitManageSystem.moveUnit(self, path!!)
-        mBehavior[self].fullMoveArea = null
+        es.dispatch(UnitMoveEvent::class).let {
+            it.unit = self
+            it.path = path!!
+        }
         return true
     }
 

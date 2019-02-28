@@ -19,7 +19,7 @@ import net.natruid.jungle.utils.UnitTargetType
 class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class.java)) {
     override val comparator = FactionComparator()
 
-    private enum class Phase { READY, PLANNING, PERFORMING, STOPPING, STOPPED }
+    private enum class Phase { READY, PLANNING, PERFORMING, PERFORMED, STOPPING, STOPPED }
 
     private lateinit var unitManageSystem: UnitManageSystem
     private lateinit var combatTurnSystem: CombatTurnSystem
@@ -36,6 +36,7 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
     private var currentJob: Job? = null
     private var planJob: Job? = null
     private var currentUnit = -1
+    private var performingUnit = -1
     private val scoreMap = mapOf(Pair("kill", 1000f), Pair("damage", 100f))
 
     fun prepare() {
@@ -83,21 +84,19 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
         }
     }
 
+    override fun inserted(entityId: Int) {
+        super.inserted(entityId)
+        mBehavior[entityId].tree.init(world, entityId)
+    }
+
     override fun processSystem() {
         when (phase) {
             Phase.READY -> {
                 if (combatTurnSystem.faction == Faction.PLAYER) return
-                phase = Phase.PLANNING
-                currentJob = KtxAsync.launch {
-                    phase = if (!calculateIndex()) {
-                        Phase.STOPPED
-                    } else {
-                        loopAgents { id ->
-                            mBehavior[id].tree.init(world, id)
-                            false
-                        }
-                        if (plan()) Phase.PERFORMING else Phase.STOPPING
-                    }
+                phase = if (!calculateIndex()) {
+                    Phase.STOPPED
+                } else {
+                    Phase.PERFORMED
                 }
             }
             Phase.PLANNING -> {
@@ -105,8 +104,12 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
             Phase.PERFORMING -> {
                 assert(currentUnit >= 0)
                 val unit = currentUnit
+                performingUnit = unit
                 mBehavior[unit].execution?.execute()
                 mBehavior[unit].execution = null
+                phase = Phase.PERFORMED
+            }
+            Phase.PERFORMED -> {
                 var hasTurn = false
                 loopAgents { id ->
                     if (mUnit[id].hasTurn) {
@@ -117,7 +120,7 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
                 if (hasTurn) {
                     phase = Phase.PLANNING
                     currentJob = KtxAsync.launch {
-                        while (!animateSystem.ready) skipFrame()
+                        while (!animateSystem.ready || unitManageSystem.isBusy(performingUnit)) skipFrame()
                         phase = if (plan()) Phase.PERFORMING else Phase.STOPPING
                     }
                 } else {

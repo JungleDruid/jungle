@@ -8,9 +8,14 @@ import com.badlogic.gdx.Input.Keys
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.utils.Align
+import net.mostlyoriginal.api.event.common.EventSystem
+import net.mostlyoriginal.api.event.common.Subscribe
 import net.natruid.jungle.components.*
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.core.Marsh
+import net.natruid.jungle.events.UnitAttackEvent
+import net.natruid.jungle.events.UnitHealthChangedEvent
+import net.natruid.jungle.events.UnitMoveEvent
 import net.natruid.jungle.systems.abstracts.SortedIteratingSystem
 import net.natruid.jungle.utils.*
 import net.natruid.jungle.utils.ai.BehaviorTree
@@ -19,6 +24,7 @@ import net.natruid.jungle.utils.ai.actions.AttackAction
 import net.natruid.jungle.utils.ai.actions.MoveTowardUnitAction
 import net.natruid.jungle.utils.ai.conditions.HasUnitInAttackRangeCondition
 import net.natruid.jungle.utils.ai.conditions.SimpleUnitTargeter
+import net.natruid.jungle.utils.extensions.dispatch
 import net.natruid.jungle.views.SkillBarView
 import kotlin.math.ceil
 
@@ -36,6 +42,7 @@ class UnitManageSystem : SortedIteratingSystem(
     private lateinit var mAttributes: ComponentMapper<AttributesComponent>
     private lateinit var mBehavior: ComponentMapper<BehaviorComponent>
     private lateinit var mAnimation: ComponentMapper<AnimationComponent>
+    private lateinit var es: EventSystem
     private lateinit var tileSystem: TileSystem
     private lateinit var pathfinderSystem: PathfinderSystem
     private lateinit var indicateSystem: IndicateSystem
@@ -127,7 +134,19 @@ class UnitManageSystem : SortedIteratingSystem(
         return entityId
     }
 
-    fun moveUnit(unit: Int, tile: Int): Boolean {
+    @Subscribe
+    fun unitMoveListener(event: UnitMoveEvent) {
+        event.let { e ->
+            if (e.path?.let { moveUnit(e.unit, it, e.free) } == null) {
+                if (e.free)
+                    freeMoveUnit(e.unit, e.targetTile)
+                else
+                    moveUnit(e.unit, e.targetTile)
+            }
+        }
+    }
+
+    private fun moveUnit(unit: Int, tile: Int): Boolean {
         val cUnit = mUnit[unit]
         val area = pathfinderSystem.area(cUnit.tile, getMovement(unit))
         val path = pathfinderSystem.extractPath(area, tile) ?: return false
@@ -135,7 +154,7 @@ class UnitManageSystem : SortedIteratingSystem(
         return true
     }
 
-    fun moveUnit(unit: Int, path: Path, free: Boolean = false, callback: (() -> Unit)? = null) {
+    private fun moveUnit(unit: Int, path: Path, free: Boolean = false, callback: (() -> Unit)? = null) {
         if (unit < 0) return
         val dest = path.peekLast()
         val cUnit = mUnit[unit]
@@ -154,9 +173,14 @@ class UnitManageSystem : SortedIteratingSystem(
         }
     }
 
-    fun freeMoveUnit(unit: Int, goal: Point) {
+    fun isBusy(unit: Int): Boolean {
+        if (unit < 0) return false
+        return mAnimation.has(unit) || mPathFollower.has(unit)
+    }
+
+    private fun freeMoveUnit(unit: Int, tile: Int) {
         val cUnit = mUnit[unit] ?: return
-        val path = pathfinderSystem.path(cUnit.tile, tileSystem[goal]) ?: return
+        val path = pathfinderSystem.path(cUnit.tile, tile) ?: return
         moveUnit(unit, path, true)
     }
 
@@ -176,18 +200,25 @@ class UnitManageSystem : SortedIteratingSystem(
         ) ?: return null
     }
 
-    fun moveAndAttack(unit: Int, target: Int, preview: Boolean = false): Boolean {
-        val path = getMoveAndAttackPath(unit, target) ?: return false
-        if (preview) return true
-        moveUnit(
-            unit,
-            path,
-            callback = { attack(unit, target) }
-        )
-        return true
+    @Subscribe
+    fun attackListener(event: UnitAttackEvent) {
+        event.let {
+            val attackPath = it.path ?: getMoveAndAttackPath(it.unit, it.target)
+            if (attackPath != null) {
+                val unit = it.unit
+                val target = it.target
+                moveUnit(
+                    it.unit,
+                    attackPath,
+                    callback = {
+                        attack(unit, target)
+                    }
+                )
+            }
+        }
     }
 
-    fun attack(unit: Int, target: Int): Boolean {
+    private fun attack(unit: Int, target: Int): Boolean {
         return useAp(unit, 2) {
             mAnimation.create(unit).let {
                 it.target = target
@@ -202,17 +233,26 @@ class UnitManageSystem : SortedIteratingSystem(
         return (10f * mStats[unit].damage).toInt()
     }
 
-    fun damage(unit: Int, target: Int, amount: Int) {
+    private fun damage(unit: Int, target: Int, amount: Int) {
         Logger.debug { "$unit deals $amount damage to $target" }
+        var killed = false
         mUnit[target].let {
             it.hp -= amount
             if (it.hp <= 0) {
                 kill(unit, target)
+                killed = true
             }
+        }
+
+        es.dispatch(UnitHealthChangedEvent::class).let {
+            it.unit = target
+            it.source = unit
+            it.amount = -amount
+            it.killed = killed
         }
     }
 
-    fun kill(unit: Int, target: Int) {
+    private fun kill(unit: Int, target: Int) {
         Logger.debug { "$unit kills $target" }
         val cUnit = mUnit[target]
         val faction = cUnit.faction
@@ -389,7 +429,10 @@ class UnitManageSystem : SortedIteratingSystem(
                 Faction.ENEMY -> {
                     if (selectedUnit >= 0) {
                         hideMoveArea(selectedUnit)
-                        moveAndAttack(selectedUnit, unit)
+                        es.dispatch(UnitAttackEvent::class).let {
+                            it.unit = selectedUnit
+                            it.target = unit
+                        }
                         deselectUnit(selectedUnit)
                     }
                 }
@@ -402,11 +445,11 @@ class UnitManageSystem : SortedIteratingSystem(
                     val path = indicateSystem.getPathTo(tileSystem[mouseCoord], unit)
                     if (path != null) {
                         indicateSystem.remove(unit, IndicatorType.MOVE_AREA)
-                        moveUnit(unit, path)
-                        if (mUnit[unit].hasTurn) {
-                            showMoveArea(unit)
-                            return true
+                        es.dispatch(UnitMoveEvent::class).let {
+                            it.unit = unit
+                            it.path = path
                         }
+                        deselectUnit(unit)
                     }
                     deselectUnit()
                     return true

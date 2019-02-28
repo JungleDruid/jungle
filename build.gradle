@@ -75,6 +75,7 @@ project(":core") {
         // Artemis-odb
         compile "net.onedaybeard.artemis:artemis-odb:$artemisVersion"
         compile "net.onedaybeard.artemis:artemis-odb-serializer-json-libgdx:$artemisVersion"
+        compile "net.mostlyoriginal.artemis-odb:contrib-eventbus:2.4.0"
 
         compile group: "io.github.libktx", name: "ktx-freetype", version: "$ktxVersion"
         compile group: "io.github.libktx", name: "ktx-math", version: "$ktxVersion"

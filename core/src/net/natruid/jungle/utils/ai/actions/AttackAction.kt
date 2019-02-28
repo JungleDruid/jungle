@@ -1,7 +1,9 @@
 package net.natruid.jungle.utils.ai.actions
 
+import net.natruid.jungle.events.UnitAttackEvent
 import net.natruid.jungle.utils.Path
 import net.natruid.jungle.utils.ai.BehaviorAction
+import net.natruid.jungle.utils.extensions.dispatch
 
 class AttackAction : BehaviorAction() {
     private var target = -1
@@ -31,12 +33,10 @@ class AttackAction : BehaviorAction() {
     }
 
     override fun execute(): Boolean {
-        unitManageSystem.apply {
-            moveUnit(
-                self,
-                path!!,
-                callback = { attack(self, target) }
-            )
+        es.dispatch(UnitAttackEvent::class).let {
+            it.unit = self
+            it.target = target
+            it.path = path!!
         }
         return true
     }
