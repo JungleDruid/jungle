@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<!DOCTYPE window SYSTEM "lml.dtd">
+
+<window id="base" defaultwidth="128" movable="false" style="info">
+    <table tablealign="left">
+        <label style="small" color="green" padleft="5" padright="5" align="left">
+            HP
+        </label>
+        <label id="hp" style="small" color="green" padleft="5" padright="5" row="true" align="left">
+            0
+        </label>
+        <label style="small" color="green" padleft="5" padright="5" align="center">
+            I
+        </label>
+        <label id="int" style="small" color="green" padleft="5" padright="5" row="true" align="center">
+            0
+        </label>
+        <label style="small" color="green" padleft="5" padright="5" align="center">
+            D
+        </label>
+        <label id="det" style="small" color="green" padleft="5" padright="5" row="true" align="center">
+            0
+        </label>
+        <label style="small" color="green" padleft="5" padright="5" align="center">
+            E
+        </label>
+        <label id="end" style="small" color="green" padleft="5" padright="5" row="true" align="center">
+            0
+        </label>
+        <label style="small" color="green" padleft="5" padright="5" align="center">
+            A
+        </label>
+        <label id="awa" style="small" color="green" padleft="5" padright="5" row="true" align="center">
+            0
+        </label>
+        <label style="small" color="green" padleft="5" padright="5" align="center">
+            L
+        </label>
+        <label id="luc" style="small" color="green" padleft="5" padright="5" row="true" align="center">
+            0
+        </label>
+    </table>
+</window>

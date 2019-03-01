@@ -33,6 +33,10 @@ class ViewManageSystem : BaseSystem() {
         return view as T
     }
 
+    inline fun <reified T : AbstractView> hide(): T? {
+        return hide(T::class)
+    }
+
     fun <T : AbstractView> hide(type: KClass<out AbstractView>): T? {
         val view = viewMap[type] ?: return null
         Jungle.instance.hideView(view)

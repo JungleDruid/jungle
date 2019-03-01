@@ -400,6 +400,10 @@
     "window-resizable": {
       "name": "t-window-resize",
       "color": "t-dark"
+    },
+    "window-info": {
+      "name": "t-window",
+      "color": "t-alpha"
     }
   },
   "ButtonStyle": {
@@ -549,6 +553,11 @@
       "stageBackground": "dialogDim",
       "titleFont": "small",
       "background": "window",
+      "titleFontColor": "white"
+    },
+    "info": {
+      "titleFont": "small",
+      "background": "window-info",
       "titleFontColor": "white"
     }
   },

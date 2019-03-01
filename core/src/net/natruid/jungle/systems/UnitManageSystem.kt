@@ -7,6 +7,7 @@ import com.artemis.managers.TagManager
 import com.badlogic.gdx.Input.Keys
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.Align
 import net.mostlyoriginal.api.event.common.EventSystem
 import net.mostlyoriginal.api.event.common.Subscribe
@@ -28,6 +29,7 @@ import net.natruid.jungle.utils.ai.conditions.HasUnitInAttackRangeCondition
 import net.natruid.jungle.utils.ai.conditions.SimpleUnitTargeter
 import net.natruid.jungle.utils.extensions.dispatch
 import net.natruid.jungle.views.SkillBarView
+import net.natruid.jungle.views.UnitStatsQuickview
 import kotlin.math.ceil
 
 class UnitManageSystem : SortedIteratingSystem(
@@ -52,6 +54,7 @@ class UnitManageSystem : SortedIteratingSystem(
     private lateinit var combatTurnSystem: CombatTurnSystem
     private lateinit var viewManageSystem: ViewManageSystem
     private lateinit var animateSystem: AnimateSystem
+    private lateinit var cameraSystem: CameraSystem
     private lateinit var tagManager: TagManager
 
     private var unitsHasTurn = -1
@@ -504,6 +507,7 @@ class UnitManageSystem : SortedIteratingSystem(
     }
 
     private var lastCoord: Point? = null
+    private val pos = Vector3()
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
         val mouseCoord = tileSystem.mouseCoord
         if (lastCoord != mouseCoord) {
@@ -522,6 +526,29 @@ class UnitManageSystem : SortedIteratingSystem(
             if (mouseCoord != null) {
                 val tile = tileSystem[mouseCoord]
                 Jungle.instance.debugView?.unitLabel?.setText("Unit: ${mTile[tile].unit}")
+
+                val unit = mTile[tile].unit
+                if (unit >= 0) {
+                    val view = viewManageSystem.show<UnitStatsQuickview>()
+                    pos.set(mPos[unit].x + 32f, mPos[unit].y, 0f)
+                    cameraSystem.camera.project(pos)
+                    val cUnit = mUnit[unit]
+                    view.base.let {
+                        it.setPosition(pos.x, pos.y)
+                        it.align(Align.left)
+                        it.titleLabel.setText(cUnit.faction.name)
+                    }
+                    view.hp.setText(cUnit.hp)
+                    mAttributes[unit].let {
+                        view.int.setText(it.intelligence)
+                        view.det.setText(it.determination)
+                        view.end.setText(it.endurance)
+                        view.awa.setText(it.awareness)
+                        view.luc.setText(it.luck)
+                    }
+                } else {
+                    viewManageSystem.hide<UnitStatsQuickview>()
+                }
             }
             lastCoord = mouseCoord
         }
