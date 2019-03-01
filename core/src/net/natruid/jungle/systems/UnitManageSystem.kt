@@ -85,7 +85,10 @@ class UnitManageSystem : SortedIteratingSystem(
         mUnit.create(entityId).apply {
             this.tile = tile
             this.faction = faction
-            this.level = 100
+            if (faction == Faction.PLAYER)
+                this.level = 100
+            else
+                this.level = 5
         }
         mAttributes.create(entityId).apply {
             if (faction == Faction.PLAYER)

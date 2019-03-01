@@ -9,10 +9,7 @@ import net.mostlyoriginal.api.event.common.EventSystem
 import net.mostlyoriginal.api.event.common.SubscribeAnnotationFinder
 import net.mostlyoriginal.api.event.dispatcher.PollingPooledEventDispatcher
 import net.natruid.jungle.systems.*
-import net.natruid.jungle.systems.render.CustomRenderSystem
-import net.natruid.jungle.systems.render.ImageRenderSystem
-import net.natruid.jungle.systems.render.LabelRenderSystem
-import net.natruid.jungle.systems.render.RectRenderSystem
+import net.natruid.jungle.systems.render.*
 import net.natruid.jungle.utils.Faction
 import net.natruid.jungle.utils.extensions.forEach
 import net.natruid.jungle.views.SkillBarView
@@ -39,7 +36,8 @@ class FieldScreen : AbstractScreen() {
             ImageRenderSystem(),
             LabelRenderSystem(),
             RectRenderSystem(),
-            CustomRenderSystem()
+            CustomRenderSystem(),
+            UnitHpRenderSystem()
         )
     }
 

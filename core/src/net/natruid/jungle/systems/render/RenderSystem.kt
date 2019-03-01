@@ -53,10 +53,10 @@ abstract class RenderSystem(
         renderer.begin(camera, rendererType, mCrop[current]?.rect)
     }
 
-    protected fun getPos(offsetX: Float = 0f, offsetY: Float = 0f): Vector3 {
-        val xy = mPos.getSafe(current, PosComponent.DEFAULT).xy
+    protected fun getPos(offsetX: Float = 0f, offsetY: Float = 0f, entityId: Int = current): Vector3 {
+        val xy = mPos.getSafe(entityId, PosComponent.DEFAULT).xy
         position.set(xy.x + offsetX, xy.y + offsetY, 0f)
-        if (mUI.has(current)) {
+        if (mUI.has(entityId)) {
             cameraSystem.camera.project(position)
         }
         return position
