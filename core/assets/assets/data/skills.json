@@ -1,0 +1,39 @@
+{
+  "proficiencies": [
+    "weapon",
+    "armor",
+    "protection",
+    "nature",
+    "sun",
+    "shadow",
+    "device",
+    "shooting",
+    "fire",
+    "blood",
+    "arcane",
+    "water",
+    "taint"
+  ],
+  "skills": [
+    {
+      "name": "test",
+      "effect": {
+        "type": "damage",
+        "amount": {
+          "proficiency": "weapon",
+          "magnitude": 1,
+          "base": 10
+        }
+      },
+      "range": {
+        "base": 1
+      },
+      "area": {
+        "base": 0
+      },
+      "cooldown": {
+        "base": 1
+      }
+    }
+  ]
+}

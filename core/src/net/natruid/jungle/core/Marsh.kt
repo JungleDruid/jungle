@@ -13,13 +13,17 @@ import com.badlogic.gdx.utils.JsonReader
 import com.badlogic.gdx.utils.JsonValue
 import ktx.freetype.generateFont
 import net.natruid.jungle.utils.*
+import net.natruid.jungle.utils.skill.Proficiency
+import net.natruid.jungle.utils.skill.Skill
 import kotlin.collections.set
 
 object Marsh {
     private val fontDefs = ArrayList<FontDef>()
     private val fontGeneratorMap = HashMap<String, FreeTypeFontGenerator>()
     private var fonts = HashMap<String, BitmapFont>()
-    val statDefs = Array(StatType.size) { StatDef() }
+    val statDefs = Array(StatType.size) { StatDef.NONE }
+    val proficiencies: Map<String, Proficiency> = HashMap()
+    val skills: Map<String, Skill> = HashMap()
 
     object Fonts {
         operator fun get(key: String): BitmapFont {
@@ -135,6 +139,20 @@ object Marsh {
                         statDefs[stat.ordinal] = def
                     }
                 }
+                "proficiencies" -> {
+                    val map = proficiencies as HashMap
+                    for (next in j) {
+                        val name = next.asString()
+                        map[name] = Proficiency(name)
+                    }
+                }
+                "skills" -> {
+                    val map = skills as HashMap
+                    for (next in j) {
+                        val skill = json.readValue(Skill::class.java, next)
+                        map[skill.name] = skill
+                    }
+                }
                 else -> Logger.warn { "Found unknown property \"${j.name}\" in \"${file.name()}\"" }
             }
         }
@@ -149,6 +167,7 @@ object Marsh {
     class StatDef : Json.Serializable {
         companion object {
             private val modifierList = ArrayList<AttributeModifier>(1)
+            internal val NONE = StatDef()
         }
 
         var base = 0
