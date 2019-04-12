@@ -23,7 +23,7 @@ class HasUnitInAttackRangeCondition(
         val targets = behaviorSystem.getSortedUnitList(self, UnitTargetType.HOSTILE, UnitCondition.CLOSE)
         val maxDistance = attackRange + movement
         targets.removeIf { mUnit[it] == null || tileSystem.getDistance(mUnit[self].tile, mUnit[it].tile) > maxDistance }
-        targets.removeIf { unitManageSystem.getMoveAndAttackPath(self, it) == null }
+        targets.removeIf { unitManageSystem.getMoveAndActPath(self, it, 2, 1f) == null }
         if (saveResult) mBehavior[self].targets.addAll(targets)
         return targets.isNotEmpty()
     }

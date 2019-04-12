@@ -7,5 +7,6 @@ data class ModdedValue(
 ) {
     companion object {
         val ZERO = ModdedValue()
+        val ONE = ModdedValue(null, 0f, 1f)
     }
 }

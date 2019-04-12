@@ -16,15 +16,17 @@
   ],
   "skills": [
     {
-      "name": "test",
-      "effect": {
-        "type": "damage",
-        "amount": {
-          "proficiency": "weapon",
-          "magnitude": 1,
-          "base": 10
+      "name": "attack",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": {
+            "proficiency": "weapon",
+            "magnitude": 1,
+            "base": 10
+          }
         }
-      },
+      ],
       "range": {
         "base": 1
       },
@@ -33,7 +35,11 @@
       },
       "cooldown": {
         "base": 1
-      }
+      },
+      "accuracy": {
+        "base": 80
+      },
+      "cost": 2
     }
   ]
 }

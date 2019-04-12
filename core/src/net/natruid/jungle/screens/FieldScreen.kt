@@ -8,6 +8,8 @@ import com.badlogic.gdx.Input
 import net.mostlyoriginal.api.event.common.EventSystem
 import net.mostlyoriginal.api.event.common.SubscribeAnnotationFinder
 import net.mostlyoriginal.api.event.dispatcher.PollingPooledEventDispatcher
+import net.natruid.jungle.components.UnitComponent
+import net.natruid.jungle.core.Marsh
 import net.natruid.jungle.systems.*
 import net.natruid.jungle.systems.render.*
 import net.natruid.jungle.utils.Faction
@@ -44,7 +46,8 @@ class FieldScreen : AbstractScreen() {
     fun init(seed: Long = Random.nextLong()) {
         world.getSystem(TileSystem::class.java).create(20, 20, seed)
         world.getSystem(UnitManageSystem::class.java).apply {
-            addUnit(0, 0, faction = Faction.PLAYER)
+            val player = addUnit(0, 0, faction = Faction.PLAYER)
+            world.getMapper(UnitComponent::class.java)[player].skills.add(Marsh.skills.getValue("attack"))
             var count = 0
             while (count < 20) {
                 if (addUnit(Random.nextInt(20), Random.nextInt(20), Faction.ENEMY) >= 0)

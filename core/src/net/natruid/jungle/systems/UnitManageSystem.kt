@@ -19,6 +19,7 @@ import net.natruid.jungle.core.Marsh
 import net.natruid.jungle.events.UnitAttackEvent
 import net.natruid.jungle.events.UnitHealthChangedEvent
 import net.natruid.jungle.events.UnitMoveEvent
+import net.natruid.jungle.events.UnitSkillEvent
 import net.natruid.jungle.systems.abstracts.SortedIteratingSystem
 import net.natruid.jungle.utils.*
 import net.natruid.jungle.utils.ai.BehaviorTree
@@ -28,6 +29,8 @@ import net.natruid.jungle.utils.ai.actions.MoveTowardUnitAction
 import net.natruid.jungle.utils.ai.conditions.HasUnitInAttackRangeCondition
 import net.natruid.jungle.utils.ai.conditions.SimpleUnitTargeter
 import net.natruid.jungle.utils.extensions.dispatch
+import net.natruid.jungle.utils.skill.ModdedValue
+import net.natruid.jungle.utils.skill.Skill
 import net.natruid.jungle.views.SkillBarView
 import net.natruid.jungle.views.UnitStatsQuickview
 import kotlin.math.ceil
@@ -193,11 +196,11 @@ class UnitManageSystem : SortedIteratingSystem(
         moveUnit(unit, path, true)
     }
 
-    fun getMoveAndAttackPath(unit: Int, target: Int): Path? {
+    fun getMoveAndActPath(unit: Int, target: Int, ap: Int, range: Float): Path? {
         val tile1 = mUnit[unit].tile
         val tile2 = mUnit[target].tile
-        val movement = getMovement(unit, 2)
-        if (tileSystem.getDistance(tile1, tile2) > movement + 1f) return null
+        val movement = getMovement(unit, ap)
+        if (tileSystem.getDistance(tile1, tile2) > movement + range) return null
         val area = pathfinderSystem.area(tile1, movement)
         return pathfinderSystem.extractPath(
             area = area,
@@ -205,14 +208,14 @@ class UnitManageSystem : SortedIteratingSystem(
             unit = unit,
             maxCost = movement,
             type = ExtractPathType.LOWEST_COST,
-            inRange = 1f
+            inRange = range
         ) ?: return null
     }
 
     @Subscribe
     fun attackListener(event: UnitAttackEvent) {
         event.let {
-            val attackPath = it.path ?: getMoveAndAttackPath(it.unit, it.target)
+            val attackPath = it.path ?: getMoveAndActPath(it.unit, it.target, 2, 1f)
             if (attackPath != null) {
                 val unit = it.unit
                 val target = it.target
@@ -225,6 +228,56 @@ class UnitManageSystem : SortedIteratingSystem(
                 )
             }
         }
+    }
+
+    @Subscribe
+    fun skillListener(event: UnitSkillEvent) {
+        event.let {
+            val skill = mUnit[it.unit].skills[it.skill]
+            val attackPath = it.path ?: getMoveAndActPath(
+                it.unit,
+                it.target,
+                skill.cost,
+                getModdedValue(it.unit, skill.range)
+            )
+            if (attackPath != null) {
+                val unit = it.unit
+                val target = it.target
+                moveUnit(
+                    it.unit,
+                    attackPath,
+                    callback = {
+                        useSkill(unit, skill, target)
+                    }
+                )
+            }
+        }
+    }
+
+    private fun useSkill(unit: Int, skill: Skill, target: Int) {
+        useAp(unit, skill.cost) {
+            Logger.debug { "Unit $unit used skill ${skill.name} on $target" }
+            mAnimation.create(unit).let {
+                it.target = target
+                it.type = AnimationType.ATTACK
+                it.callback = { applyEffects(unit, skill, target) }
+            }
+        }
+    }
+
+    private fun applyEffects(unit: Int, skill: Skill, target: Int) {
+        val effects = skill.effects
+        for (i in 0 until effects.size) {
+            val effect = effects[i]
+            when (effect.type) {
+                "damage" -> damage(unit, target, getModdedValue(unit, effect.amount).toInt())
+            }
+        }
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    private fun getModdedValue(unit: Int, moddedValue: ModdedValue): Float {
+        return moddedValue.base
     }
 
     private fun attack(unit: Int, target: Int): Boolean {
@@ -438,8 +491,9 @@ class UnitManageSystem : SortedIteratingSystem(
                 Faction.ENEMY -> {
                     if (selectedUnit >= 0) {
                         hideMoveArea(selectedUnit)
-                        es.dispatch(UnitAttackEvent::class).let {
+                        es.dispatch(UnitSkillEvent::class).let {
                             it.unit = selectedUnit
+                            it.skill = 0
                             it.target = unit
                         }
                         deselectUnit(selectedUnit)

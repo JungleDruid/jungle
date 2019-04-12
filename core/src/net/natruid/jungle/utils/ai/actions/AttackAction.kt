@@ -25,7 +25,7 @@ class AttackAction : BehaviorAction() {
             }
         }
         if (bestTarget < 0) return null
-        val path = unitManageSystem.getMoveAndAttackPath(self, bestTarget) ?: error("No path")
+        val path = unitManageSystem.getMoveAndActPath(self, bestTarget, 2, 1f) ?: error("No path")
         if (path.isEmpty()) error("Path is empty")
         target = bestTarget
         this.path = path
