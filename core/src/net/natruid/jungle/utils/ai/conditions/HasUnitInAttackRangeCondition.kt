@@ -13,8 +13,9 @@ class HasUnitInAttackRangeCondition(
     private lateinit var tileSystem: TileSystem
 
     override fun run(): Boolean {
-        val attackRange = 1f
-        val attackCost = 2
+        val skill = mUnit[self].skills[0]
+        val attackRange = unitManageSystem.getModdedValue(self, skill.range)
+        val attackCost = skill.cost
         val movement = if (plusMovement) {
             unitManageSystem.getMovement(self, attackCost + preserveAp)
         } else {

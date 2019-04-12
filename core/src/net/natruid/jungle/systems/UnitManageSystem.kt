@@ -16,7 +16,6 @@ import net.natruid.jungle.components.render.PosComponent
 import net.natruid.jungle.components.render.RenderComponent
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.core.Marsh
-import net.natruid.jungle.events.UnitAttackEvent
 import net.natruid.jungle.events.UnitHealthChangedEvent
 import net.natruid.jungle.events.UnitMoveEvent
 import net.natruid.jungle.events.UnitSkillEvent
@@ -91,6 +90,7 @@ class UnitManageSystem : SortedIteratingSystem(
         mUnit.create(entityId).apply {
             this.tile = tile
             this.faction = faction
+            this.skills.add(Marsh.skills.getValue("attack"))
             if (faction == Faction.PLAYER)
                 this.level = 100
             else
@@ -213,39 +213,21 @@ class UnitManageSystem : SortedIteratingSystem(
     }
 
     @Subscribe
-    fun attackListener(event: UnitAttackEvent) {
-        event.let {
-            val attackPath = it.path ?: getMoveAndActPath(it.unit, it.target, 2, 1f)
-            if (attackPath != null) {
-                val unit = it.unit
-                val target = it.target
-                moveUnit(
-                    it.unit,
-                    attackPath,
-                    callback = {
-                        attack(unit, target)
-                    }
-                )
-            }
-        }
-    }
-
-    @Subscribe
     fun skillListener(event: UnitSkillEvent) {
         event.let {
             val skill = mUnit[it.unit].skills[it.skill]
-            val attackPath = it.path ?: getMoveAndActPath(
+            val path = it.path ?: getMoveAndActPath(
                 it.unit,
                 it.target,
                 skill.cost,
                 getModdedValue(it.unit, skill.range)
             )
-            if (attackPath != null) {
+            if (path != null) {
                 val unit = it.unit
                 val target = it.target
                 moveUnit(
                     it.unit,
-                    attackPath,
+                    path,
                     callback = {
                         useSkill(unit, skill, target)
                     }
@@ -276,23 +258,8 @@ class UnitManageSystem : SortedIteratingSystem(
     }
 
     @Suppress("UNUSED_PARAMETER")
-    private fun getModdedValue(unit: Int, moddedValue: ModdedValue): Float {
+    fun getModdedValue(unit: Int, moddedValue: ModdedValue): Float {
         return moddedValue.base
-    }
-
-    private fun attack(unit: Int, target: Int): Boolean {
-        return useAp(unit, 2) {
-            mAnimation.create(unit).let {
-                it.target = target
-                it.type = AnimationType.ATTACK
-                it.callback = { damage(unit, target, getDamage(unit, target)) }
-            }
-        }
-    }
-
-    @Suppress("UNUSED_PARAMETER")
-    fun getDamage(unit: Int, target: Int): Int {
-        return (10f * mStats[unit].damage).toInt()
     }
 
     private fun damage(unit: Int, target: Int, amount: Int) {
