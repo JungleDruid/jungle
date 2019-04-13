@@ -252,14 +252,22 @@ class UnitManageSystem : SortedIteratingSystem(
         for (i in 0 until effects.size) {
             val effect = effects[i]
             when (effect.type) {
-                "damage" -> damage(unit, target, getModdedValue(unit, effect.amount).toInt())
+                "damage" -> damage(
+                    unit,
+                    target,
+                    (getModdedValue(unit, effect.amount) * mStats[unit].damage).toInt()
+                )
             }
         }
     }
 
-    @Suppress("UNUSED_PARAMETER")
     fun getModdedValue(unit: Int, moddedValue: ModdedValue): Float {
-        return moddedValue.base
+        var value = moddedValue.base
+        if (moddedValue.proficiency != null) {
+            val proLevel = mUnit[unit].proficiencies[moddedValue.proficiency] ?: 0
+            value += proLevel * moddedValue.magnitude
+        }
+        return value
     }
 
     private fun damage(unit: Int, target: Int, amount: Int) {

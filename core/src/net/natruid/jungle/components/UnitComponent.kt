@@ -16,6 +16,7 @@ class UnitComponent : PooledComponent() {
     var extraMovement: Float = 0f
     var hasTurn: Boolean = false
     val skills: ArrayList<Skill> = ArrayList()
+    val proficiencies = HashMap<String, Int>()
 
     override fun reset() {
         tile = -1
