@@ -13,4 +13,5 @@ class BehaviorComponent : Component() {
     var fullMoveArea: Area? = null
     var execution: BehaviorAction? = null
     var score: Float = 0f
+    val threatMap: HashMap<Int, Float> = HashMap()
 }

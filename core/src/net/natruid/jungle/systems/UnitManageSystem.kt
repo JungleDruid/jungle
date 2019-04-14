@@ -23,9 +23,10 @@ import net.natruid.jungle.systems.abstracts.SortedIteratingSystem
 import net.natruid.jungle.utils.*
 import net.natruid.jungle.utils.ai.BehaviorTree
 import net.natruid.jungle.utils.ai.SequenceSelector
-import net.natruid.jungle.utils.ai.actions.AttackAction
-import net.natruid.jungle.utils.ai.actions.MoveTowardUnitAction
+import net.natruid.jungle.utils.ai.actions.*
 import net.natruid.jungle.utils.ai.conditions.HasUnitInAttackRangeCondition
+import net.natruid.jungle.utils.ai.conditions.HasUnitInRangeCondition
+import net.natruid.jungle.utils.ai.conditions.IsOverrideBehaviorCondition
 import net.natruid.jungle.utils.ai.conditions.SimpleUnitTargeter
 import net.natruid.jungle.utils.extensions.dispatch
 import net.natruid.jungle.utils.skill.ModdedValue
@@ -119,7 +120,7 @@ class UnitManageSystem : SortedIteratingSystem(
         }
         if (faction != Faction.PLAYER) {
             mBehavior.create(entityId).tree = BehaviorTree().apply {
-                name = "Move Close"
+                overrideBehavior = "idle"
                 addBehaviors(
                     SequenceSelector().apply {
                         name = "attack"
@@ -129,9 +130,26 @@ class UnitManageSystem : SortedIteratingSystem(
                         )
                     },
                     SequenceSelector().apply {
+                        name = "move close"
                         addBehaviors(
                             SimpleUnitTargeter(UnitTargetType.HOSTILE, UnitCondition.CLOSE),
                             MoveTowardUnitAction()
+                        )
+                    },
+                    SequenceSelector().apply {
+                        name = "idle"
+                        addBehaviors(
+                            IsOverrideBehaviorCondition("idle"),
+                            HasUnitInRangeCondition(
+                                6f,
+                                UnitTargetType.HOSTILE,
+                                awarenessMod = true,
+                                saveResult = true
+                            ),
+                            AllAction(
+                                AddThreatFromTargetsAction(),
+                                OverrideBehaviorAction("")
+                            )
                         )
                     }
                 )
