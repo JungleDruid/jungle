@@ -1,6 +1,7 @@
 package net.natruid.jungle.systems
 
 import com.artemis.Aspect
+import com.artemis.BaseEntitySystem
 import com.artemis.ComponentMapper
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -8,18 +9,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import ktx.async.KtxAsync
 import ktx.async.skipFrame
+import net.natruid.jungle.components.AttributesComponent
 import net.natruid.jungle.components.BehaviorComponent
 import net.natruid.jungle.components.UnitComponent
-import net.natruid.jungle.systems.abstracts.SortedIteratingSystem
 import net.natruid.jungle.utils.Faction
-import net.natruid.jungle.utils.FactionComparator
 import net.natruid.jungle.utils.UnitCondition
 import net.natruid.jungle.utils.UnitTargetType
 
-class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class.java)) {
-    override val comparator = FactionComparator()
-
-    private enum class Phase { READY, PLANNING, PERFORMING, PERFORMED, STOPPING, STOPPED }
+class BehaviorSystem : BaseEntitySystem(Aspect.all(BehaviorComponent::class.java)) {
+    private enum class Phase { READY, CHECKING, PLANNING, PERFORMING, STOPPING, STOPPED }
 
     private lateinit var unitManageSystem: UnitManageSystem
     private lateinit var combatTurnSystem: CombatTurnSystem
@@ -27,17 +25,17 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
     private lateinit var tileSystem: TileSystem
     private lateinit var mUnit: ComponentMapper<UnitComponent>
     private lateinit var mBehavior: ComponentMapper<BehaviorComponent>
+    private lateinit var mAttributes: ComponentMapper<AttributesComponent>
 
     private val unitGroup = HashMap<UnitTargetType, List<Int>>()
     private var phase = Phase.STOPPED
-    private var firstIndex = Int.MAX_VALUE
-    private var lastIndex = Int.MIN_VALUE
-    private var entitySize = 0
     private var currentJob: Job? = null
     private var planJob: Job? = null
     private var currentUnit = -1
     private var performingUnit = -1
     private val scoreMap = mapOf(Pair("kill", 1000f), Pair("damage", 100f))
+    private val activeUnits = HashSet<Int>()
+    private val idleUnits = HashSet<Int>()
 
     fun prepare() {
         if (phase == Phase.READY) return
@@ -59,57 +57,41 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
         phase = Phase.STOPPED
     }
 
-    private fun calculateIndex(): Boolean {
-        firstIndex = Int.MAX_VALUE
-        lastIndex = Int.MIN_VALUE
-        entitySize = sortedEntityIds.size
+    private inline fun loopAgents(idle: Boolean = false, function: (id: Int) -> Boolean) {
         val currentFaction = combatTurnSystem.faction
-        for ((index, id) in sortedEntityIds.withIndex()) {
-            val faction = mUnit[id].faction
-            if (faction.ordinal < currentFaction.ordinal) continue
-            if (faction.ordinal > currentFaction.ordinal) break
-            if (faction == currentFaction) {
-                if (index < firstIndex) firstIndex = index
-                if (index > lastIndex) lastIndex = index
-            }
-        }
-        return firstIndex != Int.MAX_VALUE && lastIndex != Int.MIN_VALUE
-    }
-
-    private inline fun loopAgents(function: (id: Int) -> Boolean) {
-        val ids = sortedEntityIds
-        if (entitySize != ids.size) calculateIndex()
-        for (i in firstIndex..lastIndex) {
-            if (function(ids[i])) break
+        val set = if (idle) idleUnits else activeUnits
+        for (unit in set) {
+            if (mUnit[unit].faction != currentFaction) continue
+            if (function(unit)) break
         }
     }
 
     override fun inserted(entityId: Int) {
         super.inserted(entityId)
         mBehavior[entityId].tree.init(world, entityId)
+        idleUnits.add(entityId)
+    }
+
+    override fun removed(entityId: Int) {
+        super.removed(entityId)
+        idleUnits.remove(entityId)
+        activeUnits.remove(entityId)
     }
 
     override fun processSystem() {
         when (phase) {
             Phase.READY -> {
                 if (combatTurnSystem.faction == Faction.PLAYER) return
-                phase = if (!calculateIndex()) {
-                    Phase.STOPPED
+                for (unit in getUnitGroup(UnitTargetType.ANY)) {
+                    checkAlert(unit)
+                }
+                phase = if (activeUnits.size == 0) {
+                    Phase.STOPPING
                 } else {
-                    Phase.PERFORMED
+                    Phase.CHECKING
                 }
             }
-            Phase.PLANNING -> {
-            }
-            Phase.PERFORMING -> {
-                assert(currentUnit >= 0)
-                val unit = currentUnit
-                performingUnit = unit
-                mBehavior[unit].execution?.execute()
-                mBehavior[unit].execution = null
-                phase = Phase.PERFORMED
-            }
-            Phase.PERFORMED -> {
+            Phase.CHECKING -> {
                 var hasTurn = false
                 loopAgents { id ->
                     if (mUnit[id].hasTurn) {
@@ -124,11 +106,25 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
                         phase = if (plan()) Phase.PERFORMING else Phase.STOPPING
                     }
                 } else {
-                    phase = Phase.STOPPED
+                    phase = Phase.STOPPING
                 }
+            }
+            Phase.PLANNING -> {
+            }
+            Phase.PERFORMING -> {
+                assert(currentUnit >= 0)
+                val unit = currentUnit
+                performingUnit = unit
+                mBehavior[unit].execution?.execute()
+                mBehavior[unit].execution = null
+                phase = Phase.CHECKING
             }
             Phase.STOPPING -> {
                 loopAgents { id ->
+                    unitManageSystem.endTurn(id)
+                    false
+                }
+                loopAgents(true) { id ->
                     unitManageSystem.endTurn(id)
                     false
                 }
@@ -234,5 +230,19 @@ class BehaviorSystem : SortedIteratingSystem(Aspect.all(BehaviorComponent::class
         return score
     }
 
-    override fun process(entityId: Int) {}
+    fun checkAlert(unit: Int, tile: Int = -1) {
+        if (idleUnits.size == 0) return
+        if (mUnit[unit] == null) return
+        val t = if (tile >= 0) tile else mUnit[unit].tile
+        val it = idleUnits.iterator()
+        while (it.hasNext()) {
+            val u = it.next()
+            if (!unitManageSystem.isEnemy(u, unit)) continue
+            val maxDistance = 6f * 1f + (mAttributes[u].awareness - 10) * 0.05f
+            if (tileSystem.getDistance(mUnit[u].tile, t) <= maxDistance) {
+                it.remove()
+                activeUnits.add(u)
+            }
+        }
+    }
 }

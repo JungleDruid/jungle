@@ -22,6 +22,7 @@ class PathFollowSystem : IteratingSystem(Aspect.all(
 
     private lateinit var mPos: ComponentMapper<PosComponent>
     private lateinit var mPathFollower: ComponentMapper<PathFollowerComponent>
+    private lateinit var behaviorSystem: BehaviorSystem
 
     private val v = Vector2()
 
@@ -45,6 +46,7 @@ class PathFollowSystem : IteratingSystem(Aspect.all(
         }
 
         if (pos.xy == destination) {
+            behaviorSystem.checkAlert(entityId, path.peek().tile)
             if (path.size > 1) {
                 path.remove()
             } else {
