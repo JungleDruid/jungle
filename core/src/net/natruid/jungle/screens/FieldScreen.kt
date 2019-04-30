@@ -25,6 +25,7 @@ class FieldScreen : AbstractScreen() {
         return builder.with(
             EventSystem(PollingPooledEventDispatcher(), SubscribeAnnotationFinder()),
             TagManager(),
+            FlowControlSystem(),
             TileSystem(),
             UnitManageSystem(),
             CombatTurnSystem(),

@@ -23,7 +23,7 @@ class BehaviorSystem : BaseEntitySystem(Aspect.all(
 
     private lateinit var unitManageSystem: UnitManageSystem
     private lateinit var combatTurnSystem: CombatTurnSystem
-    private lateinit var animateSystem: AnimateSystem
+    private lateinit var flowControlSystem: FlowControlSystem
     private lateinit var tileSystem: TileSystem
     private lateinit var threatSystem: ThreatSystem
     private lateinit var mUnit: ComponentMapper<UnitComponent>
@@ -88,7 +88,7 @@ class BehaviorSystem : BaseEntitySystem(Aspect.all(
             Phase.CHECKING -> {
                 phase = Phase.PLANNING
                 currentJob = KtxAsync.launch {
-                    while (!animateSystem.ready || unitManageSystem.isBusy(performingUnit)) skipFrame()
+                    while (!flowControlSystem.ready || unitManageSystem.isBusy(performingUnit)) skipFrame()
                     phase = if (plan()) Phase.PERFORMING else Phase.STOPPING
                 }
             }

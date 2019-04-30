@@ -18,13 +18,22 @@ class PathFollowSystem : IteratingSystem(Aspect.all(
         private const val speed = 1000f
     }
 
-    val ready get() = entityIds.isEmpty
-
     private lateinit var mPos: ComponentMapper<PosComponent>
     private lateinit var mPathFollower: ComponentMapper<PathFollowerComponent>
     private lateinit var threatSystem: ThreatSystem
+    private lateinit var flowControlSystem: FlowControlSystem
 
     private val v = Vector2()
+
+    override fun inserted(entityId: Int) {
+        super.inserted(entityId)
+        flowControlSystem.addAct(entityId)
+    }
+
+    override fun removed(entityId: Int) {
+        super.removed(entityId)
+        flowControlSystem.delAct(entityId)
+    }
 
     override fun process(entityId: Int) {
         val pos = mPos[entityId]

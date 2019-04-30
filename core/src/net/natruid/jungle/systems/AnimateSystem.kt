@@ -19,9 +19,7 @@ class AnimateSystem : IteratingSystem(Aspect.all(
     private lateinit var mAnimation: ComponentMapper<AnimationComponent>
     private lateinit var mPos: ComponentMapper<PosComponent>
     private lateinit var mUnit: ComponentMapper<UnitComponent>
-    private lateinit var pathFollowSystem: PathFollowSystem
-
-    val ready get() = entityIds.isEmpty && pathFollowSystem.ready
+    private lateinit var flowControlSystem: FlowControlSystem
 
     private val vector2 = Vector2()
 
@@ -32,6 +30,20 @@ class AnimateSystem : IteratingSystem(Aspect.all(
         vector2 *= 400f * world.delta
         vector2 += mPos[self].xy
         mPos[self].set(vector2)
+    }
+
+    override fun inserted(entityId: Int) {
+        super.inserted(entityId)
+        when (mAnimation[entityId].type) {
+            AnimationType.ATTACK -> flowControlSystem.addAct(entityId)
+        }
+    }
+
+    override fun removed(entityId: Int) {
+        super.removed(entityId)
+        when (mAnimation[entityId].type) {
+            AnimationType.ATTACK -> flowControlSystem.delAct(entityId)
+        }
     }
 
     override fun process(entityId: Int) {

@@ -23,7 +23,7 @@ class CombatTurnSystem : BaseEntitySystem(Aspect.all(TurnComponent::class.java))
     private var phase = Phase.NONE
 
     private lateinit var behaviorSystem: BehaviorSystem
-    private lateinit var pathFollowSystem: PathFollowSystem
+    private lateinit var flowControlSystem: FlowControlSystem
     private lateinit var mTurn: ComponentMapper<TurnComponent>
     private lateinit var mUnit: ComponentMapper<UnitComponent>
     private lateinit var mStats: ComponentMapper<StatsComponent>
@@ -63,7 +63,7 @@ class CombatTurnSystem : BaseEntitySystem(Aspect.all(TurnComponent::class.java))
                 }
             }
             Phase.NEXT_TURN -> {
-                if (!pathFollowSystem.ready) return
+                if (!flowControlSystem.ready) return
                 if (currentFactionIndex >= factionList.size - 1) {
                     turn += 1
                     currentFactionIndex = 0
