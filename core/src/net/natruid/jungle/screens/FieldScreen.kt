@@ -32,6 +32,7 @@ class FieldScreen : AbstractScreen() {
             PathfinderSystem(),
             PathFollowSystem(),
             AnimateSystem(),
+            ThreatSystem(),
             BehaviorSystem(),
             ViewManageSystem(),
             ImageRenderSystem(),

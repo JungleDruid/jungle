@@ -23,6 +23,7 @@ abstract class AbstractScreen : Screen, InputProcessor, Disposable {
         world = World(getConfiguration(WorldConfigurationBuilder())
             .with(Priority.LOW, CameraSystem())
             .with(Priority.LOW, renderBatchSystem)
+            .alwaysDelayComponentRemoval(true)
             .build())
     }
 

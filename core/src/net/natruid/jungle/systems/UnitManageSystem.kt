@@ -49,17 +49,16 @@ class UnitManageSystem : SortedIteratingSystem(
     private lateinit var mAttributes: ComponentMapper<AttributesComponent>
     private lateinit var mBehavior: ComponentMapper<BehaviorComponent>
     private lateinit var mAnimation: ComponentMapper<AnimationComponent>
+    private lateinit var mTurn: ComponentMapper<TurnComponent>
     private lateinit var es: EventSystem
     private lateinit var tileSystem: TileSystem
     private lateinit var pathfinderSystem: PathfinderSystem
     private lateinit var indicateSystem: IndicateSystem
     private lateinit var combatTurnSystem: CombatTurnSystem
     private lateinit var viewManageSystem: ViewManageSystem
-    private lateinit var animateSystem: AnimateSystem
     private lateinit var cameraSystem: CameraSystem
     private lateinit var tagManager: TagManager
 
-    private var unitsHasTurn = -1
     @EntityId
     private var selectedUnit = -1
     @EntityId
@@ -67,7 +66,6 @@ class UnitManageSystem : SortedIteratingSystem(
 
     fun reset() {
         selectedUnit = -1
-        unitsHasTurn = -1
     }
 
     fun getUnit(coord: Point): Int {
@@ -342,26 +340,6 @@ class UnitManageSystem : SortedIteratingSystem(
         cStats.dirty = false
     }
 
-    fun giveTurn(faction: Faction): Boolean {
-        val targetOrdinal = faction.ordinal
-        var hasUnit = false
-        unitsHasTurn = 0
-        for (unit in sortedEntityIds) {
-            val cUnit = mUnit[unit]
-            val ordinal = cUnit.faction.ordinal
-            if (ordinal > targetOrdinal) break
-            if (ordinal < targetOrdinal) continue
-
-            cUnit.ap = (cUnit.ap + 4 + mStats[unit].ap).coerceAtMost(Constants.MAX_AP)
-            cUnit.hasTurn = true
-
-            unitsHasTurn += 1
-            hasUnit = true
-        }
-
-        return hasUnit
-    }
-
     fun hasAp(unit: Int, ap: Int): Boolean {
         if (mUnit[unit].ap < ap) return false
         return true
@@ -373,7 +351,7 @@ class UnitManageSystem : SortedIteratingSystem(
         viewManageSystem.get<SkillBarView>()?.setAp(cUnit.ap)
         indicateSystem.remove(unit, IndicatorType.MOVE_AREA)
         if (cUnit.ap <= 0) {
-            endTurn(unit)
+            combatTurnSystem.endTurn(unit)
             return true
         }
         return false
@@ -384,16 +362,6 @@ class UnitManageSystem : SortedIteratingSystem(
         function()
         if (ap <= 0) return false
         return removeAp(unit, ap)
-    }
-
-    fun endTurn(unit: Int) {
-        val cUnit = mUnit[unit]
-        if (!cUnit.hasTurn) return
-        cUnit.hasTurn = false
-        unitsHasTurn -= 1
-        if (selectedUnit == unit) {
-            deselectUnit()
-        }
     }
 
     fun getMovement(unit: Int, preservedAp: Int = 0): Float {
@@ -459,7 +427,7 @@ class UnitManageSystem : SortedIteratingSystem(
                 Faction.NONE -> {
                 }
                 Faction.PLAYER -> {
-                    if (selectedUnit != unit && mUnit[unit].hasTurn) {
+                    if (selectedUnit != unit && mTurn.has(unit)) {
                         select(unit)
                     }
                 }
@@ -607,17 +575,18 @@ class UnitManageSystem : SortedIteratingSystem(
     override fun keyDown(keycode: Int): Boolean {
         if (keycode == Keys.E && selectedUnit >= 0) {
             indicateSystem.remove(selectedUnit, IndicatorType.MOVE_AREA)
-            endTurn(selectedUnit)
+            combatTurnSystem.endTurn(selectedUnit)
             return true
         }
         return false
     }
 
     override fun process(entityId: Int) {
-        if (unitsHasTurn == 0) {
-            if (animateSystem.ready) combatTurnSystem.nextTurn()
-        } else if (nextSelect >= 0) {
-            if (mUnit[nextSelect].hasTurn) {
+        if (selectedUnit >= 0 && !mTurn.has(selectedUnit)) {
+            deselectUnit()
+        }
+        if (nextSelect >= 0) {
+            if (mTurn.has(nextSelect)) {
                 if (!mPathFollower.has(nextSelect) && !mAnimation.has(nextSelect)) {
                     select(nextSelect)
                     nextSelect = -1

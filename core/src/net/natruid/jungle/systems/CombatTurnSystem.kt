@@ -1,10 +1,16 @@
 package net.natruid.jungle.systems
 
-import com.artemis.BaseSystem
+import com.artemis.Aspect
+import com.artemis.BaseEntitySystem
+import com.artemis.ComponentMapper
+import net.natruid.jungle.components.StatsComponent
+import net.natruid.jungle.components.TurnComponent
+import net.natruid.jungle.components.UnitComponent
+import net.natruid.jungle.utils.Constants
 import net.natruid.jungle.utils.Faction
 import net.natruid.jungle.utils.Logger
 
-class CombatTurnSystem : BaseSystem() {
+class CombatTurnSystem : BaseEntitySystem(Aspect.all(TurnComponent::class.java)) {
     private enum class Phase { NONE, START, READY, NEXT_TURN }
 
     var turn = 0
@@ -16,9 +22,15 @@ class CombatTurnSystem : BaseSystem() {
     private var currentFactionIndex = 0
     private var phase = Phase.NONE
 
-    private lateinit var unitManageSystem: UnitManageSystem
     private lateinit var behaviorSystem: BehaviorSystem
     private lateinit var pathFollowSystem: PathFollowSystem
+    private lateinit var mTurn: ComponentMapper<TurnComponent>
+    private lateinit var mUnit: ComponentMapper<UnitComponent>
+    private lateinit var mStats: ComponentMapper<StatsComponent>
+
+    private val unitSubscription by lazy {
+        world.aspectSubscriptionManager.get(Aspect.all(UnitComponent::class.java))
+    }
 
     fun start() {
         phase = Phase.START
@@ -33,10 +45,6 @@ class CombatTurnSystem : BaseSystem() {
         factionList.remove(faction)
     }
 
-    fun nextTurn() {
-        phase = Phase.NEXT_TURN
-    }
-
     fun reset() {
         factionList.clear()
         currentFactionIndex = 0
@@ -46,8 +54,13 @@ class CombatTurnSystem : BaseSystem() {
     override fun processSystem() {
         when (phase) {
             Phase.START -> {
-                unitManageSystem.giveTurn(factionList[currentFactionIndex])
+                giveTurn(factionList[currentFactionIndex])
                 phase = Phase.READY
+            }
+            Phase.READY -> {
+                if (entityIds.isEmpty) {
+                    phase = Phase.NEXT_TURN
+                }
             }
             Phase.NEXT_TURN -> {
                 if (!pathFollowSystem.ready) return
@@ -60,12 +73,31 @@ class CombatTurnSystem : BaseSystem() {
 
                 val nextFaction = factionList[currentFactionIndex]
                 Logger.debug { "Turn ended. Next faction: $nextFaction" }
-                unitManageSystem.giveTurn(nextFaction)
+                giveTurn(nextFaction)
                 behaviorSystem.prepare()
                 phase = Phase.READY
             }
             else -> {
             }
         }
+    }
+
+    fun giveTurn(faction: Faction) {
+        val entities = unitSubscription.entities
+        val data = entities.data
+        for (i in 0 until entities.size()) {
+            val unit = data[i]
+            val cUnit = mUnit[unit]
+
+            if (cUnit.faction != faction) continue
+
+            cUnit.ap = (cUnit.ap + 4 + mStats[unit].ap).coerceAtMost(Constants.MAX_AP)
+            mTurn.create(unit)
+        }
+    }
+
+    fun endTurn(unit: Int) {
+        if (!mTurn.has(unit)) return
+        mTurn.remove(unit)
     }
 }

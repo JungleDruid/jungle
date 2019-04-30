@@ -9,23 +9,25 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import ktx.async.KtxAsync
 import ktx.async.skipFrame
-import net.natruid.jungle.components.AttributesComponent
 import net.natruid.jungle.components.BehaviorComponent
+import net.natruid.jungle.components.TurnComponent
 import net.natruid.jungle.components.UnitComponent
 import net.natruid.jungle.utils.Faction
 import net.natruid.jungle.utils.UnitCondition
 import net.natruid.jungle.utils.UnitTargetType
 
-class BehaviorSystem : BaseEntitySystem(Aspect.all(BehaviorComponent::class.java)) {
+class BehaviorSystem : BaseEntitySystem(Aspect.all(
+    BehaviorComponent::class.java, TurnComponent::class.java
+)) {
     private enum class Phase { READY, CHECKING, PLANNING, PERFORMING, STOPPING, STOPPED }
 
     private lateinit var unitManageSystem: UnitManageSystem
     private lateinit var combatTurnSystem: CombatTurnSystem
     private lateinit var animateSystem: AnimateSystem
     private lateinit var tileSystem: TileSystem
+    private lateinit var threatSystem: ThreatSystem
     private lateinit var mUnit: ComponentMapper<UnitComponent>
     private lateinit var mBehavior: ComponentMapper<BehaviorComponent>
-    private lateinit var mAttributes: ComponentMapper<AttributesComponent>
 
     private val unitGroup = HashMap<UnitTargetType, List<Int>>()
     private var phase = Phase.STOPPED
@@ -34,8 +36,6 @@ class BehaviorSystem : BaseEntitySystem(Aspect.all(BehaviorComponent::class.java
     private var currentUnit = -1
     private var performingUnit = -1
     private val scoreMap = mapOf(Pair("kill", 1000f), Pair("damage", 100f))
-    private val activeUnits = HashSet<Int>()
-    private val idleUnits = HashSet<Int>()
 
     fun prepare() {
         if (phase == Phase.READY) return
@@ -58,10 +58,11 @@ class BehaviorSystem : BaseEntitySystem(Aspect.all(BehaviorComponent::class.java
     }
 
     private inline fun loopAgents(idle: Boolean = false, function: (id: Int) -> Boolean) {
-        val currentFaction = combatTurnSystem.faction
-        val set = if (idle) idleUnits else activeUnits
-        for (unit in set) {
-            if (mUnit[unit].faction != currentFaction) continue
+        val data = entityIds.data
+        for (i in 0 until entityIds.size()) {
+            val unit = data[i]
+            val noThreat = mBehavior[unit].threatMap.size == 0
+            if (noThreat != idle) continue
             if (function(unit)) break
         }
     }
@@ -69,13 +70,6 @@ class BehaviorSystem : BaseEntitySystem(Aspect.all(BehaviorComponent::class.java
     override fun inserted(entityId: Int) {
         super.inserted(entityId)
         mBehavior[entityId].tree.init(world, entityId)
-        idleUnits.add(entityId)
-    }
-
-    override fun removed(entityId: Int) {
-        super.removed(entityId)
-        idleUnits.remove(entityId)
-        activeUnits.remove(entityId)
     }
 
     override fun processSystem() {
@@ -83,30 +77,19 @@ class BehaviorSystem : BaseEntitySystem(Aspect.all(BehaviorComponent::class.java
             Phase.READY -> {
                 if (combatTurnSystem.faction == Faction.PLAYER) return
                 for (unit in getUnitGroup(UnitTargetType.ANY)) {
-                    checkAlert(unit)
+                    threatSystem.checkAlert(unit)
                 }
-                phase = if (activeUnits.size == 0) {
+                phase = if (entityIds.size() == 0) {
                     Phase.STOPPING
                 } else {
                     Phase.CHECKING
                 }
             }
             Phase.CHECKING -> {
-                var hasTurn = false
-                loopAgents { id ->
-                    if (mUnit[id].hasTurn) {
-                        hasTurn = true
-                        true
-                    } else false
-                }
-                if (hasTurn) {
-                    phase = Phase.PLANNING
-                    currentJob = KtxAsync.launch {
-                        while (!animateSystem.ready || unitManageSystem.isBusy(performingUnit)) skipFrame()
-                        phase = if (plan()) Phase.PERFORMING else Phase.STOPPING
-                    }
-                } else {
-                    phase = Phase.STOPPING
+                phase = Phase.PLANNING
+                currentJob = KtxAsync.launch {
+                    while (!animateSystem.ready || unitManageSystem.isBusy(performingUnit)) skipFrame()
+                    phase = if (plan()) Phase.PERFORMING else Phase.STOPPING
                 }
             }
             Phase.PLANNING -> {
@@ -121,11 +104,11 @@ class BehaviorSystem : BaseEntitySystem(Aspect.all(BehaviorComponent::class.java
             }
             Phase.STOPPING -> {
                 loopAgents { id ->
-                    unitManageSystem.endTurn(id)
+                    combatTurnSystem.endTurn(id)
                     false
                 }
                 loopAgents(true) { id ->
-                    unitManageSystem.endTurn(id)
+                    combatTurnSystem.endTurn(id)
                     false
                 }
                 phase = Phase.STOPPED
@@ -228,21 +211,5 @@ class BehaviorSystem : BaseEntitySystem(Aspect.all(BehaviorComponent::class.java
         var score = scoreMap[result] ?: 0f
         score += (amount - apCost) / 100f
         return score
-    }
-
-    fun checkAlert(unit: Int, tile: Int = -1) {
-        if (idleUnits.size == 0) return
-        if (mUnit[unit] == null) return
-        val t = if (tile >= 0) tile else mUnit[unit].tile
-        val it = idleUnits.iterator()
-        while (it.hasNext()) {
-            val u = it.next()
-            if (!unitManageSystem.isEnemy(u, unit)) continue
-            val maxDistance = 6f * 1f + (mAttributes[u].awareness - 10) * 0.05f
-            if (tileSystem.getDistance(mUnit[u].tile, t) <= maxDistance) {
-                it.remove()
-                activeUnits.add(u)
-            }
-        }
     }
 }

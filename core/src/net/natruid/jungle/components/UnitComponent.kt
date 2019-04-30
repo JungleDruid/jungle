@@ -14,7 +14,6 @@ class UnitComponent : PooledComponent() {
     var hp: Int = 0
     var ap: Int = 0
     var extraMovement: Float = 0f
-    var hasTurn: Boolean = false
     val skills: ArrayList<Skill> = ArrayList()
     val proficiencies = HashMap<String, Int>()
 
@@ -26,7 +25,6 @@ class UnitComponent : PooledComponent() {
         hp = 0
         ap = 0
         extraMovement = 0f
-        hasTurn = false
         skills.clear()
     }
 }
