@@ -58,12 +58,11 @@ class CombatTurnSystem : BaseEntitySystem(Aspect.all(TurnComponent::class.java))
                 phase = Phase.READY
             }
             Phase.READY -> {
-                if (entityIds.isEmpty) {
+                if (entityIds.isEmpty && behaviorSystem.ready && flowControlSystem.ready) {
                     phase = Phase.NEXT_TURN
                 }
             }
             Phase.NEXT_TURN -> {
-                if (!flowControlSystem.ready) return
                 if (currentFactionIndex >= factionList.size - 1) {
                     turn += 1
                     currentFactionIndex = 0

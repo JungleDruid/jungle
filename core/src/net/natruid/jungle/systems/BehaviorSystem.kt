@@ -12,13 +12,14 @@ import ktx.async.skipFrame
 import net.natruid.jungle.components.BehaviorComponent
 import net.natruid.jungle.components.TurnComponent
 import net.natruid.jungle.components.UnitComponent
-import net.natruid.jungle.utils.Faction
 import net.natruid.jungle.utils.UnitCondition
 import net.natruid.jungle.utils.UnitTargetType
 
 class BehaviorSystem : BaseEntitySystem(Aspect.all(
     BehaviorComponent::class.java, TurnComponent::class.java
 )) {
+    val ready get() = phase == Phase.READY || phase == Phase.STOPPED
+
     private enum class Phase { READY, CHECKING, PLANNING, PERFORMING, STOPPING, STOPPED }
 
     private lateinit var unitManageSystem: UnitManageSystem
@@ -75,13 +76,12 @@ class BehaviorSystem : BaseEntitySystem(Aspect.all(
     override fun processSystem() {
         when (phase) {
             Phase.READY -> {
-                if (combatTurnSystem.faction == Faction.PLAYER) return
-                for (unit in getUnitGroup(UnitTargetType.ANY)) {
-                    threatSystem.checkAlert(unit)
-                }
                 phase = if (entityIds.size() == 0) {
                     Phase.STOPPING
                 } else {
+                    for (unit in getUnitGroup(UnitTargetType.ANY)) {
+                        threatSystem.checkAlert(unit)
+                    }
                     Phase.CHECKING
                 }
             }

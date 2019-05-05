@@ -51,7 +51,7 @@ class FieldScreen : AbstractScreen() {
                 world.getMapper(UnitComponent::class.java)[it].proficiencies["weapon"] = 20
             }
             var count = 0
-            while (count < 20) {
+            while (count < 6) {
                 if (addUnit(Random.nextInt(20), Random.nextInt(20), Faction.ENEMY) >= 0)
                     count += 1
             }
