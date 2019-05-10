@@ -244,7 +244,6 @@ class TileSystem : BaseSystem(), InputProcessor {
                 if (cTile.hasRoad) {
                     // create road or bridge
                     world.create().let { road ->
-                        mRender.create(road).z = mRender[tile].z + 0.1f
                         mPos.create(road).set(mPos[tile].xy)
                         val coord = cTile.coord
                         var roadCount = 0
@@ -266,6 +265,7 @@ class TileSystem : BaseSystem(), InputProcessor {
                         }
                         if (cTile.terrainType == TerrainType.WATER) {
                             // create bridge
+                            mRender.create(road).z = mRender[tile].z + 0.2f
                             var rotate = false
                             var multiDirection = false
                             when (roadCount) {
@@ -292,6 +292,7 @@ class TileSystem : BaseSystem(), InputProcessor {
                             }
                         } else {
                             // create road
+                            mRender.create(road).z = mRender[tile].z + 0.1f
                             var directions = 0
                             for ((i, dir) in dirs.withIndex()) {
                                 if (dir) directions = directions.or(1.shl(i))
