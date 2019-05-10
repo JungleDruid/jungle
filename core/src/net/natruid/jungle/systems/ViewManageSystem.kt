@@ -5,6 +5,7 @@ import ktx.assets.disposeSafely
 import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.views.AbstractView
 import kotlin.reflect.KClass
+import kotlin.reflect.full.createInstance
 
 @Suppress("UNCHECKED_CAST")
 class ViewManageSystem : BaseSystem() {
@@ -17,7 +18,7 @@ class ViewManageSystem : BaseSystem() {
     fun <T : AbstractView> show(type: KClass<T>): T {
         var view = viewMap[type]
         if (view == null) {
-            view = AbstractView.createView(type)
+            view = type.createInstance()
             viewMap[type] = view
         }
         Jungle.instance.showView(view)

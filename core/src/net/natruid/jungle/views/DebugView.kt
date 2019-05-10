@@ -1,7 +1,8 @@
 package net.natruid.jungle.views
 
-import com.github.czyzby.lml.annotation.LmlActor
+import com.badlogic.gdx.utils.Align
 import com.kotcrab.vis.ui.widget.VisLabel
+import ktx.vis.table
 import net.natruid.jungle.utils.RendererHelper
 
 class DebugView : AbstractView() {
@@ -15,21 +16,33 @@ class DebugView : AbstractView() {
     private var timer = 0f
     private var threads = 0
 
-    @LmlActor("fpsLabel")
-    lateinit var fpsLabel: VisLabel
-    @LmlActor("ramLabel")
-    lateinit var ramLabel: VisLabel
-    @LmlActor("renderCallsLabel")
-    lateinit var rcLabel: VisLabel
-    @LmlActor("threadsLabel")
-    lateinit var threadsLabel: VisLabel
-    @LmlActor("tileLabel")
+    private lateinit var fpsLabel: VisLabel
+    private lateinit var ramLabel: VisLabel
+    private lateinit var rcLabel: VisLabel
+    private lateinit var threadsLabel: VisLabel
     lateinit var tileLabel: VisLabel
-    @LmlActor("unitLabel")
+        private set
     lateinit var unitLabel: VisLabel
+        private set
 
-    override fun getViewId(): String {
-        return "debug"
+    init {
+        addActor(table {
+            setFillParent(true)
+            align(Align.topLeft)
+            padLeft(5f)
+            defaults().align(Align.left)
+            fpsLabel = label("FPS: 0", "green-small")
+            row()
+            ramLabel = label("RAM: 0", "green-small")
+            row()
+            rcLabel = label("RC: 0", "green-small")
+            row()
+            threadsLabel = label("Threads: 0", "green-small")
+            row()
+            tileLabel = label("Tile: -1", "green-small")
+            row()
+            unitLabel = label("Unit: -1", "green-small")
+        })
     }
 
     override fun render(delta: Float) {

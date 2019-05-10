@@ -33,7 +33,6 @@ allprojects {
         ktxVersion = "1.9.9-b1"
         kotlinCoroutineVersion = "1.1.1"
         visuiVersion = "1.4.2"
-        gdxLmlVersion = "1.9.1.9.8-SNAPSHOT"
     }
 
     repositories {
@@ -86,7 +85,6 @@ project(":core") {
         compile group: "io.github.libktx", name: "ktx-i18n", version: "$ktxVersion"
         compile group: "io.github.libktx", name: "ktx-async", version: "$ktxVersion"
         compile "com.kotcrab.vis:vis-ui:$visuiVersion"
-        compile "com.github.czyzby:gdx-lml-vis:$gdxLmlVersion"
     }
 
     sourceSets.main.resources.srcDirs = [project(":core").file("assets")]

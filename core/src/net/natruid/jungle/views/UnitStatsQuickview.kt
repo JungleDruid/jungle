@@ -1,26 +1,41 @@
 package net.natruid.jungle.views
 
-import com.github.czyzby.lml.annotation.LmlActor
 import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisWindow
+import ktx.vis.window
 
 class UnitStatsQuickview : AbstractView() {
-    @LmlActor("base")
-    lateinit var base: VisWindow
-    @LmlActor("hp")
     lateinit var hp: VisLabel
-    @LmlActor("int")
     lateinit var int: VisLabel
-    @LmlActor("det")
     lateinit var det: VisLabel
-    @LmlActor("end")
     lateinit var end: VisLabel
-    @LmlActor("awa")
     lateinit var awa: VisLabel
-    @LmlActor("luc")
     lateinit var luc: VisLabel
+    val base: VisWindow = window("", "info") {
+        isMovable = false
+        defaults().pad(0f, 5f, 0f, 5f)
+        label("HP", "green-small")
+        hp = label("0", "green-small")
+        row()
+        label("I", "green-small")
+        int = label("0", "green-small")
+        row()
+        label("D", "green-small")
+        det = label("0", "green-small")
+        row()
+        label("E", "green-small")
+        end = label("0", "green-small")
+        row()
+        label("A", "green-small")
+        awa = label("0", "green-small")
+        row()
+        label("L", "green-small")
+        luc = label("0", "green-small")
+        pack()
+        width = 128f
+    }
 
-    override fun getViewId(): String {
-        return "unit-stats-quickview"
+    init {
+        addActor(base)
     }
 }

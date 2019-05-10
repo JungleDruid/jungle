@@ -605,6 +605,10 @@
     "menuitem-shortcut": {
       "font": "normal",
       "fontColor": "menuitem"
+    },
+    "green-small": {
+      "font": "small",
+      "fontColor": "green"
     }
   },
   "TextFieldStyle": {

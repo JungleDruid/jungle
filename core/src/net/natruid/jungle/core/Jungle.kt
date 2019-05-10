@@ -6,8 +6,6 @@ import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.utils.viewport.ScreenViewport
-import com.github.czyzby.lml.parser.LmlParser
-import com.github.czyzby.lml.vis.util.VisLml
 import com.kotcrab.vis.ui.VisUI
 import kotlinx.coroutines.launch
 import ktx.assets.disposeSafely
@@ -78,7 +76,7 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
                 loadingScreen.progress()
 
                 if (debug) {
-                    debugView = AbstractView.createView()
+                    debugView = DebugView()
                     DebugView.show = true
                 }
                 setScreen(FieldScreen())
@@ -130,7 +128,7 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
         loadingScreen.dispose()
         currentScreen?.dispose()
         viewList.forEach {
-            it.dispose()
+            it.disposeSafely()
         }
         viewList.clear()
         debugView?.dispose()
@@ -254,7 +252,7 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
                     setScreen(FieldScreen())
                 } else {
                     setScreen(TestScreen())
-                    showView(AbstractView.createView<TestView>())
+                    showView(TestView())
                 }
 
                 return true
@@ -309,7 +307,7 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
 
     private fun unfocusAll() {
         viewList.forEach {
-            it.stage?.unfocusAll()
+            it.unfocusAll()
         }
     }
 
@@ -326,7 +324,6 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
     companion object {
         var debug = ManagementFactory.getRuntimeMXBean().inputArguments.toString().indexOf("-agentlib:jdwp") > 0
             private set
-        val lmlParser: LmlParser by lazy { VisLml.parser().i18nBundle(Marsh.I18N["assets/locale/UI"]).build() }
 
         lateinit var instance: Jungle
             private set

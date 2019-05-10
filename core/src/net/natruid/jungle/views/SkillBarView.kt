@@ -4,17 +4,25 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.scenes.scene2d.ui.Widget
+import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.Pool
 import com.badlogic.gdx.utils.Pools
-import com.github.czyzby.lml.annotation.LmlActor
 import com.kotcrab.vis.ui.widget.VisTable
+import ktx.vis.table
 import net.natruid.jungle.core.Jungle
 
 class SkillBarView : AbstractView() {
-    @LmlActor("apBar")
     private lateinit var apBar: VisTable
 
     private val apCircleList = ArrayList<ApPointCircle>()
+
+    init {
+        addActor(table {
+            setFillParent(true)
+            align(Align.bottom)
+            apBar = table {}
+        })
+    }
 
     override fun show() {
         super.show()
@@ -49,10 +57,6 @@ class SkillBarView : AbstractView() {
 
     fun hideAp() {
         apBar.isVisible = false
-    }
-
-    override fun getViewId(): String {
-        return "skill-bar"
     }
 
     class ApPointCircle : Widget(), Pool.Poolable {
