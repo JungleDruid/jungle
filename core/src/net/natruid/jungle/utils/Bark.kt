@@ -9,7 +9,7 @@ import net.natruid.jungle.core.Marsh
 
 class Bark(skinFile: String) : Skin() {
     init {
-        val file = Scout[skinFile]
+        val file = Scout.get(skinFile)
 
         for (f in Marsh.getFontDefs()) {
             add(f.name, Marsh.Fonts[f.name])

@@ -11,6 +11,7 @@ buildscript {
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+        classpath "net.onedaybeard.artemis:artemis-odb-gradle-plugin:2.2.0"
     }
 }
 

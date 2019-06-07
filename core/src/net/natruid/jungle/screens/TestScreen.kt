@@ -25,7 +25,7 @@ class TestScreen : AbstractScreen() {
         world.getMapper(RenderComponent::class.java).create(e)
         world.getMapper(PosComponent::class.java).create(e)
         world.getMapper(TextureComponent::class.java).create(e).apply {
-            region = TextureRegion(Texture(Scout["assets/img/test/badlogic.jpg"]))
+            region = TextureRegion(Texture(Scout.get("assets/img/test/badlogic.jpg")))
         }
         world.getMapper(LabelComponent::class.java).create(e).apply {
             text = "測試 test with a long text abcdefghijklmnopqrstuvwxyz"

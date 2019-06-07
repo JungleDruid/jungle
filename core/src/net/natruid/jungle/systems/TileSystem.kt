@@ -25,6 +25,7 @@ import net.natruid.jungle.utils.Constants.UP
 import net.natruid.jungle.utils.Constants.Z_GRID
 import net.natruid.jungle.utils.Constants.Z_MOUSE_ON_TILE
 import net.natruid.jungle.utils.Constants.Z_OBSTACLE
+import net.natruid.jungle.utils.callbacks.RenderCallback
 import net.natruid.jungle.utils.extensions.forEach
 import kotlin.math.abs
 import kotlin.math.min
@@ -69,7 +70,7 @@ class TileSystem : BaseSystem(), InputProcessor {
     private val gridColor = Color(0.5f, 0.7f, 0.3f, 0.8f)
     private val mouseOnTileColor = Color(1f, 1f, 0f, 0.4f)
     private val tileShaderComponent = ShaderComponent().apply {
-        shader = Shader(fragment = "tile")
+        shader = Shader("tile")
         shader.getInstance().use {
             it.setUniformf("bound", 1f - 64f / 96f)
         }
@@ -77,7 +78,7 @@ class TileSystem : BaseSystem(), InputProcessor {
         blendDstFunc = GL20.GL_ONE
     }
     private val waterTileShaderComponent = ShaderComponent().apply {
-        shader = Shader(fragment = "tile")
+        shader = Shader("tile")
         shader.getInstance().use {
             it.setUniformf("bound", 1f - 64f / 96f)
         }
@@ -85,13 +86,13 @@ class TileSystem : BaseSystem(), InputProcessor {
         blendDstFunc = GL20.GL_ONE
     }
     private val stoneInWaterShaderComponent = ShaderComponent().apply {
-        shader = Shader(fragment = "tile")
+        shader = Shader("tile")
         shader.getInstance().use {
             it.setUniformf("bound", 0.45f)
         }
     }
     private val tileCropComponent = CropComponent()
-    private val gridRenderCallback: ((RendererHelper) -> Unit) = { renderer ->
+    private val gridRenderCallback = RenderCallback { renderer ->
         val camera = cameraSystem.camera
         val shapeRenderer = renderer.shapeRenderer
 
@@ -185,18 +186,18 @@ class TileSystem : BaseSystem(), InputProcessor {
         return this[x, y]
     }
 
-    private val dirtTexture = TextureRegion(Texture(Scout["assets/img/tiles/dirt.png"]))
-    private val grassTexture = TextureRegion(Texture(Scout["assets/img/tiles/grass.png"]))
-    private val roadTexture = TextureRegion(Texture(Scout["assets/img/tiles/road.png"]))
-    private val roadTextureUpDown = TextureRegion(Texture(Scout["assets/img/tiles/road-ud.png"]))
-    private val roadTextureRightUp = TextureRegion(Texture(Scout["assets/img/tiles/road-ru.png"]))
-    private val roadTextureRightUpLeft = TextureRegion(Texture(Scout["assets/img/tiles/road-rul.png"]))
-    private val roadTextureRightUpLeftDown = TextureRegion(Texture(Scout["assets/img/tiles/road-ruld.png"]))
-    private val waterTexture = TextureRegion(Texture(Scout["assets/img/tiles/water.png"]))
-    private val bridgeTexture = TextureRegion(Texture(Scout["assets/img/tiles/bridge.png"]))
-    private val bridgeMultiDirectionTexture = TextureRegion(Texture(Scout["assets/img/tiles/bridge-multi-direction.png"]))
-    private val treeTexture = TextureRegion(Texture(Scout["assets/img/tiles/tree.png"]))
-    private val rockTexture = TextureRegion(Texture(Scout["assets/img/tiles/rock.png"]))
+    private val dirtTexture = TextureRegion(Texture(Scout.get("assets/img/tiles/dirt.png")))
+    private val grassTexture = TextureRegion(Texture(Scout.get("assets/img/tiles/grass.png")))
+    private val roadTexture = TextureRegion(Texture(Scout.get("assets/img/tiles/road.png")))
+    private val roadTextureUpDown = TextureRegion(Texture(Scout.get("assets/img/tiles/road-ud.png")))
+    private val roadTextureRightUp = TextureRegion(Texture(Scout.get("assets/img/tiles/road-ru.png")))
+    private val roadTextureRightUpLeft = TextureRegion(Texture(Scout.get("assets/img/tiles/road-rul.png")))
+    private val roadTextureRightUpLeftDown = TextureRegion(Texture(Scout.get("assets/img/tiles/road-ruld.png")))
+    private val waterTexture = TextureRegion(Texture(Scout.get("assets/img/tiles/water.png")))
+    private val bridgeTexture = TextureRegion(Texture(Scout.get("assets/img/tiles/bridge.png")))
+    private val bridgeMultiDirectionTexture = TextureRegion(Texture(Scout.get("assets/img/tiles/bridge-multi-direction.png")))
+    private val treeTexture = TextureRegion(Texture(Scout.get("assets/img/tiles/tree.png")))
+    private val rockTexture = TextureRegion(Texture(Scout.get("assets/img/tiles/rock.png")))
 
     fun create(columns: Int, rows: Int, seed: Long = Random.nextLong()) {
         reset()

@@ -71,7 +71,7 @@ class CombatTurnSystem : BaseEntitySystem(Aspect.all(TurnComponent::class.java))
                 }
 
                 val nextFaction = factionList[currentFactionIndex]
-                Logger.debug { "Turn ended. Next faction: $nextFaction" }
+                Logger.debug("Turn ended. Next faction: $nextFaction")
                 giveTurn(nextFaction)
                 behaviorSystem.prepare()
                 phase = Phase.READY

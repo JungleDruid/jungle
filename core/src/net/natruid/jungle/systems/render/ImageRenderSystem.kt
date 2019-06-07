@@ -26,8 +26,8 @@ class ImageRenderSystem : RenderSystem(
             val width = region.regionWidth.toFloat()
             val height = region.regionHeight.toFloat()
 
-            val originX = width * pivot.x
-            val originY = height * pivot.y
+            val originX = width * pivot.xy.x
+            val originY = height * pivot.xy.y
 
             region.flip(region.isFlipX != texture.flipX, region.isFlipY != texture.flipY)
             batch.color = texture.color
@@ -40,8 +40,8 @@ class ImageRenderSystem : RenderSystem(
                 originY,
                 width,
                 height,
-                scale.x,
-                scale.y,
+                scale.xy.x,
+                scale.xy.y,
                 angle.rotation
             )
         }

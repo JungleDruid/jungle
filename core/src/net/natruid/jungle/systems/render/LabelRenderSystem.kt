@@ -30,7 +30,7 @@ class LabelRenderSystem : RenderSystem(
         val offsetY: Float = when {
             label.align.and(Align.top) != 0 -> 0f
             label.align.and(Align.bottom) != 0 -> glyphLayout.height
-            else -> glyphLayout.height * pivot.y
+            else -> glyphLayout.height * pivot.xy.y
         }
         val position = getPos()
         font.draw(renderer.batch, glyphLayout, position.x, position.y + offsetY)

@@ -10,7 +10,7 @@ import ktx.math.timesAssign
 import net.natruid.jungle.components.AnimationComponent
 import net.natruid.jungle.components.UnitComponent
 import net.natruid.jungle.components.render.PosComponent
-import net.natruid.jungle.utils.AnimationType
+import net.natruid.jungle.utils.types.AnimationType
 
 class AnimateSystem : IteratingSystem(Aspect.all(
     UnitComponent::class.java,
@@ -55,7 +55,7 @@ class AnimateSystem : IteratingSystem(Aspect.all(
                         move(entityId, it.target)
                     } else {
                         it.callback?.apply {
-                            invoke()
+                            run()
                             it.callback = null
                         }
                         val tile = mUnit[entityId].tile

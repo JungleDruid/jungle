@@ -29,7 +29,7 @@ object Marsh {
         operator fun get(key: String): BitmapFont {
             var font = fonts[key]
             if (font == null) {
-                Logger.warn { "Cannot find font name: $key" }
+                Logger.warn("Cannot find font name: $key")
                 font = fonts["normal"]
                 if (font == null) {
                     error("Cannot find fallback font: normal")
@@ -46,7 +46,7 @@ object Marsh {
         operator fun get(key: String): I18NBundle {
             var ret = i18nMap[key]
             if (ret == null) {
-                ret = I18NBundle.createBundle(Scout[key]) ?: error("Cannot find bundle $key")
+                ret = I18NBundle.createBundle(Scout.get(key)) ?: error("Cannot find bundle $key")
                 i18nMap[key] = ret
             }
 
@@ -84,7 +84,7 @@ object Marsh {
         map: HashMap<String, FileHandle> = HashMap(),
         useZip: Boolean = false
     ): HashMap<String, FileHandle> {
-        val dir = Scout[path, useZip]
+        val dir = Scout.get(path, useZip)
 
         if (!dir.isDirectory) {
             error("$path is not a directory.")
@@ -115,7 +115,7 @@ object Marsh {
                         val fontPath = "assets/fonts/" + def.file
                         var generator = fontGeneratorMap[fontPath]
                         if (generator == null) {
-                            generator = FreeTypeFontGenerator(Scout[fontPath])
+                            generator = FreeTypeFontGenerator(Scout.get(fontPath))
                             fontGeneratorMap[fontPath] = generator
                         }
 
@@ -153,7 +153,7 @@ object Marsh {
                         map[skill.name] = skill
                     }
                 }
-                else -> Logger.warn { "Found unknown property \"${j.name}\" in \"${file.name()}\"" }
+                else -> Logger.warn("Found unknown property \"${j.name}\" in \"${file.name()}\"")
             }
         }
     }

@@ -5,6 +5,7 @@ import net.natruid.jungle.components.AttributesComponent
 import net.natruid.jungle.systems.TileSystem
 import net.natruid.jungle.utils.UnitTargetType
 import net.natruid.jungle.utils.ai.BehaviorCondition
+import net.natruid.jungle.utils.types.AttributeType
 
 class HasUnitInRangeCondition(
     private val range: Float,
@@ -20,7 +21,7 @@ class HasUnitInRangeCondition(
 
     override fun run(): Boolean {
         val targets = behaviorSystem.getUnitGroup(group)
-        val maxDistance = range * if (!awarenessMod) 1f else 1f + (mAttributes[self].awareness - 10) * 0.05f
+        val maxDistance = range * if (!awarenessMod) 1f else 1f + (mAttributes[self].get(AttributeType.AWARENESS) - 10) * 0.05f
         var result = false
         for (target in targets) {
             if (mUnit[target] != null) {

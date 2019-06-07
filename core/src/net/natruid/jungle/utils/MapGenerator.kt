@@ -37,7 +37,7 @@ class MapGenerator(
     private var initialized = false
 
     fun init(): Array<IntArray> {
-        Logger.debug { "Map seed: $seed" }
+        Logger.debug("Map seed: $seed")
         map = Array(columns) { x ->
             IntArray(rows) { y ->
                 val entityId = world.create(tileArchetype)
@@ -283,31 +283,31 @@ class MapGenerator(
     }
 
     fun generate(): Array<IntArray> {
-        Logger.stopwatch("Map generation") {
-            if (!initialized) init()
-            repeat(random.nextInt(5) + 5) {
-                createArea(TerrainType.fromByte((random.nextLong(2) + 1).toByte())!!, min(columns, rows) / 3)
-            }
-            repeat(random.nextInt(3)) {
-                createArea(TerrainType.WATER, 2, 5)
-            }
-            var vertical = random.nextBoolean()
-            var riverCount = 0
-            repeat(random.nextInt(4)) {
-                createLine(TerrainType.WATER, vertical = vertical, fork = true)
-                vertical = !vertical
-                riverCount++
-            }
-            repeat(random.nextInt(3)) {
-                createArea(TerrainType.WATER, 2, 5)
-            }
-            createObstacles(random.nextInt(columns * rows / 20) + columns * rows / 40)
-            repeat((random.nextInt(2) + riverCount).coerceIn(1, 2)) {
-                createPath(vertical)
-                vertical = !vertical
-            }
-            clean()
+        Logger.startWatch("Map Generation")
+        if (!initialized) init()
+        repeat(random.nextInt(5) + 5) {
+            createArea(TerrainType.fromByte((random.nextLong(2) + 1).toByte())!!, min(columns, rows) / 3)
         }
+        repeat(random.nextInt(3)) {
+            createArea(TerrainType.WATER, 2, 5)
+        }
+        var vertical = random.nextBoolean()
+        var riverCount = 0
+        repeat(random.nextInt(4)) {
+            createLine(TerrainType.WATER, vertical = vertical, fork = true)
+            vertical = !vertical
+            riverCount++
+        }
+        repeat(random.nextInt(3)) {
+            createArea(TerrainType.WATER, 2, 5)
+        }
+        createObstacles(random.nextInt(columns * rows / 20) + columns * rows / 40)
+        repeat((random.nextInt(2) + riverCount).coerceIn(1, 2)) {
+            createPath(vertical)
+            vertical = !vertical
+        }
+        clean()
+        Logger.stopWatch("Map Generation")
         return map
     }
 }

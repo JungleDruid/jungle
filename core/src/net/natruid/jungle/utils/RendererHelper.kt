@@ -13,7 +13,7 @@ import com.badlogic.gdx.utils.Disposable
 
 class RendererHelper : Disposable {
 
-    val batch = SpriteBatch(1000, Shader.defaultShaderProgram)
+    val batch = SpriteBatch(1000, Shader.getDefaultShaderProgram())
     val shapeRenderer = ShapeRenderer()
 
     var begins = 0
@@ -114,7 +114,7 @@ class RendererHelper : Disposable {
                 batch.end()
                 batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
                 batch.color = Color.WHITE
-                if (batch.shader != Shader.defaultShaderProgram) batch.shader = Shader.defaultShaderProgram
+                if (batch.shader != Shader.getDefaultShaderProgram()) batch.shader = Shader.getDefaultShaderProgram()
             }
             else -> {
                 shapeRenderer.end()

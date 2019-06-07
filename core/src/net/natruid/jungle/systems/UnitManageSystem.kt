@@ -30,6 +30,8 @@ import net.natruid.jungle.utils.ai.conditions.SimpleUnitTargeter
 import net.natruid.jungle.utils.extensions.dispatch
 import net.natruid.jungle.utils.skill.ModdedValue
 import net.natruid.jungle.utils.skill.Skill
+import net.natruid.jungle.utils.types.AnimationType
+import net.natruid.jungle.utils.types.AttributeType
 import net.natruid.jungle.views.SkillBarView
 import net.natruid.jungle.views.UnitStatsQuickview
 import kotlin.math.ceil
@@ -164,7 +166,7 @@ class UnitManageSystem : SortedIteratingSystem(
         return true
     }
 
-    private fun moveUnit(unit: Int, path: Path, free: Boolean = false, callback: (() -> Unit)? = null) {
+    private fun moveUnit(unit: Int, path: Path, free: Boolean = false, callback: Runnable? = null) {
         if (unit < 0) return
         val dest = path.peekLast()
         val cUnit = mUnit[unit]
@@ -226,7 +228,7 @@ class UnitManageSystem : SortedIteratingSystem(
                 moveUnit(
                     it.unit,
                     path,
-                    callback = {
+                    callback = Runnable {
                         useSkill(unit, skill, target)
                     }
                 )
@@ -236,11 +238,11 @@ class UnitManageSystem : SortedIteratingSystem(
 
     private fun useSkill(unit: Int, skill: Skill, target: Int) {
         useAp(unit, skill.cost) {
-            Logger.debug { "Unit $unit used skill ${skill.name} on $target" }
+            Logger.debug("Unit $unit used skill ${skill.name} on $target")
             mAnimation.create(unit).let {
                 it.target = target
                 it.type = AnimationType.ATTACK
-                it.callback = { applyEffects(unit, skill, target) }
+                it.callback = Runnable { applyEffects(unit, skill, target) }
             }
         }
     }
@@ -269,7 +271,7 @@ class UnitManageSystem : SortedIteratingSystem(
     }
 
     private fun damage(unit: Int, target: Int, amount: Int) {
-        Logger.debug { "$unit deals $amount damage to $target" }
+        Logger.debug("$unit deals $amount damage to $target")
         var killed = false
         mUnit[target].let {
             it.hp -= amount
@@ -288,7 +290,7 @@ class UnitManageSystem : SortedIteratingSystem(
     }
 
     private fun kill(unit: Int, target: Int) {
-        Logger.debug { "$unit kills $target" }
+        Logger.debug("$unit kills $target")
         val cUnit = mUnit[target]
         val faction = cUnit.faction
         val last = sortedEntityIds.count { mUnit[it].faction == faction } <= 1
@@ -348,7 +350,7 @@ class UnitManageSystem : SortedIteratingSystem(
     fun removeAp(unit: Int, ap: Int): Boolean {
         val cUnit = mUnit[unit]
         cUnit.ap -= ap
-        viewManageSystem.get<SkillBarView>()?.setAp(cUnit.ap)
+        viewManageSystem.get(SkillBarView::class.java).setAp(cUnit.ap)
         indicateSystem.remove(unit, IndicatorType.MOVE_AREA)
         if (cUnit.ap <= 0) {
             combatTurnSystem.endTurn(unit)
@@ -473,14 +475,14 @@ class UnitManageSystem : SortedIteratingSystem(
     private fun select(unit: Int) {
         showMoveArea(unit)
         selectedUnit = unit
-        viewManageSystem.get<SkillBarView>()?.setAp(mUnit[unit].ap)
+        viewManageSystem.get(SkillBarView::class.java)?.setAp(mUnit[unit].ap)
     }
 
     private fun deselectUnit(next: Int = -1) {
         if (selectedUnit < 0) return
         hideMoveArea(selectedUnit)
         selectedUnit = -1
-        viewManageSystem.get<SkillBarView>()?.hideAp()
+        viewManageSystem.get(SkillBarView::class.java)?.hideAp()
         nextSelect = next
     }
 
@@ -517,7 +519,7 @@ class UnitManageSystem : SortedIteratingSystem(
                 if (mouseCoord != null) {
                     val cost = indicateSystem.showPathTo(tileSystem[mouseCoord], selectedUnit)
                     if (cost >= 0) {
-                        viewManageSystem.get<SkillBarView>()?.setAp(
+                        viewManageSystem.get(SkillBarView::class.java)?.setAp(
                             mUnit[selectedUnit].ap,
                             getMovementCost(selectedUnit, cost, true)
                         )
@@ -530,8 +532,8 @@ class UnitManageSystem : SortedIteratingSystem(
 
                 val unit = mTile[tile].unit
                 if (unit >= 0) {
-                    val view = viewManageSystem.show<UnitStatsQuickview>()
-                    pos.set(mPos[unit].x + 32f, mPos[unit].y, 0f)
+                    val view = viewManageSystem.show(UnitStatsQuickview::class.java)
+                    pos.set(mPos[unit].xy.x + 32f, mPos[unit].xy.y, 0f)
                     cameraSystem.camera.project(pos)
                     val cUnit = mUnit[unit]
                     view.base.let {
@@ -541,14 +543,14 @@ class UnitManageSystem : SortedIteratingSystem(
                     }
                     view.hp.setText(cUnit.hp)
                     mAttributes[unit].let {
-                        view.int.setText(it.intelligence)
-                        view.det.setText(it.determination)
-                        view.end.setText(it.endurance)
-                        view.awa.setText(it.awareness)
-                        view.luc.setText(it.luck)
+                        view.int.setText(it.get(AttributeType.INTELLIGENCE))
+                        view.det.setText(it.get(AttributeType.DETERMINATION))
+                        view.end.setText(it.get(AttributeType.ENDURANCE))
+                        view.awa.setText(it.get(AttributeType.AWARENESS))
+                        view.luc.setText(it.get(AttributeType.LUCK))
                     }
                 } else {
-                    viewManageSystem.hide<UnitStatsQuickview>()
+                    viewManageSystem.hide(UnitStatsQuickview::class.java)
                 }
             }
             lastCoord = mouseCoord

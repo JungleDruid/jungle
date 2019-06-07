@@ -59,7 +59,7 @@ class PathFollowSystem : IteratingSystem(Aspect.all(
             if (path.size > 1) {
                 path.remove()
             } else {
-                mPathFollower[entityId].callback?.invoke()
+                mPathFollower[entityId].callback?.run()
                 mPathFollower.remove(entityId)
             }
         }

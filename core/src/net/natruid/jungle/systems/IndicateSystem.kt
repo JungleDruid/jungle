@@ -96,7 +96,7 @@ class IndicateSystem : BaseSystem() {
     fun hide(entityId: Int, indicatorType: IndicatorType) {
         mIndicatorOwner[entityId]?.indicatorMap?.get(indicatorType)?.forEach {
             if (!mIndicator.has(it)) {
-                Logger.warn { "Entity $it doesn't have indicator component." }
+                Logger.warn("Entity $it doesn't have indicator component.")
                 val bag = Bag<Component>()
                 world.componentManager.getComponentsFor(it, bag)
                 var first = true

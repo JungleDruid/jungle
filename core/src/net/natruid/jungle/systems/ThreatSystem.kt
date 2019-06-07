@@ -6,6 +6,7 @@ import com.artemis.ComponentMapper
 import net.natruid.jungle.components.AttributesComponent
 import net.natruid.jungle.components.BehaviorComponent
 import net.natruid.jungle.components.UnitComponent
+import net.natruid.jungle.utils.types.AttributeType
 
 class ThreatSystem : BaseEntitySystem(Aspect.all(BehaviorComponent::class.java)) {
     private lateinit var mBehavior: ComponentMapper<BehaviorComponent>
@@ -23,7 +24,7 @@ class ThreatSystem : BaseEntitySystem(Aspect.all(BehaviorComponent::class.java))
             val u = data[i]
             if (!unitManageSystem.isEnemy(u, unit)) continue
             if (mBehavior[u].threatMap.isNotEmpty()) continue
-            val maxDistance = 6f * 1f + (mAttributes[u].awareness - 10) * 0.05f
+            val maxDistance = 6f * 1f + (mAttributes[u].get(AttributeType.AWARENESS) - 10) * 0.05f
             if (tileSystem.getDistance(mUnit[u].tile, t) <= maxDistance) {
                 mBehavior[u].threatMap[u] = 1f
             }

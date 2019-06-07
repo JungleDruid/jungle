@@ -53,39 +53,46 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
         loadingScreen.init(5)
 
         KtxAsync.launch {
-            Logger.stopwatch("Initialization") {
-                Logger.debug { "Initializing..." }
+            Logger.startWatch("Initialization")
+            Logger.debug("Initializing...")
 
-                client.init()
-                loadingScreen.progress()
+            client.init()
+            loadingScreen.progress()
 
-                Logger.catch("Data loading failed.") {
-                    Marsh.load()
-                }
-                loadingScreen.progress()
-
-                Logger.catch("Skin loading failed.") {
-                    VisUI.load(Bark("assets/ui/jungle.json"))
-                }
-                loadingScreen.progress()
-
-                Logger.catch("I18n bundle loading failed.") {
-                    val bundle = Marsh.I18N["assets/locale/UI"]
-                    client.setTitle(bundle["title"])
-                }
-                loadingScreen.progress()
-
-                if (debug) {
-                    debugView = DebugView()
-                    DebugView.show = true
-                }
-                setScreen(FieldScreen())
-                Gdx.graphics.setVSync(vSync)
-                Logger.info { "Game initialized." }
-                loadingScreen.finish()
-
-                Gdx.input.inputProcessor = this@Jungle
+            try {
+                Marsh.load()
+            } catch (e: Exception) {
+                Logger.error("Data loading failed", e)
             }
+            loadingScreen.progress()
+
+            try {
+                VisUI.load(Bark("assets/ui/jungle.json"))
+            } catch (e: Exception) {
+                Logger.error("Skin loading failed.")
+            }
+            loadingScreen.progress()
+
+            try {
+                val bundle = Marsh.I18N["assets/locale/UI"]
+                client.setTitle(bundle["title"])
+            } catch (e: Exception) {
+                Logger.error("I18n bundle loading failed.", e)
+            }
+            loadingScreen.progress()
+
+            if (debug) {
+                debugView = DebugView()
+                DebugView.show = true
+            }
+            setScreen(FieldScreen())
+            Gdx.graphics.setVSync(vSync)
+            Logger.info("Game initialized.")
+            loadingScreen.finish()
+
+            Gdx.input.inputProcessor = this@Jungle
+
+            Logger.stopWatch("Initialization");
         }
     }
 

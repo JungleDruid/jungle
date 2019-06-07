@@ -31,8 +31,8 @@ class UnitHpRenderSystem : RenderSystem(
         val shapeRenderer = renderer.shapeRenderer
         val pivot = PivotComponent.DEFAULT
 
-        val originX = outWidth * pivot.x
-        val originY = outHeight * pivot.y + 26f
+        val originX = outWidth * pivot.xy.x
+        val originY = outHeight * pivot.xy.y + 26f
         shapeRenderer.color = Color.RED
         val e = if (mAnimation.has(entityId)) mUnit[entityId].tile else entityId
         val pos = getPos(-originX, -originY, e)

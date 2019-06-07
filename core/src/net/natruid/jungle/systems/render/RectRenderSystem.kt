@@ -24,8 +24,8 @@ class RectRenderSystem : RenderSystem(
         val scale = mScale.getSafe(entityId, ScaleComponent.DEFAULT)
         val angle = mAngle.getSafe(entityId, AngleComponent.NONE)
 
-        val originX = rect.width * pivot.x
-        val originY = rect.height * pivot.y
+        val originX = rect.width * pivot.xy.x
+        val originY = rect.height * pivot.xy.y
 
         shapeRenderer.color = rect.color
         val pos = getPos(-originX, -originY)
@@ -36,8 +36,8 @@ class RectRenderSystem : RenderSystem(
             originY,
             rect.width,
             rect.height,
-            scale.x,
-            scale.y,
+            scale.xy.x,
+            scale.xy.y,
             angle.rotation
         )
     }
