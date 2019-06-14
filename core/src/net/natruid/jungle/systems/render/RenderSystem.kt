@@ -6,7 +6,7 @@ import com.artemis.ComponentMapper
 import com.badlogic.gdx.math.Vector3
 import net.natruid.jungle.components.render.*
 import net.natruid.jungle.systems.CameraSystem
-import net.natruid.jungle.utils.RendererType
+import net.natruid.jungle.utils.types.RendererType
 
 abstract class RenderSystem(
     aspect: Aspect.Builder,

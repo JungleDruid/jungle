@@ -4,6 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.BufferUtils;
+import net.natruid.jungle.core.Sky;
+import net.natruid.jungle.utils.types.ShaderUniformType;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -17,11 +19,13 @@ public final class ExposedShaderProgram extends ShaderProgram {
     public final Pair<String, String> pair;
     private int program = 0;
     private boolean disposed = false;
+    private FloatBuffer floatBuffer = BufferUtils.newFloatBuffer(16);
+    private IntBuffer intBuffer = BufferUtils.newIntBuffer(16);
 
     public ExposedShaderProgram(Pair<String, String> pair) {
         super(
-            Scout.get("assets/shaders/" + pair.getFirst() + "Vertex.glsl"),
-            Scout.get("assets/shaders/" + pair.getSecond() + "Fragment.glsl")
+            Sky.scout.locate("assets/shaders/" + pair.getFirst() + "Vertex.glsl"),
+            Sky.scout.locate("assets/shaders/" + pair.getSecond() + "Fragment.glsl")
         );
         this.pair = pair;
     }
@@ -46,9 +50,6 @@ public final class ExposedShaderProgram extends ShaderProgram {
         return disposed;
     }
 
-    private FloatBuffer floatBuffer = BufferUtils.newFloatBuffer(16);
-    private IntBuffer intBuffer = BufferUtils.newIntBuffer(16);
-
     public void copy(ExposedShaderProgram other) {
         assert this.pair == other.pair;
         final HashMap<Integer, ShaderUniformType> map = uniformTypeMap.get(pair);
@@ -57,8 +58,8 @@ public final class ExposedShaderProgram extends ShaderProgram {
         for (Map.Entry<Integer, ShaderUniformType> kv : map.entrySet()) {
             final Integer location = kv.getKey();
             final ShaderUniformType type = kv.getValue();
-            if (type.getValue() == 0) continue;
-            if (type.getValue() < 9) {
+            if (type.value == 0) continue;
+            if (type.value < 9) {
                 floatBuffer.clear();
                 gl.glGetUniformfv(other.program, location, floatBuffer);
             } else {

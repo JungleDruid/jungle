@@ -11,13 +11,11 @@ import net.mostlyoriginal.api.event.common.EventSystem;
 import net.mostlyoriginal.api.event.common.SubscribeAnnotationFinder;
 import net.mostlyoriginal.api.event.dispatcher.PollingPooledEventDispatcher;
 import net.natruid.jungle.components.UnitComponent;
+import net.natruid.jungle.core.Sky;
 import net.natruid.jungle.systems.*;
 import net.natruid.jungle.systems.render.*;
-import net.natruid.jungle.utils.Faction;
-import net.natruid.jungle.utils.Fate;
+import net.natruid.jungle.utils.types.Faction;
 import net.natruid.jungle.views.SkillBarView;
-
-import java.util.Random;
 
 public class FieldScreen extends AbstractScreen {
     public FieldScreen() {
@@ -53,9 +51,8 @@ public class FieldScreen extends AbstractScreen {
         UnitManageSystem unitManageSystem = world.getSystem(UnitManageSystem.class);
         int player = unitManageSystem.addUnit(0, 0, Faction.PLAYER);
         world.getMapper(UnitComponent.class).get(player).proficiencies.put("weapon", 20);
-        Random random = Fate.getInstance();
         for (int i = 0; i < 6; ) {
-            if (unitManageSystem.addUnit(random.nextInt(20), random.nextInt(20), Faction.ENEMY) >= 0) {
+            if (unitManageSystem.addUnit(Sky.fate.nextInt(20), Sky.fate.nextInt(20), Faction.ENEMY) >= 0) {
                 i += 1;
             }
         }
@@ -64,7 +61,7 @@ public class FieldScreen extends AbstractScreen {
     }
 
     public void init() {
-        init(Fate.getInstance().nextLong());
+        init(Sky.fate.nextLong());
     }
 
     @Override

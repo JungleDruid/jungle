@@ -7,23 +7,22 @@ import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.kotcrab.vis.ui.VisUI
-import kotlinx.coroutines.launch
 import ktx.assets.disposeSafely
-import ktx.async.KtxAsync
 import net.natruid.jungle.screens.AbstractScreen
 import net.natruid.jungle.screens.FieldScreen
 import net.natruid.jungle.screens.LoadingScreen
 import net.natruid.jungle.screens.TestScreen
-import net.natruid.jungle.utils.Bark
-import net.natruid.jungle.utils.Client
-import net.natruid.jungle.utils.Logger
-import net.natruid.jungle.utils.Sync
+import net.natruid.jungle.utils.*
 import net.natruid.jungle.views.AbstractView
 import net.natruid.jungle.views.DebugView
 import net.natruid.jungle.views.TestView
 import java.lang.management.ManagementFactory
 
 class Jungle(private val client: Client, debug: Boolean = false) : ApplicationListener, InputProcessor {
+    val isMouseMoved: Boolean
+        get() = mouseMoved
+    val isDebug: Boolean
+        get() = debug
     val uiViewport by lazy { ScreenViewport() }
     val loadingScreen by lazy { LoadingScreen() }
 
@@ -42,63 +41,62 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
     private var resizing = false
     private var vSync = true
     private var paused = false
+    private val sync = Sync()
 
     init {
-        instance = this
+        Sky.jungle = this
         Companion.debug = Companion.debug || debug
     }
 
     override fun create() {
-        KtxAsync.initiate()
+        Sky.scout = Scout()
         loadingScreen.init(5)
 
-        KtxAsync.launch {
-            Logger.startWatch("Initialization")
-            Logger.debug("Initializing...")
+        Logger.startWatch("Initialization")
+        Logger.debug("Initializing...")
 
-            client.init()
-            loadingScreen.progress()
+        client.init()
+        loadingScreen.progress()
 
-            try {
-                Marsh.load()
-            } catch (e: Exception) {
-                Logger.error("Data loading failed", e)
-            }
-            loadingScreen.progress()
-
-            try {
-                VisUI.load(Bark("assets/ui/jungle.json"))
-            } catch (e: Exception) {
-                Logger.error("Skin loading failed.")
-            }
-            loadingScreen.progress()
-
-            try {
-                val bundle = Marsh.I18N["assets/locale/UI"]
-                client.setTitle(bundle["title"])
-            } catch (e: Exception) {
-                Logger.error("I18n bundle loading failed.", e)
-            }
-            loadingScreen.progress()
-
-            if (debug) {
-                debugView = DebugView()
-                DebugView.show = true
-            }
-            setScreen(FieldScreen())
-            Gdx.graphics.setVSync(vSync)
-            Logger.info("Game initialized.")
-            loadingScreen.finish()
-
-            Gdx.input.inputProcessor = this@Jungle
-
-            Logger.stopWatch("Initialization");
+        try {
+            Marsh.load()
+        } catch (e: Exception) {
+            Logger.error("Data loading failed", e)
         }
+        loadingScreen.progress()
+
+        try {
+            VisUI.load(Bark("assets/ui/jungle.json"))
+        } catch (e: Exception) {
+            Logger.error("Skin loading failed.")
+        }
+        loadingScreen.progress()
+
+        try {
+            val bundle = Marsh.I18N["assets/locale/UI"]
+            client.setTitle(bundle["title"])
+        } catch (e: Exception) {
+            Logger.error("I18n bundle loading failed.", e)
+        }
+        loadingScreen.progress()
+
+        if (debug) {
+            debugView = DebugView()
+            DebugView.show = true
+        }
+        setScreen(FieldScreen())
+        Gdx.graphics.setVSync(vSync)
+        Logger.info("Game initialized.")
+        loadingScreen.finish()
+
+        Gdx.input.inputProcessor = this@Jungle
+
+        Logger.stopWatch("Initialization")
     }
 
     override fun render() {
-        if (paused && loadingScreen.done) {
-            Sync.sync(1)
+        if (paused && loadingScreen.isDone) {
+            sync.sync(1)
             return
         }
 
@@ -107,9 +105,9 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
 
         val delta = Gdx.graphics.deltaTime
 
-        if (!loadingScreen.done) {
+        if (!loadingScreen.isDone) {
             loadingScreen.render(delta)
-            Sync.sync(10)
+            sync.sync(10)
             return
         }
 
@@ -124,7 +122,7 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
         if (!resizing) {
             val f = if (client.isFocused() || backgroundFPS == 0) targetFPS else backgroundFPS
             if (f > 0 && (f < 60 || !vSync)) {
-                Sync.sync(f)
+                sync.sync(f)
             }
         } else {
             resizing = false
@@ -330,9 +328,6 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
 
     companion object {
         var debug = ManagementFactory.getRuntimeMXBean().inputArguments.toString().indexOf("-agentlib:jdwp") > 0
-            private set
-
-        lateinit var instance: Jungle
             private set
     }
 }

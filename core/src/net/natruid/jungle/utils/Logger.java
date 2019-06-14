@@ -2,13 +2,14 @@ package net.natruid.jungle.utils;
 
 import com.badlogic.gdx.Application;
 import net.natruid.jungle.core.Jungle;
+import net.natruid.jungle.core.Sky;
 
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
 
 public final class Logger {
-    public static final int logLevel = Jungle.Companion.getDebug() ? Application.LOG_DEBUG : Application.LOG_INFO;
+    public static final int logLevel = Sky.jungle.isDebug() ? Application.LOG_DEBUG : Application.LOG_INFO;
 
     public static final String ANSI_RESET = "\u001B[0m";
     public static final String ANSI_RED = "\u001B[31m";

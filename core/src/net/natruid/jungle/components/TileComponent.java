@@ -1,11 +1,9 @@
 package net.natruid.jungle.components;
 
 import com.artemis.Component;
-import com.artemis.PooledComponent;
 import com.artemis.annotations.EntityId;
-import com.artemis.annotations.PooledWeaver;
 import net.natruid.jungle.utils.Point;
-import net.natruid.jungle.utils.TerrainType;
+import net.natruid.jungle.utils.types.TerrainType;
 
 public class TileComponent extends Component {
     public final Point coord = new Point();

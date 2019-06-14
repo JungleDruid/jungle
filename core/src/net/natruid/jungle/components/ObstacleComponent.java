@@ -2,7 +2,7 @@ package net.natruid.jungle.components;
 
 import com.artemis.Component;
 import com.artemis.annotations.PooledWeaver;
-import net.natruid.jungle.utils.ObstacleType;
+import net.natruid.jungle.utils.types.ObstacleType;
 
 @PooledWeaver
 public class ObstacleComponent extends Component {

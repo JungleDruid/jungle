@@ -3,7 +3,7 @@ package net.natruid.jungle.systems.render
 import com.artemis.Aspect
 import com.artemis.ComponentMapper
 import net.natruid.jungle.components.render.CustomRenderComponent
-import net.natruid.jungle.utils.RendererType
+import net.natruid.jungle.utils.types.RendererType
 
 class CustomRenderSystem : RenderSystem(
     Aspect.all(CustomRenderComponent::class.java),

@@ -14,8 +14,8 @@ import net.mostlyoriginal.api.event.common.Subscribe
 import net.natruid.jungle.components.*
 import net.natruid.jungle.components.render.PosComponent
 import net.natruid.jungle.components.render.RenderComponent
-import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.core.Marsh
+import net.natruid.jungle.core.Sky
 import net.natruid.jungle.events.UnitHealthChangedEvent
 import net.natruid.jungle.events.UnitMoveEvent
 import net.natruid.jungle.events.UnitSkillEvent
@@ -30,10 +30,11 @@ import net.natruid.jungle.utils.ai.conditions.SimpleUnitTargeter
 import net.natruid.jungle.utils.extensions.dispatch
 import net.natruid.jungle.utils.skill.ModdedValue
 import net.natruid.jungle.utils.skill.Skill
-import net.natruid.jungle.utils.types.AnimationType
-import net.natruid.jungle.utils.types.AttributeType
+import net.natruid.jungle.utils.types.*
 import net.natruid.jungle.views.SkillBarView
 import net.natruid.jungle.views.UnitStatsQuickview
+import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.ceil
 
 class UnitManageSystem : SortedIteratingSystem(
@@ -166,7 +167,7 @@ class UnitManageSystem : SortedIteratingSystem(
         return true
     }
 
-    private fun moveUnit(unit: Int, path: Path, free: Boolean = false, callback: Runnable? = null) {
+    private fun moveUnit(unit: Int, path: Deque<PathNode>, free: Boolean = false, callback: Runnable? = null) {
         if (unit < 0) return
         val dest = path.peekLast()
         val cUnit = mUnit[unit]
@@ -196,7 +197,7 @@ class UnitManageSystem : SortedIteratingSystem(
         moveUnit(unit, path, true)
     }
 
-    fun getMoveAndActPath(unit: Int, target: Int, ap: Int, range: Float): Path? {
+    fun getMoveAndActPath(unit: Int, target: Int, ap: Int, range: Float): Deque<PathNode>? {
         val tile1 = mUnit[unit].tile
         val tile2 = mUnit[target].tile
         val movement = getMovement(unit, ap)
@@ -299,7 +300,7 @@ class UnitManageSystem : SortedIteratingSystem(
         if (last) combatTurnSystem.removeFaction(faction)
     }
 
-    private val statMultipliers = Array(StatType.size) { 1f }
+    private val statMultipliers = Array(StatType.length) { 1f }
     fun calculateStats(entityId: Int) {
         if (entityId < 0) return
         val cStats = mStats[entityId] ?: return
@@ -528,7 +529,7 @@ class UnitManageSystem : SortedIteratingSystem(
             }
             if (mouseCoord != null) {
                 val tile = tileSystem[mouseCoord]
-                Jungle.instance.debugView?.unitLabel?.setText("Unit: ${mTile[tile].unit}")
+                Sky.jungle.debugView?.unitLabel?.setText("Unit: ${mTile[tile].unit}")
 
                 val unit = mTile[tile].unit
                 if (unit >= 0) {
@@ -536,18 +537,18 @@ class UnitManageSystem : SortedIteratingSystem(
                     pos.set(mPos[unit].xy.x + 32f, mPos[unit].xy.y, 0f)
                     cameraSystem.camera.project(pos)
                     val cUnit = mUnit[unit]
-                    view.base.let {
+                    view.window.let {
                         it.setPosition(pos.x, pos.y)
                         it.align(Align.left)
                         it.titleLabel.setText(cUnit.faction.name)
                     }
                     view.hp.setText(cUnit.hp)
                     mAttributes[unit].let {
-                        view.int.setText(it.get(AttributeType.INTELLIGENCE))
-                        view.det.setText(it.get(AttributeType.DETERMINATION))
-                        view.end.setText(it.get(AttributeType.ENDURANCE))
-                        view.awa.setText(it.get(AttributeType.AWARENESS))
-                        view.luc.setText(it.get(AttributeType.LUCK))
+                        view.intelligence.setText(it.get(AttributeType.INTELLIGENCE))
+                        view.determination.setText(it.get(AttributeType.DETERMINATION))
+                        view.endurance.setText(it.get(AttributeType.ENDURANCE))
+                        view.awareness.setText(it.get(AttributeType.AWARENESS))
+                        view.luck.setText(it.get(AttributeType.LUCK))
                     }
                 } else {
                     viewManageSystem.hide(UnitStatsQuickview::class.java)

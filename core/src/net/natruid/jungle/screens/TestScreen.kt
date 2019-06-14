@@ -8,9 +8,9 @@ import net.natruid.jungle.components.LabelComponent
 import net.natruid.jungle.components.render.PosComponent
 import net.natruid.jungle.components.render.RenderComponent
 import net.natruid.jungle.components.render.TextureComponent
+import net.natruid.jungle.core.Sky
 import net.natruid.jungle.systems.render.ImageRenderSystem
 import net.natruid.jungle.systems.render.LabelRenderSystem
-import net.natruid.jungle.utils.Scout
 
 class TestScreen : AbstractScreen() {
     override fun getConfiguration(builder: WorldConfigurationBuilder): WorldConfigurationBuilder {
@@ -25,7 +25,7 @@ class TestScreen : AbstractScreen() {
         world.getMapper(RenderComponent::class.java).create(e)
         world.getMapper(PosComponent::class.java).create(e)
         world.getMapper(TextureComponent::class.java).create(e).apply {
-            region = TextureRegion(Texture(Scout.get("assets/img/test/badlogic.jpg")))
+            region = TextureRegion(Texture(Sky.scout.locate("assets/img/test/badlogic.jpg")))
         }
         world.getMapper(LabelComponent::class.java).create(e).apply {
             text = "測試 test with a long text abcdefghijklmnopqrstuvwxyz"

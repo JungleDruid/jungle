@@ -6,6 +6,7 @@ import com.artemis.utils.Bag
 import com.badlogic.gdx.utils.Pool
 import net.natruid.jungle.components.render.*
 import net.natruid.jungle.core.Jungle
+import net.natruid.jungle.core.Sky
 import net.natruid.jungle.utils.RendererHelper
 
 class RenderBatchSystem : BaseSystem() {
@@ -21,7 +22,7 @@ class RenderBatchSystem : BaseSystem() {
     private var needSorting = false
 
     init {
-        Jungle.instance.debugView?.renderer = renderer
+        Sky.jungle.debugView?.renderer = renderer
     }
 
     private val jobPool = object : Pool<RenderJob>() {
@@ -138,7 +139,7 @@ class RenderBatchSystem : BaseSystem() {
 
     override fun dispose() {
         renderer.dispose()
-        Jungle.instance.debugView?.renderer = null
+        Sky.jungle.debugView?.renderer = null
     }
 
     class RenderJob(var entityId: Int, var agent: RenderSystem?) : Pool.Poolable {

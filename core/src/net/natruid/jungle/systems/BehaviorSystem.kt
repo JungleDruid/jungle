@@ -12,8 +12,8 @@ import ktx.async.skipFrame
 import net.natruid.jungle.components.BehaviorComponent
 import net.natruid.jungle.components.TurnComponent
 import net.natruid.jungle.components.UnitComponent
-import net.natruid.jungle.utils.UnitCondition
-import net.natruid.jungle.utils.UnitTargetType
+import net.natruid.jungle.utils.types.UnitCondition
+import net.natruid.jungle.utils.types.UnitTargetType
 
 class BehaviorSystem : BaseEntitySystem(Aspect.all(
     BehaviorComponent::class.java, TurnComponent::class.java

@@ -3,7 +3,7 @@ package net.natruid.jungle.components;
 import com.artemis.Component;
 import com.artemis.annotations.EntityId;
 import com.artemis.annotations.PooledWeaver;
-import net.natruid.jungle.utils.IndicatorType;
+import net.natruid.jungle.utils.types.IndicatorType;
 
 @PooledWeaver
 public class IndicatorComponent extends Component {

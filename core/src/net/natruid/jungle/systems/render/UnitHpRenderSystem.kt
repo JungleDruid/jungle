@@ -8,7 +8,7 @@ import net.natruid.jungle.components.StatsComponent
 import net.natruid.jungle.components.UnitComponent
 import net.natruid.jungle.components.render.PivotComponent
 import net.natruid.jungle.systems.UnitManageSystem
-import net.natruid.jungle.utils.RendererType
+import net.natruid.jungle.utils.types.RendererType
 
 class UnitHpRenderSystem : RenderSystem(
     Aspect.all(

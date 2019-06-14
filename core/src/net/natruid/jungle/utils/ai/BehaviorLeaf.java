@@ -1,0 +1,38 @@
+package net.natruid.jungle.utils.ai;
+
+import com.artemis.ComponentMapper;
+import net.natruid.jungle.components.UnitComponent;
+import net.natruid.jungle.systems.PathfinderSystem;
+import net.natruid.jungle.systems.UnitManageSystem;
+import net.natruid.jungle.utils.PathNode;
+
+import java.util.ArrayList;
+
+public abstract class BehaviorLeaf extends BehaviorNode {
+    protected PathfinderSystem pathfinderSystem;
+    protected UnitManageSystem unitManageSystem;
+    protected ComponentMapper<UnitComponent> mUnit;
+
+    protected ArrayList<Integer> getTargets() {
+        return mBehavior.get(getSelf()).targets;
+    }
+
+    protected PathNode[] getFullMoveArea() {
+        PathNode[] moveArea = mBehavior.get(getSelf()).fullMoveArea;
+        if (moveArea == null) {
+            moveArea = pathfinderSystem.area(mUnit.get(getSelf()).tile, null, true, false);
+            mBehavior.get(getSelf()).fullMoveArea = moveArea;
+        }
+
+        return moveArea;
+    }
+
+    protected PathNode[] getMoveArea() {
+        PathNode[] moveArea = mBehavior.get(getSelf()).moveArea;
+        if (moveArea == null) {
+            moveArea = pathfinderSystem.area(mUnit.get(getSelf()).tile, unitManageSystem.getMovement(getSelf(), 0), true, false);
+            mBehavior.get(getSelf()).moveArea = moveArea;
+        }
+        return moveArea;
+    }
+}

@@ -12,16 +12,19 @@ import com.badlogic.gdx.utils.Json
 import com.badlogic.gdx.utils.JsonReader
 import com.badlogic.gdx.utils.JsonValue
 import ktx.freetype.generateFont
-import net.natruid.jungle.utils.*
+import net.natruid.jungle.utils.AttributeModifier
+import net.natruid.jungle.utils.Logger
 import net.natruid.jungle.utils.skill.Proficiency
 import net.natruid.jungle.utils.skill.Skill
+import net.natruid.jungle.utils.types.AttributeType
+import net.natruid.jungle.utils.types.StatType
 import kotlin.collections.set
 
 object Marsh {
     private val fontDefs = ArrayList<FontDef>()
     private val fontGeneratorMap = HashMap<String, FreeTypeFontGenerator>()
     private var fonts = HashMap<String, BitmapFont>()
-    val statDefs = Array(StatType.size) { StatDef.NONE }
+    val statDefs = Array(StatType.length) { StatDef.NONE }
     val proficiencies: Map<String, Proficiency> = HashMap()
     val skills: Map<String, Skill> = HashMap()
 
@@ -46,7 +49,7 @@ object Marsh {
         operator fun get(key: String): I18NBundle {
             var ret = i18nMap[key]
             if (ret == null) {
-                ret = I18NBundle.createBundle(Scout.get(key)) ?: error("Cannot find bundle $key")
+                ret = I18NBundle.createBundle(Sky.scout.locate(key)) ?: error("Cannot find bundle $key")
                 i18nMap[key] = ret
             }
 
@@ -84,7 +87,7 @@ object Marsh {
         map: HashMap<String, FileHandle> = HashMap(),
         useZip: Boolean = false
     ): HashMap<String, FileHandle> {
-        val dir = Scout.get(path, useZip)
+        val dir = Sky.scout.locate(path, useZip)
 
         if (!dir.isDirectory) {
             error("$path is not a directory.")
@@ -115,7 +118,7 @@ object Marsh {
                         val fontPath = "assets/fonts/" + def.file
                         var generator = fontGeneratorMap[fontPath]
                         if (generator == null) {
-                            generator = FreeTypeFontGenerator(Scout.get(fontPath))
+                            generator = FreeTypeFontGenerator(Sky.scout.locate(fontPath))
                             fontGeneratorMap[fontPath] = generator
                         }
 
@@ -134,8 +137,7 @@ object Marsh {
                 "stats" -> {
                     for (statDefJson in j) {
                         val def = json.readValue(StatDef::class.java, statDefJson)
-                        val stat = StatType.fromString(statDefJson.name.toUpperCase())
-                            ?: error("Unknown stat \"${statDefJson.name}\"")
+                        val stat = StatType.valueOf(statDefJson.name.toUpperCase())
                         statDefs[stat.ordinal] = def
                     }
                 }
@@ -185,8 +187,7 @@ object Marsh {
                     "level" -> level = stat.asInt()
                     "attributes" -> {
                         for (attr in stat) {
-                            val type = AttributeType.fromString(attr.name.toUpperCase())
-                                ?: error("Unknown attribute \"${attr.name}\"")
+                            val type = AttributeType.valueOf(attr.name.toUpperCase())
                             var add = 0
                             var mul = 0f
                             for (mod in attr) {

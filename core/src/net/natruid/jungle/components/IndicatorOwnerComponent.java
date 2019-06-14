@@ -2,8 +2,8 @@ package net.natruid.jungle.components;
 
 import com.artemis.Component;
 import com.artemis.annotations.PooledWeaver;
-import net.natruid.jungle.utils.IndicatorType;
 import net.natruid.jungle.utils.PathNode;
+import net.natruid.jungle.utils.types.IndicatorType;
 
 import java.util.HashMap;
 

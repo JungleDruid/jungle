@@ -16,7 +16,7 @@ import ktx.graphics.use
 import net.natruid.jungle.components.ObstacleComponent
 import net.natruid.jungle.components.TileComponent
 import net.natruid.jungle.components.render.*
-import net.natruid.jungle.core.Jungle
+import net.natruid.jungle.core.Sky
 import net.natruid.jungle.utils.*
 import net.natruid.jungle.utils.Constants.DOWN
 import net.natruid.jungle.utils.Constants.LEFT
@@ -27,6 +27,9 @@ import net.natruid.jungle.utils.Constants.Z_MOUSE_ON_TILE
 import net.natruid.jungle.utils.Constants.Z_OBSTACLE
 import net.natruid.jungle.utils.callbacks.RenderCallback
 import net.natruid.jungle.utils.extensions.forEach
+import net.natruid.jungle.utils.types.ObstacleType
+import net.natruid.jungle.utils.types.RendererType
+import net.natruid.jungle.utils.types.TerrainType
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -186,18 +189,18 @@ class TileSystem : BaseSystem(), InputProcessor {
         return this[x, y]
     }
 
-    private val dirtTexture = TextureRegion(Texture(Scout.get("assets/img/tiles/dirt.png")))
-    private val grassTexture = TextureRegion(Texture(Scout.get("assets/img/tiles/grass.png")))
-    private val roadTexture = TextureRegion(Texture(Scout.get("assets/img/tiles/road.png")))
-    private val roadTextureUpDown = TextureRegion(Texture(Scout.get("assets/img/tiles/road-ud.png")))
-    private val roadTextureRightUp = TextureRegion(Texture(Scout.get("assets/img/tiles/road-ru.png")))
-    private val roadTextureRightUpLeft = TextureRegion(Texture(Scout.get("assets/img/tiles/road-rul.png")))
-    private val roadTextureRightUpLeftDown = TextureRegion(Texture(Scout.get("assets/img/tiles/road-ruld.png")))
-    private val waterTexture = TextureRegion(Texture(Scout.get("assets/img/tiles/water.png")))
-    private val bridgeTexture = TextureRegion(Texture(Scout.get("assets/img/tiles/bridge.png")))
-    private val bridgeMultiDirectionTexture = TextureRegion(Texture(Scout.get("assets/img/tiles/bridge-multi-direction.png")))
-    private val treeTexture = TextureRegion(Texture(Scout.get("assets/img/tiles/tree.png")))
-    private val rockTexture = TextureRegion(Texture(Scout.get("assets/img/tiles/rock.png")))
+    private val dirtTexture = TextureRegion(Texture(Sky.scout.locate("assets/img/tiles/dirt.png")))
+    private val grassTexture = TextureRegion(Texture(Sky.scout.locate("assets/img/tiles/grass.png")))
+    private val roadTexture = TextureRegion(Texture(Sky.scout.locate("assets/img/tiles/road.png")))
+    private val roadTextureUpDown = TextureRegion(Texture(Sky.scout.locate("assets/img/tiles/road-ud.png")))
+    private val roadTextureRightUp = TextureRegion(Texture(Sky.scout.locate("assets/img/tiles/road-ru.png")))
+    private val roadTextureRightUpLeft = TextureRegion(Texture(Sky.scout.locate("assets/img/tiles/road-rul.png")))
+    private val roadTextureRightUpLeftDown = TextureRegion(Texture(Sky.scout.locate("assets/img/tiles/road-ruld.png")))
+    private val waterTexture = TextureRegion(Texture(Sky.scout.locate("assets/img/tiles/water.png")))
+    private val bridgeTexture = TextureRegion(Texture(Sky.scout.locate("assets/img/tiles/bridge.png")))
+    private val bridgeMultiDirectionTexture = TextureRegion(Texture(Sky.scout.locate("assets/img/tiles/bridge-multi-direction.png")))
+    private val treeTexture = TextureRegion(Texture(Sky.scout.locate("assets/img/tiles/tree.png")))
+    private val rockTexture = TextureRegion(Texture(Sky.scout.locate("assets/img/tiles/rock.png")))
 
     fun create(columns: Int, rows: Int, seed: Long = Random.nextLong()) {
         reset()
@@ -413,7 +416,8 @@ class TileSystem : BaseSystem(), InputProcessor {
     private fun screenToCoord(screenCoord: Point): Point? {
         if (columns == 0) return null
 
-        val (screenX, screenY) = screenCoord
+        val screenX = screenCoord.x
+        val screenY = screenCoord.y
         val camera = cameraSystem.camera
         projection.set(screenX.toFloat(), screenY.toFloat(), 0f)
         camera.unproject(projection)
@@ -447,13 +451,13 @@ class TileSystem : BaseSystem(), InputProcessor {
         tempCoordsIndex = 1 - tempCoordsIndex
         if (currentCoord == null) {
             mInvisible.create(mouseOnTile)
-            Jungle.instance.debugView?.tileLabel?.setText("Tile: -1")
+            Sky.jungle.debugView?.tileLabel?.setText("Tile: -1")
             return false
         }
         mInvisible.remove(mouseOnTile)
         pos.set(mPos[this[currentCoord]])
 
-        Jungle.instance.debugView?.tileLabel?.setText("Tile: ${this[currentCoord]} $currentCoord")
+        Sky.jungle.debugView?.tileLabel?.setText("Tile: ${this[currentCoord]} $currentCoord")
 
         return false
     }
@@ -517,7 +521,7 @@ class TileSystem : BaseSystem(), InputProcessor {
 
         try {
             waterTileShaderComponent.shader.getInstance().use {
-                it.setUniformf("time", Jungle.instance.time)
+                it.setUniformf("time", Sky.jungle.time)
             }
         } catch (e: Exception) {
         }

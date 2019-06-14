@@ -11,8 +11,13 @@ import net.natruid.jungle.components.IndicatorOwnerComponent
 import net.natruid.jungle.components.LabelComponent
 import net.natruid.jungle.components.render.*
 import net.natruid.jungle.systems.TileSystem.Companion.tileSize
-import net.natruid.jungle.utils.*
+import net.natruid.jungle.utils.Constants
+import net.natruid.jungle.utils.Logger
+import net.natruid.jungle.utils.PathNode
+import net.natruid.jungle.utils.types.IndicatorType
 import java.text.DecimalFormat
+import java.util.*
+import kotlin.collections.ArrayList
 
 class IndicateSystem : BaseSystem() {
     companion object {
@@ -30,7 +35,7 @@ class IndicateSystem : BaseSystem() {
     private lateinit var mInvisible: ComponentMapper<InvisibleComponent>
     private val moveAreaColor = Color(0f, 1f, 1f, .4f)
 
-    fun addResult(entityId: Int, indicatorType: IndicatorType, pathfinderResult: Area) {
+    fun addResult(entityId: Int, indicatorType: IndicatorType, pathfinderResult: Array<PathNode>) {
         val cOwner = mIndicatorOwner[entityId] ?: mIndicatorOwner.create(entityId)
 
         cOwner.resultMap[indicatorType] = pathfinderResult
@@ -112,7 +117,7 @@ class IndicateSystem : BaseSystem() {
         }
     }
 
-    fun getPathTo(goal: Int, entityId: Int): Path? {
+    fun getPathTo(goal: Int, entityId: Int): Deque<PathNode>? {
         val result = mIndicatorOwner[entityId]?.resultMap?.get(IndicatorType.MOVE_AREA) ?: return null
         return pathfinderSystem.extractPath(result, goal)
     }

@@ -7,7 +7,7 @@ import net.natruid.jungle.components.StatsComponent
 import net.natruid.jungle.components.TurnComponent
 import net.natruid.jungle.components.UnitComponent
 import net.natruid.jungle.utils.Constants
-import net.natruid.jungle.utils.Faction
+import net.natruid.jungle.utils.types.Faction
 import net.natruid.jungle.utils.Logger
 
 class CombatTurnSystem : BaseEntitySystem(Aspect.all(TurnComponent::class.java)) {

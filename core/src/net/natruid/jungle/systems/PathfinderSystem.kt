@@ -5,7 +5,10 @@ import com.artemis.ComponentMapper
 import com.badlogic.gdx.utils.BinaryHeap
 import com.badlogic.gdx.utils.Pool
 import net.natruid.jungle.components.TileComponent
-import net.natruid.jungle.utils.*
+import net.natruid.jungle.utils.PathNode
+import net.natruid.jungle.utils.Point
+import net.natruid.jungle.utils.types.ExtractPathType
+import net.natruid.jungle.utils.types.TerrainType
 import java.util.*
 import kotlin.collections.set
 
@@ -53,8 +56,8 @@ class PathfinderSystem : BaseSystem() {
             mTile[current.tile].let {
                 if (buildingRoad && it.terrainType == TerrainType.WATER && current.prev != null) {
                     searchDirection.set(it.coord)
-                    searchDirection *= 2
-                    searchDirection -= mTile[current.prev!!.tile].coord
+                    searchDirection.times(2)
+                    searchDirection.minus(mTile[current.prev!!.tile].coord)
                     val next = tileSystem[searchDirection]
                     if (next >= 0) searchQueue.add(next)
                 } else {
@@ -128,7 +131,7 @@ class PathfinderSystem : BaseSystem() {
             maxCost: Float?,
             diagonal: Boolean = true,
             buildingRoad: Boolean = false
-        ): Area {
+        ): Array<PathNode> {
             init(from)
             while (!frontier.isEmpty) {
                 val current = frontier.pop()
@@ -149,7 +152,7 @@ class PathfinderSystem : BaseSystem() {
             unit: Int = -1,
             type: ExtractPathType = ExtractPathType.EXACT,
             maxCost: Float = Float.NaN
-        ): Path? {
+        ): Deque<PathNode>? {
             init(from)
             while (!frontier.isEmpty) {
                 val current = frontier.pop()
@@ -183,7 +186,7 @@ class PathfinderSystem : BaseSystem() {
         maxCost: Float?,
         diagonal: Boolean = true,
         buildingRoad: Boolean = false
-    ): Area {
+    ): Array<PathNode> {
         val pathfinder = obtain()
         val area = pathfinder.area(from, maxCost, diagonal, buildingRoad)
         free(pathfinder)
@@ -197,7 +200,7 @@ class PathfinderSystem : BaseSystem() {
         unit: Int = -1,
         type: ExtractPathType = ExtractPathType.EXACT,
         maxCost: Float = Float.NaN
-    ): Path? {
+    ): Deque<PathNode>? {
         val pathfinder = obtain()
         val path = pathfinder.path(from, goal, diagonal, unit, type, maxCost)
         free(pathfinder)
@@ -205,13 +208,13 @@ class PathfinderSystem : BaseSystem() {
     }
 
     fun extractPath(
-        area: Area,
+        area: Array<PathNode>,
         goal: Int,
         unit: Int = -1,
         type: ExtractPathType = ExtractPathType.EXACT,
         maxCost: Float = Float.NaN,
         inRange: Float = Float.NaN
-    ): Path? {
+    ): Deque<PathNode>? {
         return extractPath(area.asIterable(), goal, unit, type, maxCost, inRange)
     }
 
@@ -222,7 +225,7 @@ class PathfinderSystem : BaseSystem() {
         type: ExtractPathType = ExtractPathType.EXACT,
         maxCost: Float = Float.NaN,
         inRange: Float = Float.NaN
-    ): Path? {
+    ): Deque<PathNode>? {
         if (type == ExtractPathType.EXACT || type == ExtractPathType.CLOSEST) {
             if (unit < 0 || mTile[goal].unit < 0) {
                 for (node in pathNodes) {
@@ -257,7 +260,7 @@ class PathfinderSystem : BaseSystem() {
         return null
     }
 
-    private fun buildPath(node: PathNode, unit: Int = -1, maxCost: Float = Float.NaN): Path {
+    private fun buildPath(node: PathNode, unit: Int = -1, maxCost: Float = Float.NaN): Deque<PathNode> {
         val path = LinkedList<PathNode>()
         var current: PathNode? = node
         while (current != null) {

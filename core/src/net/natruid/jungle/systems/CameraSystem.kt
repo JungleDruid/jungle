@@ -9,6 +9,7 @@ import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector2
 import ktx.math.times
 import net.natruid.jungle.core.Jungle
+import net.natruid.jungle.core.Sky
 import net.natruid.jungle.utils.Point
 import kotlin.math.max
 import kotlin.math.min
@@ -66,7 +67,7 @@ class CameraSystem : BaseSystem(), InputProcessor {
             camera.translate(velocity * speed * world.delta * zoom)
             clamp()
             camera.update()
-            if (Jungle.instance.mouseMoved) Jungle.instance.mouseMoved(Gdx.input.x, Gdx.input.y)
+            if (Sky.jungle.isMouseMoved) Sky.jungle.mouseMoved(Gdx.input.x, Gdx.input.y)
         }
     }
 

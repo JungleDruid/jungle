@@ -2,7 +2,7 @@ package net.natruid.jungle.systems;
 
 import com.artemis.BaseSystem;
 import com.badlogic.gdx.utils.ObjectMap;
-import net.natruid.jungle.core.Jungle;
+import net.natruid.jungle.core.Sky;
 import net.natruid.jungle.utils.Utils;
 import net.natruid.jungle.views.AbstractView;
 
@@ -22,7 +22,7 @@ public class ViewManageSystem extends BaseSystem {
         }
 
         assert view != null;
-        Jungle.Companion.getInstance().showView(view);
+        Sky.jungle.showView(view);
         return (T) view;
     }
 
@@ -34,17 +34,17 @@ public class ViewManageSystem extends BaseSystem {
 
     public <T extends AbstractView> T hide(Class<T> type) {
         T t = get(type);
-        if (t != null) Jungle.Companion.getInstance().hideView(t);
+        if (t != null) Sky.jungle.hideView(t);
         return t;
     }
 
     public AbstractView hideLast() {
-        return Jungle.Companion.getInstance().hideLastView();
+        return Sky.jungle.hideLastView();
     }
 
     public void hideAll() {
         for (AbstractView view : viewMap.values()) {
-            Jungle.Companion.getInstance().hideView(view);
+            Sky.jungle.hideView(view);
         }
     }
 

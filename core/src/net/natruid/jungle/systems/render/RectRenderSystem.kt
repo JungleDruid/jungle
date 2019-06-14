@@ -6,7 +6,7 @@ import net.natruid.jungle.components.render.AngleComponent
 import net.natruid.jungle.components.render.PivotComponent
 import net.natruid.jungle.components.render.RectComponent
 import net.natruid.jungle.components.render.ScaleComponent
-import net.natruid.jungle.utils.RendererType
+import net.natruid.jungle.utils.types.RendererType
 
 class RectRenderSystem : RenderSystem(
     Aspect.all(RectComponent::class.java),

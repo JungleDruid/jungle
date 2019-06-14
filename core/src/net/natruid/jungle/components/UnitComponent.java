@@ -5,7 +5,7 @@ import com.artemis.annotations.EntityId;
 import com.artemis.annotations.PooledWeaver;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ObjectMap;
-import net.natruid.jungle.utils.Faction;
+import net.natruid.jungle.utils.types.Faction;
 import net.natruid.jungle.utils.skill.Skill;
 
 @PooledWeaver
