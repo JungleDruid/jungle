@@ -28,16 +28,18 @@ public class SkillBarView extends AbstractView {
         for (int i = 0; i < 6; i++) {
             apCircleList.add(Pools.obtain(ApPointCircle.class));
         }
-        apCircleList.forEach(apBar::add);
+        for (ApPointCircle circle : apCircleList) {
+            apBar.add(circle);
+        }
         apBar.setVisible(false);
     }
 
     @Override
     public void hide() {
-        apCircleList.forEach(apPointCircle -> {
-            apBar.removeActor(apPointCircle);
-            Pools.free(apPointCircle);
-        });
+        for (ApPointCircle circle : apCircleList) {
+            apBar.removeActor(circle);
+            Pools.free(circle);
+        }
         apCircleList.clear();
     }
 

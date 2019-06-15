@@ -15,11 +15,15 @@ public abstract class BehaviorBranch extends BehaviorNode {
     @Override
     public void init(World world, int self) {
         super.init(world, self);
-        children.forEach((it) -> it.init(world, self));
+        for (BehaviorNode child : children) {
+            child.init(world, self);
+        }
     }
 
     @Override
     public void reset() {
-        children.forEach(BehaviorNode::reset);
+        for (BehaviorNode child : children) {
+            child.reset();
+        }
     }
 }

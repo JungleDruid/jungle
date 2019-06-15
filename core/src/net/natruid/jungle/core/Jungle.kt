@@ -12,13 +12,16 @@ import net.natruid.jungle.screens.AbstractScreen
 import net.natruid.jungle.screens.FieldScreen
 import net.natruid.jungle.screens.LoadingScreen
 import net.natruid.jungle.screens.TestScreen
-import net.natruid.jungle.utils.*
+import net.natruid.jungle.utils.Bark
+import net.natruid.jungle.utils.Client
+import net.natruid.jungle.utils.Logger
+import net.natruid.jungle.utils.Sync
 import net.natruid.jungle.views.AbstractView
 import net.natruid.jungle.views.DebugView
 import net.natruid.jungle.views.TestView
 import java.lang.management.ManagementFactory
 
-class Jungle(private val client: Client, debug: Boolean = false) : ApplicationListener, InputProcessor {
+class JungleA(private val client: Client, debug: Boolean = false) : ApplicationListener, InputProcessor {
     val isMouseMoved: Boolean
         get() = mouseMoved
     val isDebug: Boolean
@@ -44,7 +47,7 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
     private val sync = Sync()
 
     init {
-        Sky.jungle = this
+//        Sky.jungle = this
         Companion.debug = Companion.debug || debug
     }
 
@@ -89,7 +92,7 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
         Logger.info("Game initialized.")
         loadingScreen.finish()
 
-        Gdx.input.inputProcessor = this@Jungle
+        Gdx.input.inputProcessor = this@JungleA
 
         Logger.stopWatch("Initialization")
     }
@@ -120,7 +123,7 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
         debugView?.render(delta)
 
         if (!resizing) {
-            val f = if (client.isFocused() || backgroundFPS == 0) targetFPS else backgroundFPS
+            val f = if (client.isFocused || backgroundFPS == 0) targetFPS else backgroundFPS
             if (f > 0 && (f < 60 || !vSync)) {
                 sync.sync(f)
             }
@@ -318,7 +321,7 @@ class Jungle(private val client: Client, debug: Boolean = false) : ApplicationLi
 
     fun focusChanged() {
         if (pauseOnBackground) {
-            if (client.isFocused()) {
+            if (client.isFocused) {
                 resume()
             } else {
                 pause()

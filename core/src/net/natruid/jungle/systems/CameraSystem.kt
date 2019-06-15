@@ -8,7 +8,6 @@ import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector2
 import ktx.math.times
-import net.natruid.jungle.core.Jungle
 import net.natruid.jungle.core.Sky
 import net.natruid.jungle.utils.Point
 import kotlin.math.max

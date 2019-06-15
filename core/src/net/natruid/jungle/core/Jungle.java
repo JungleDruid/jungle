@@ -5,7 +5,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.I18NBundle;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
@@ -23,7 +22,7 @@ import java.lang.management.ManagementFactory;
 
 import static net.natruid.jungle.utils.Utils.safelyDispose;
 
-class JungleA implements ApplicationListener, InputProcessor {
+public class Jungle implements ApplicationListener, InputProcessor {
     private final static int backgroundFPS = 10;
     private final static boolean pauseOnBackground = true;
     private final Client client;
@@ -41,8 +40,8 @@ class JungleA implements ApplicationListener, InputProcessor {
     private boolean paused = false;
     private Sync sync = new Sync();
 
-    public JungleA(Client client, boolean debug) {
-//        Sky.jungle = this;
+    public Jungle(Client client, boolean debug) {
+        Sky.jungle = this;
         this.client = client;
         this.debug = this.debug || debug;
     }
@@ -77,50 +76,42 @@ class JungleA implements ApplicationListener, InputProcessor {
 
         uiViewport = new ScreenViewport();
         loadingScreen = new LoadingScreen();
-        client.init();
-
-        Logger.debug("Game started.");
-
-        loadingScreen.init(5);
 
         Logger.startWatch("Initialization");
         Logger.debug("Initializing...");
 
+        client.init();
         loadingScreen.progress();
 
-        Logger.debug("Loading data...");
         try {
             Marsh.INSTANCE.load();
         } catch (Exception e) {
-            Logger.debug("Data loading failed", e);
+            Logger.error("Data loading failed", e);
         }
         loadingScreen.progress();
 
-        Logger.debug("Loading skin...");
         try {
             VisUI.load(new Bark("assets/ui/jungle.json"));
         } catch (Exception e) {
-            Logger.debug("Skin load failed", e);
+            Logger.error("Skin loading failed.");
         }
         loadingScreen.progress();
 
-        Logger.debug("Loading I18N...");
         try {
             I18NBundle bundle = Marsh.I18N.INSTANCE.get("assets/locale/UI");
             client.setTitle(bundle.get("title"));
         } catch (Exception e) {
-            Logger.debug("I18N bundle loading failed.", e);
+            Logger.error("I18n bundle loading failed.", e);
         }
         loadingScreen.progress();
 
         if (debug) {
-            Logger.debug("Loading DebugView...");
             debugView = new DebugView();
             DebugView.show = true;
         }
         setScreen(new FieldScreen());
         Gdx.graphics.setVSync(vSync);
-        Logger.info("Game initialized");
+        Logger.info("Game initialized.");
         loadingScreen.finish();
 
         Gdx.input.setInputProcessor(this);
@@ -135,7 +126,7 @@ class JungleA implements ApplicationListener, InputProcessor {
             return;
         }
 
-        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         float delta = Gdx.graphics.getDeltaTime();
@@ -149,13 +140,13 @@ class JungleA implements ApplicationListener, InputProcessor {
         time += delta;
 
         if (currentScreen != null) currentScreen.render(delta);
-
-        viewList.forEach((it) -> it.render(delta));
-
+        for (AbstractView view : viewList) {
+            view.render(delta);
+        }
         if (debugView != null) debugView.render(delta);
 
         if (!resizing) {
-            int f = (client.isFocused() || backgroundFPS == 0) ? targetFPS : backgroundFPS;
+            int f = client.isFocused() || backgroundFPS == 0 ? targetFPS : backgroundFPS;
             if (f > 0 && (f < 60 || !vSync)) {
                 sync.sync(f);
             }
@@ -168,18 +159,20 @@ class JungleA implements ApplicationListener, InputProcessor {
     public void dispose() {
         loadingScreen.dispose();
         safelyDispose(currentScreen);
-        viewList.forEach(Utils::safelyDispose);
+        for (AbstractView view : viewList) {
+            Utils.safelyDispose(view);
+        }
         viewList.clear();
         safelyDispose(debugView);
         VisUI.dispose();
     }
 
     private void setScreen(AbstractScreen screen) {
-        safelyDispose(screen);
+        safelyDispose(currentScreen);
+
         currentScreen = screen;
-        if (currentScreen != null) {
-            currentScreen.show();
-        }
+        if (screen == null) return;
+        screen.show();
     }
 
     public void showView(AbstractView view) {
@@ -208,7 +201,9 @@ class JungleA implements ApplicationListener, InputProcessor {
     }
 
     public void destroyAllViews() {
-        viewList.forEach(Utils::safelyDispose);
+        for (AbstractView view : viewList) {
+            Utils.safelyDispose(view);
+        }
         viewList.clear();
     }
 
@@ -217,7 +212,9 @@ class JungleA implements ApplicationListener, InputProcessor {
         paused = true;
         mouseMoved = false;
         if (currentScreen != null) currentScreen.pause();
-        viewList.forEach(AbstractView::pause);
+        for (AbstractView view : viewList) {
+            view.pause();
+        }
         if (debugView != null) debugView.pause();
     }
 
@@ -225,7 +222,9 @@ class JungleA implements ApplicationListener, InputProcessor {
     public void resume() {
         paused = false;
         if (currentScreen != null) currentScreen.resume();
-        viewList.forEach(AbstractView::resume);
+        for (AbstractView view : viewList) {
+            view.resume();
+        }
         if (debugView != null) debugView.resume();
     }
 
@@ -237,7 +236,9 @@ class JungleA implements ApplicationListener, InputProcessor {
     }
 
     public void unfocusAll() {
-        viewList.forEach(Stage::unfocusAll);
+        for (AbstractView view : viewList) {
+            view.unfocusAll();
+        }
     }
 
     @Override
