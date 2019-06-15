@@ -164,13 +164,13 @@ class BehaviorSystem : BaseEntitySystem(Aspect.all(
         var group = unitGroup[targetType]
         if (group == null) {
             group = when (targetType) {
-                UnitTargetType.ANY -> unitManageSystem.getUnits()
+                UnitTargetType.ANY -> unitManageSystem.units
                 UnitTargetType.FRIENDLY -> unitManageSystem.getAllies(combatTurnSystem.faction)
                 UnitTargetType.HOSTILE -> unitManageSystem.getEnemies(combatTurnSystem.faction)
             }
             unitGroup[targetType] = group
         }
-        return group
+        return group!!
     }
 
     fun getSortedUnitList(self: Int, targetType: UnitTargetType, condition: UnitCondition): ArrayList<Int> {

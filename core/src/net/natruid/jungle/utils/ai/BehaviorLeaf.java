@@ -20,7 +20,7 @@ public abstract class BehaviorLeaf extends BehaviorNode {
     protected PathNode[] getFullMoveArea() {
         PathNode[] moveArea = mBehavior.get(getSelf()).fullMoveArea;
         if (moveArea == null) {
-            moveArea = pathfinderSystem.area(mUnit.get(getSelf()).tile, null, true, false);
+            moveArea = pathfinderSystem.area(mUnit.get(getSelf()).tile, true);
             mBehavior.get(getSelf()).fullMoveArea = moveArea;
         }
 
@@ -30,7 +30,7 @@ public abstract class BehaviorLeaf extends BehaviorNode {
     protected PathNode[] getMoveArea() {
         PathNode[] moveArea = mBehavior.get(getSelf()).moveArea;
         if (moveArea == null) {
-            moveArea = pathfinderSystem.area(mUnit.get(getSelf()).tile, unitManageSystem.getMovement(getSelf(), 0), true, false);
+            moveArea = pathfinderSystem.area(mUnit.get(getSelf()).tile, unitManageSystem.getMovement(getSelf(), 0), true);
             mBehavior.get(getSelf()).moveArea = moveArea;
         }
         return moveArea;

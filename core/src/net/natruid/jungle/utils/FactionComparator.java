@@ -6,6 +6,8 @@ import net.natruid.jungle.components.UnitComponent;
 import java.util.Comparator;
 
 public class FactionComparator implements Comparator<Integer> {
+    public static final FactionComparator INSTANCE = new FactionComparator();
+
     private ComponentMapper<UnitComponent> mUnit;
 
     @Override

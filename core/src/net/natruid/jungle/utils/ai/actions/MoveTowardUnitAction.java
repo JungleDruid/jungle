@@ -2,9 +2,10 @@ package net.natruid.jungle.utils.ai.actions;
 
 import net.natruid.jungle.events.UnitMoveEvent;
 import net.natruid.jungle.systems.TileSystem;
-import net.natruid.jungle.utils.types.ExtractPathType;
+import net.natruid.jungle.utils.Logger;
 import net.natruid.jungle.utils.PathNode;
 import net.natruid.jungle.utils.ai.BehaviorAction;
+import net.natruid.jungle.utils.types.ExtractPathType;
 
 import java.util.Deque;
 
@@ -54,7 +55,7 @@ public class MoveTowardUnitAction extends BehaviorAction {
 
     @Override
     public boolean execute() {
-//        Logger.debug(getSelf() + " moving with path size: " + path.size());
+        Logger.debug(getSelf() + " moving with path size: " + path.size());
         {
             UnitMoveEvent it = es.dispatch(UnitMoveEvent.class);
             it.unit = getSelf();

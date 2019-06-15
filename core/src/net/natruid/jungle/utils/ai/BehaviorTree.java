@@ -21,7 +21,8 @@ public class BehaviorTree extends BehaviorBranch {
 
     @Override
     public void reset() {
-        if (getSelf() < 0) {
+        if (getSelf() < 0) return;
+        {
             BehaviorComponent it = mBehavior.get(getSelf());
             it.targets.clear();
             it.moveArea = null;

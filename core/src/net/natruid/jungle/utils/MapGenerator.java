@@ -223,7 +223,7 @@ public class MapGenerator {
 
         float minCost = Float.MAX_VALUE;
         PathNode end = null;
-        PathNode[] area = pathfinderSystem.area(start, null, false, true);
+        PathNode[] area = pathfinderSystem.area(start, Float.NaN, false, true);
         for (PathNode node : area) {
             Point coord = mTile.get(node.tile).coord;
             boolean endX = !vertical && coord.x == (reversed ? 0 : columns - 1);

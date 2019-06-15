@@ -46,6 +46,7 @@ public class AttackAction extends BehaviorAction {
             it.unit = getSelf();
             it.skill = 0;
             it.target = target;
+            assert target >= 0;
             assert path != null;
             it.path = path;
         }
