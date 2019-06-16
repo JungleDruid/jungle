@@ -1,5 +1,6 @@
 package net.natruid.jungle.core;
 
+import net.natruid.jungle.data.Marsh;
 import net.natruid.jungle.utils.Logger;
 
 import java.util.Random;

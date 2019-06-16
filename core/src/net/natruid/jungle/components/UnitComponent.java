@@ -5,13 +5,14 @@ import com.artemis.annotations.EntityId;
 import com.artemis.annotations.PooledWeaver;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ObjectMap;
-import net.natruid.jungle.utils.types.Faction;
+import net.natruid.jungle.utils.skill.Proficiency;
 import net.natruid.jungle.utils.skill.Skill;
+import net.natruid.jungle.utils.types.Faction;
 
 @PooledWeaver
 public class UnitComponent extends Component {
     public final Array<Skill> skills = new Array<>();
-    public final ObjectMap<String, Integer> proficiencies = new ObjectMap<>();
+    public final ObjectMap<Proficiency, Integer> proficiencies = new ObjectMap<>();
     @EntityId
     public int tile = -1;
     public Faction faction = Faction.NONE;

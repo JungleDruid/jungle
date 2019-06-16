@@ -50,7 +50,7 @@ public class FieldScreen extends AbstractScreen {
         world.getSystem(TileSystem.class).create(20, 20, seed);
         UnitManageSystem unitManageSystem = world.getSystem(UnitManageSystem.class);
         int player = unitManageSystem.addUnit(0, 0, Faction.PLAYER);
-        world.getMapper(UnitComponent.class).get(player).proficiencies.put("weapon", 20);
+        world.getMapper(UnitComponent.class).get(player).proficiencies.put(Sky.marsh.getProficiency("weapon"), 20);
         for (int i = 0; i < 6; ) {
             if (unitManageSystem.addUnit(Sky.fate.nextInt(20), Sky.fate.nextInt(20), Faction.ENEMY) >= 0) {
                 i += 1;

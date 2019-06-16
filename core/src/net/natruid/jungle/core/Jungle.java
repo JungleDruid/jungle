@@ -9,6 +9,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.I18NBundle;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.kotcrab.vis.ui.VisUI;
+import net.natruid.jungle.data.Marsh;
 import net.natruid.jungle.screens.AbstractScreen;
 import net.natruid.jungle.screens.FieldScreen;
 import net.natruid.jungle.screens.LoadingScreen;
@@ -73,6 +74,7 @@ public class Jungle implements ApplicationListener, InputProcessor {
     @Override
     public void create() {
         Sky.scout = new Scout();
+        Sky.marsh = new Marsh();
 
         uiViewport = new ScreenViewport();
         loadingScreen = new LoadingScreen();
@@ -84,7 +86,7 @@ public class Jungle implements ApplicationListener, InputProcessor {
         loadingScreen.progress();
 
         try {
-            Marsh.INSTANCE.load();
+            Sky.marsh.load();
         } catch (Exception e) {
             Logger.error("Data loading failed", e);
         }
@@ -98,7 +100,7 @@ public class Jungle implements ApplicationListener, InputProcessor {
         loadingScreen.progress();
 
         try {
-            I18NBundle bundle = Marsh.I18N.INSTANCE.get("assets/locale/UI");
+            I18NBundle bundle = Sky.marsh.locale.get("assets/locale/UI");
             client.setTitle(bundle.get("title"));
         } catch (Exception e) {
             Logger.error("I18n bundle loading failed.", e);

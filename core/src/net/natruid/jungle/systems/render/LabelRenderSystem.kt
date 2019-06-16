@@ -6,7 +6,7 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.utils.Align
 import net.natruid.jungle.components.LabelComponent
 import net.natruid.jungle.components.render.PivotComponent
-import net.natruid.jungle.core.Marsh
+import net.natruid.jungle.core.Sky
 
 class LabelRenderSystem : RenderSystem(
     Aspect.all(LabelComponent::class.java)
@@ -20,7 +20,7 @@ class LabelRenderSystem : RenderSystem(
         val label = mLabel[entityId]
         val pivot = mPivot.getSafe(entityId, PivotComponent.DEFAULT)
 
-        val font = Marsh.Fonts[label.fontName]
+        val font = Sky.marsh.font[label.fontName]
         val hAlign = when {
             label.align == Align.top -> Align.center
             label.align == Align.bottom -> Align.center

@@ -15,8 +15,9 @@ import net.mostlyoriginal.api.event.common.Subscribe;
 import net.natruid.jungle.components.*;
 import net.natruid.jungle.components.render.PosComponent;
 import net.natruid.jungle.components.render.RenderComponent;
-import net.natruid.jungle.core.Marsh;
 import net.natruid.jungle.core.Sky;
+import net.natruid.jungle.data.Marsh;
+import net.natruid.jungle.data.StatDef;
 import net.natruid.jungle.events.UnitHealthChangedEvent;
 import net.natruid.jungle.events.UnitMoveEvent;
 import net.natruid.jungle.events.UnitSkillEvent;
@@ -102,7 +103,7 @@ public class UnitManageSystem extends SortedIteratingSystem implements InputProc
             UnitComponent it = mUnit.create(entityId);
             it.tile = tile;
             it.faction = faction;
-            Skill attack = Marsh.INSTANCE.getSkills().get("attack");
+            Skill attack = Sky.marsh.getSkill("attack");
             assert attack != null;
             it.skills.add(attack);
             if (faction == PLAYER)
@@ -340,7 +341,7 @@ public class UnitManageSystem extends SortedIteratingSystem implements InputProc
     public float getModdedValue(int unit, ModdedValue moddedValue) {
         float value = moddedValue.base;
         if (moddedValue.proficiency != null) {
-            Integer proLevel = mUnit.get(unit).proficiencies.get(moddedValue.proficiency, 0);
+            Integer proLevel = mUnit.get(unit).proficiencies.get(Sky.marsh.getProficiency(moddedValue.proficiency), 0);
             value += proLevel * moddedValue.magnitude;
         }
         return value;
@@ -398,7 +399,6 @@ public class UnitManageSystem extends SortedIteratingSystem implements InputProc
 
         int[] stats = cStats.values;
         int[] attributes = cAttr.modified;
-        Marsh.StatDef[] statDefs = Marsh.INSTANCE.getStatDefs();
 
         // calculate modified attributes
         if (cAttr.dirty) {
@@ -407,11 +407,13 @@ public class UnitManageSystem extends SortedIteratingSystem implements InputProc
             cAttr.dirty = false;
         }
 
+        Marsh marsh = Sky.marsh;
+
         // calculate base stats
         for (int i = 0; i < stats.length; i++) {
-            Marsh.StatDef def = statDefs[i];
-            int value = def.getBase() + def.getLevel() * cUnit.level;
-            AttributeModifier[] attributeDefs = def.getAttributes();
+            StatDef def = marsh.getStatDef(i);
+            int value = def.base + def.level * cUnit.level;
+            AttributeModifier[] attributeDefs = def.attributes;
             if (attributeDefs != null) {
                 for (AttributeModifier it : attributeDefs) {
                     int attr = attributes[it.type.ordinal()] - 10;
