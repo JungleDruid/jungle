@@ -10,7 +10,6 @@ import net.natruid.jungle.utils.RendererHelper;
 import net.natruid.jungle.views.DebugView;
 
 import java.util.Comparator;
-import java.util.Optional;
 
 public class RenderBatchSystem extends BaseSystem {
     public final RendererHelper renderer = new RendererHelper();
@@ -119,8 +118,8 @@ public class RenderBatchSystem extends BaseSystem {
             if (result != 0) return result;
 
             result = Float.compare(
-                Optional.ofNullable(j0.agent.getZOverride()).orElse(mRender.get(p0).z),
-                Optional.ofNullable(j1.agent.getZOverride()).orElse(mRender.get(p1).z)
+                Float.isNaN(j0.agent.zOverride) ? mRender.get(p0).z : j0.agent.zOverride,
+                Float.isNaN(j1.agent.zOverride) ? mRender.get(p1).z : j0.agent.zOverride
             );
             if (result != 0) return result;
 
