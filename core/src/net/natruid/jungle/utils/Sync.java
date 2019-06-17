@@ -123,7 +123,7 @@ public class Sync {
             Thread timerAccuracyThread = new Thread(() -> {
                 try {
                     Thread.sleep(Long.MAX_VALUE);
-                } catch (Exception e) {
+                } catch (Exception ignored) {
                 }
             });
 
@@ -166,8 +166,8 @@ public class Sync {
 
         public long avg() {
             long sum = 0;
-            for (int i = 0; i < this.slots.length; i++) {
-                sum += this.slots[i];
+            for (long slot : this.slots) {
+                sum += slot;
             }
             return sum / this.slots.length;
         }

@@ -7,8 +7,8 @@ import net.natruid.jungle.components.StatsComponent
 import net.natruid.jungle.components.TurnComponent
 import net.natruid.jungle.components.UnitComponent
 import net.natruid.jungle.utils.Constants
-import net.natruid.jungle.utils.types.Faction
 import net.natruid.jungle.utils.Logger
+import net.natruid.jungle.utils.types.Faction
 
 class CombatTurnSystem : BaseEntitySystem(Aspect.all(TurnComponent::class.java)) {
     private enum class Phase { NONE, START, READY, NEXT_TURN }
@@ -58,7 +58,7 @@ class CombatTurnSystem : BaseEntitySystem(Aspect.all(TurnComponent::class.java))
                 phase = Phase.READY
             }
             Phase.READY -> {
-                if (entityIds.isEmpty && behaviorSystem.ready && flowControlSystem.ready) {
+                if (entityIds.isEmpty && behaviorSystem.isReady && flowControlSystem.ready) {
                     phase = Phase.NEXT_TURN
                 }
             }
