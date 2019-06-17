@@ -106,7 +106,7 @@ public class BehaviorSystem extends BaseEntitySystem {
                     phase = Phase.STOPPING;
                 } else {
                     for (Integer unit : getUnitGroup(UnitTargetType.ANY)) {
-                        threatSystem.checkAlert(unit, -1);
+                        threatSystem.checkAlert(unit);
                     }
                     filterAgents();
                     phase = Phase.CHECKING;

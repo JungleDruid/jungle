@@ -588,7 +588,7 @@ public class UnitManageSystem extends SortedIteratingSystem implements InputProc
                 if (unit >= 0) {
                     UnitStatsQuickview view = viewManageSystem.show(UnitStatsQuickview.class);
                     pos.set(mPos.get(unit).xy.x + 32f, mPos.get(unit).xy.y, 0f);
-                    cameraSystem.getCamera().project(pos);
+                    cameraSystem.camera.project(pos);
                     UnitComponent cUnit = mUnit.get(unit);
                     {
                         VisWindow it = view.window;

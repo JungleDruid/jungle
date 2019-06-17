@@ -67,7 +67,7 @@ public class FieldScreen extends AbstractScreen {
     @Override
     public void show() {
         super.show();
-        OrthographicCamera camera = world.getSystem(CameraSystem.class).getCamera();
+        OrthographicCamera camera = world.getSystem(CameraSystem.class).camera;
         camera.translate(400, 300);
         camera.update();
     }

@@ -45,7 +45,7 @@ public abstract class RenderSystem extends BaseEntitySystem {
     }
 
     protected OrthographicCamera getCamera() {
-        return mUI.has(current) ? cameraSystem.getUiCamera() : cameraSystem.getCamera();
+        return mUI.has(current) ? cameraSystem.uiCamera : cameraSystem.camera;
     }
 
     private void renderBegin() {
@@ -78,7 +78,7 @@ public abstract class RenderSystem extends BaseEntitySystem {
         Vector2 xy = mPos.getSafe(entityId, PosComponent.DEFAULT).xy;
         position.set(xy.x + offsetX, xy.y + offsetY, 0f);
         if (mUI.has(entityId)) {
-            cameraSystem.getCamera().project(position);
+            cameraSystem.camera.project(position);
         }
         return position;
     }
