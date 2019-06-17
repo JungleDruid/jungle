@@ -115,7 +115,7 @@ public class BehaviorSystem extends BaseEntitySystem {
             case CHECKING:
                 phase = Phase.PLANNING;
                 currentThread = new Thread(() -> {
-                    while (!flowControlSystem.getReady() || unitManageSystem.isBusy(performingUnit)) {
+                    while (!flowControlSystem.isReady() || unitManageSystem.isBusy(performingUnit)) {
                         try {
                             Thread.sleep(10);
                         } catch (InterruptedException ignored) {

@@ -57,7 +57,7 @@ public class Marsh {
         FileHandle dir = Sky.scout.locate(path, useZip);
 
         if (!dir.isDirectory()) {
-            throw new RuntimeException("$path is not a directory.");
+            throw new RuntimeException(path + " is not a directory.");
         }
 
         for (FileHandle f : dir.list()) {
@@ -72,7 +72,7 @@ public class Marsh {
     private void readJson(Json json, FileHandle file) {
         JsonValue root = new JsonReader().parse(file);
         if (!root.isObject()) {
-            throw new RuntimeException("${file.path()} is not a json object.");
+            throw new RuntimeException(file.path() + " is not a json object.");
         }
 
         for (JsonValue j : root) {
