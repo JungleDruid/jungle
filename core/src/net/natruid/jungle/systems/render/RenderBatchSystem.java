@@ -131,44 +131,50 @@ public class RenderBatchSystem extends BaseSystem {
             result = Integer.compare(j0.agent.hashCode(), j1.agent.hashCode());
             if (result != 0) return result;
 
-            int i0, i1;
-            try {
-                i0 = mTexture.get(p0).getRegion().getTexture().hashCode();
-            } catch (NullPointerException ignore) {
-                i0 = 0;
+            int i0 = 0, i1 = 0;
+            {
+                TextureComponent textureComponent = mTexture.get(p0);
+                if (textureComponent != null) {
+                    i0 = textureComponent.getRegion().getTexture().hashCode();
+                }
             }
-            try {
-                i1 = mTexture.get(p1).getRegion().getTexture().hashCode();
-            } catch (NullPointerException ignore) {
-                i1 = 0;
-            }
-
-            result = Integer.compare(i0, i1);
-            if (result != 0) return result;
-
-            try {
-                i0 = mShader.get(p0).hashCode();
-            } catch (NullPointerException ignore) {
-                i0 = 0;
-            }
-            try {
-                i1 = mShader.get(p1).hashCode();
-            } catch (NullPointerException ignore) {
-                i1 = 0;
+            {
+                TextureComponent textureComponent = mTexture.get(p1);
+                if (textureComponent != null) {
+                    i1 = textureComponent.getRegion().getTexture().hashCode();
+                }
             }
 
             result = Integer.compare(i0, i1);
             if (result != 0) return result;
 
-            try {
-                i0 = mCrop.get(p0).rect.hashCode();
-            } catch (NullPointerException ignore) {
-                i0 = 0;
+            {
+                ShaderComponent shaderComponent = mShader.get(p0);
+                if (shaderComponent != null) {
+                    i0 = shaderComponent.hashCode();
+                }
             }
-            try {
-                i1 = mCrop.get(p1).rect.hashCode();
-            } catch (NullPointerException ignore) {
-                i1 = 0;
+            {
+                ShaderComponent shaderComponent = mShader.get(p1);
+                if (shaderComponent != null) {
+                    i1 = shaderComponent.hashCode();
+                }
+            }
+
+            result = Integer.compare(i0, i1);
+            if (result != 0) return result;
+
+            {
+                CropComponent cropComponent = mCrop.get(p0);
+                if (cropComponent != null) {
+                    i0 = cropComponent.rect.hashCode();
+                }
+            }
+            {
+                CropComponent cropComponent = mCrop.get(p1);
+                if (cropComponent != null) {
+                    i1 = cropComponent.rect.hashCode();
+                }
             }
 
             result = Integer.compare(i0, i1);
