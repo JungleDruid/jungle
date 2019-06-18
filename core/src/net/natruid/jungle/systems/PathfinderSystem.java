@@ -12,7 +12,6 @@ import net.natruid.jungle.utils.PathNode;
 import net.natruid.jungle.utils.Point;
 import net.natruid.jungle.utils.types.ExtractPathType;
 import net.natruid.jungle.utils.types.TerrainType;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -164,7 +163,7 @@ public class PathfinderSystem extends BaseSystem {
             visited.put(from, node);
         }
 
-        private boolean searchNeighbors(@NotNull PathNode current, boolean diagonal, float maxCost, int goal, boolean buildingRoad) {
+        private boolean searchNeighbors(PathNode current, boolean diagonal, float maxCost, int goal, boolean buildingRoad) {
             if (!diagonal) {
                 walkables.clear();
                 walkableDiagonals.clear();
