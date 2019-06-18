@@ -65,8 +65,8 @@ public class IndicateSystem extends BaseSystem {
             mRender.create(indicator).z = Constants.Z_PATH_INDICATOR;
             mPos.create(indicator).set(mPos.get(tile).xy);
             RectComponent rect = mRect.create(indicator);
-            rect.width = TileSystem.tileSize;
-            rect.height = TileSystem.tileSize;
+            rect.width = TileSystem.TILE_SIZE;
+            rect.height = TileSystem.TILE_SIZE;
             rect.color.set(MOVE_AREA_COLOR);
             {
                 IndicatorComponent it = mIndicator.create(indicator);
@@ -144,8 +144,8 @@ public class IndicateSystem extends BaseSystem {
                 }
                 {
                     RectComponent it = mRect.create(indicator);
-                    it.width = TileSystem.tileSize;
-                    it.height = TileSystem.tileSize;
+                    it.width = TileSystem.TILE_SIZE;
+                    it.height = TileSystem.TILE_SIZE;
                     it.color.set(MOVE_AREA_COLOR);
                 }
                 {
