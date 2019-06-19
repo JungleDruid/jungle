@@ -25,8 +25,9 @@ public final class Scout {
         assert jarFile != null;
         String jarPath = jarFile.getPath().replace('\\', '/');
         String workPath = System.getProperty("user.dir").replace('\\', '/');
-        Logger.info("Working dir: " + workPath);
-        Logger.info("Jar file: " + jarFile);
+        Logger log = Sky.log;
+        log.info("Working dir: " + workPath);
+        log.info("Jar file: " + jarFile);
         if (Gdx.files.internal(workPath + "/assets").exists()) {
             assetPath = workPath + "/";
         } else {
@@ -43,7 +44,7 @@ public final class Scout {
         zipPath = Gdx.files.internal(zip).exists() ? zip : "";
         FileHandle asset = Gdx.files.internal(assetPath + "assets");
         hasAssetDir = asset.exists() && asset.isDirectory();
-        Logger.info(String.format("Assets path: %s", hasAssetDir ? asset.path() : zipPath));
+        log.info(String.format("Assets path: %s", hasAssetDir ? asset.path() : zipPath));
     }
 
     public FileHandle locate(String path) {

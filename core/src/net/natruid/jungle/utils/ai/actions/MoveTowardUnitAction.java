@@ -1,8 +1,8 @@
 package net.natruid.jungle.utils.ai.actions;
 
+import net.natruid.jungle.core.Sky;
 import net.natruid.jungle.events.UnitMoveEvent;
 import net.natruid.jungle.systems.TileSystem;
-import net.natruid.jungle.utils.Logger;
 import net.natruid.jungle.utils.PathNode;
 import net.natruid.jungle.utils.ai.BehaviorAction;
 import net.natruid.jungle.utils.types.ExtractPathType;
@@ -37,11 +37,11 @@ public class MoveTowardUnitAction extends BehaviorAction {
             maxMovement
         );
         if (path == null || path.isEmpty()) {
-//            Logger.debug(getSelf() + " cannot find path");
+//            Sky.log.debug(getSelf() + " cannot find path");
             return null;
         }
         if (path.getLast().tile == mUnit.get(getSelf()).tile) {
-//            Logger.debug(getSelf() + " is already at the destination");
+//            Sky.log.debug(getSelf() + " is already at the destination");
             return null;
         }
         float newDist = tileSystem.getDistance(mUnit.get(target).tile, path.getLast().tile);
@@ -55,7 +55,7 @@ public class MoveTowardUnitAction extends BehaviorAction {
 
     @Override
     public boolean execute() {
-        Logger.debug(getSelf() + " moving with path size: " + path.size());
+        Sky.log.debug(getSelf() + " moving with path size: " + path.size());
         {
             UnitMoveEvent it = es.dispatch(UnitMoveEvent.class);
             it.unit = getSelf();

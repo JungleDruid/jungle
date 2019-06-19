@@ -11,8 +11,8 @@ import net.natruid.jungle.components.IndicatorComponent;
 import net.natruid.jungle.components.IndicatorOwnerComponent;
 import net.natruid.jungle.components.LabelComponent;
 import net.natruid.jungle.components.render.*;
+import net.natruid.jungle.core.Sky;
 import net.natruid.jungle.utils.Constants;
-import net.natruid.jungle.utils.Logger;
 import net.natruid.jungle.utils.PathNode;
 import net.natruid.jungle.utils.types.IndicatorType;
 
@@ -101,7 +101,7 @@ public class IndicateSystem extends BaseSystem {
             if (indicator != null) {
                 for (int it : indicator) {
                     if (!mIndicator.has(it)) {
-                        Logger.warn("Entity " + it + " doesn't have indicator component.");
+                        Sky.log.warn("Entity " + it + " doesn't have indicator component.");
                         Bag<Component> bag = new Bag<>();
                         world.getComponentManager().getComponentsFor(it, bag);
                         boolean first = true;

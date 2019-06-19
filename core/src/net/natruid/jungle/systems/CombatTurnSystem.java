@@ -9,8 +9,8 @@ import com.badlogic.gdx.utils.Array;
 import net.natruid.jungle.components.StatsComponent;
 import net.natruid.jungle.components.TurnComponent;
 import net.natruid.jungle.components.UnitComponent;
+import net.natruid.jungle.core.Sky;
 import net.natruid.jungle.utils.Constants;
-import net.natruid.jungle.utils.Logger;
 import net.natruid.jungle.utils.types.Faction;
 
 public class CombatTurnSystem extends BaseEntitySystem {
@@ -85,7 +85,7 @@ public class CombatTurnSystem extends BaseEntitySystem {
                 }
 
                 Faction nextFaction = factionList.get(currentFactionIndex);
-                Logger.debug("Turn ended. Next faction:" + nextFaction);
+                Sky.log.debug("Turn ended. Next faction:" + nextFaction);
                 giveTurn(nextFaction);
                 behaviorSystem.prepare();
                 phase = Phase.READY;

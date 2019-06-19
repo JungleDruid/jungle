@@ -6,7 +6,6 @@ import com.artemis.utils.Bag;
 import com.badlogic.gdx.utils.Pool;
 import net.natruid.jungle.components.render.*;
 import net.natruid.jungle.core.Sky;
-import net.natruid.jungle.utils.Logger;
 import net.natruid.jungle.utils.RendererHelper;
 import net.natruid.jungle.views.DebugView;
 
@@ -44,7 +43,7 @@ public class RenderBatchSystem extends BaseSystem {
             try {
                 sortedJobs.sort(comparator);
             } catch (IllegalArgumentException e) {
-                Logger.error("RenderBatchSystem sorting error.", e);
+                Sky.log.error("RenderBatchSystem sorting error.", e);
             }
             needSorting = false;
         }

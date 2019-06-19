@@ -59,7 +59,7 @@ public class MapGenerator {
     }
 
     public int[][] init() {
-        Logger.debug("Map seed: " + seed);
+        Sky.log.debug("Map seed: " + seed);
         map = new int[columns][rows];
         for (int x = 0; x < columns; x++) {
             for (int y = 0; y < rows; y++) {
@@ -296,7 +296,7 @@ public class MapGenerator {
     }
 
     public int[][] generate() {
-        Logger.startWatch("Map Generation");
+        Sky.log.startWatch("Map Generation");
         if (!initialized) init();
         for (int i = 0; i < random.nextInt(5) + 5; i++) {
             createArea(TerrainType.fromValue(random.nextInt(2) + 1), Math.min(columns, rows) / 3);
@@ -320,7 +320,7 @@ public class MapGenerator {
             vertical = !vertical;
         }
         clean();
-        Logger.stopWatch("Map Generation");
+        Sky.log.stopWatch("Map Generation");
         return map;
     }
 }

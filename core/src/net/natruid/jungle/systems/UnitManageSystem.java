@@ -312,7 +312,7 @@ public class UnitManageSystem extends SortedIteratingSystem implements InputProc
 
     private void useSkill(int unit, Skill skill, int target) {
         if (hasAp(unit, skill.cost)) {
-            Logger.debug("Unit " + unit + " used skill " + skill.name + " on " + target);
+            Sky.log.debug("Unit " + unit + " used skill " + skill.name + " on " + target);
             {
                 AnimationComponent it = mAnimation.create(unit);
                 it.target = target;
@@ -348,7 +348,7 @@ public class UnitManageSystem extends SortedIteratingSystem implements InputProc
     }
 
     private void damage(int unit, int target, int amount) {
-        Logger.debug(String.format("%d deals %d damage to %d", unit, amount, target));
+        Sky.log.debug(String.format("%d deals %d damage to %d", unit, amount, target));
         boolean killed = false;
         {
             UnitComponent it = mUnit.get(target);
@@ -368,7 +368,7 @@ public class UnitManageSystem extends SortedIteratingSystem implements InputProc
     }
 
     private void kill(int unit, int target) {
-        Logger.debug(unit + " kills " + target);
+        Sky.log.debug(unit + " kills " + target);
         UnitComponent cUnit = mUnit.get(target);
         Faction faction = cUnit.faction;
         boolean last = countFactionUnits(faction) <= 1;

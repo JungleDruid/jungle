@@ -73,14 +73,17 @@ public class Jungle implements ApplicationListener, InputProcessor {
 
     @Override
     public void create() {
+        Sky.log = new Logger();
         Sky.scout = new Scout();
         Sky.marsh = new Marsh();
+
+        Logger log = Sky.log;
 
         uiViewport = new ScreenViewport();
         loadingScreen = new LoadingScreen();
 
-        Logger.startWatch("Initialization");
-        Logger.debug("Initializing...");
+        log.startWatch("Initialization");
+        log.debug("Initializing...");
 
         client.init();
         loadingScreen.progress();
@@ -88,14 +91,14 @@ public class Jungle implements ApplicationListener, InputProcessor {
         try {
             Sky.marsh.load();
         } catch (Exception e) {
-            Logger.error("Data loading failed", e);
+            log.error("Data loading failed", e);
         }
         loadingScreen.progress();
 
         try {
             VisUI.load(new Bark("assets/ui/jungle.json"));
         } catch (Exception e) {
-            Logger.error("Skin loading failed.");
+            log.error("Skin loading failed.");
         }
         loadingScreen.progress();
 
@@ -103,7 +106,7 @@ public class Jungle implements ApplicationListener, InputProcessor {
             I18NBundle bundle = Sky.marsh.locale.get("assets/locale/UI");
             client.setTitle(bundle.get("title"));
         } catch (Exception e) {
-            Logger.error("I18n bundle loading failed.", e);
+            log.error("I18n bundle loading failed.", e);
         }
         loadingScreen.progress();
 
@@ -113,12 +116,12 @@ public class Jungle implements ApplicationListener, InputProcessor {
         }
         setScreen(new FieldScreen());
         Gdx.graphics.setVSync(vSync);
-        Logger.info("Game initialized.");
+        log.info("Game initialized.");
         loadingScreen.finish();
 
         Gdx.input.setInputProcessor(this);
 
-        Logger.stopWatch("Initialization");
+        log.stopWatch("Initialization");
     }
 
     @Override
