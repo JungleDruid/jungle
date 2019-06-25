@@ -1,10 +1,11 @@
 package net.natruid.jungle.utils.ai.conditions;
 
+import com.badlogic.gdx.utils.IntArray;
 import net.natruid.jungle.systems.TileSystem;
-import net.natruid.jungle.utils.types.UnitCondition;
-import net.natruid.jungle.utils.types.UnitTargetType;
 import net.natruid.jungle.utils.ai.BehaviorCondition;
 import net.natruid.jungle.utils.skill.Skill;
+import net.natruid.jungle.utils.types.UnitCondition;
+import net.natruid.jungle.utils.types.UnitTargetType;
 
 import java.util.ArrayList;
 
@@ -44,7 +45,12 @@ public class HasUnitInAttackRangeCondition extends BehaviorCondition {
         targets.removeIf((it) ->
             mUnit.get(it) == null || tileSystem.getDistance(mUnit.get(getSelf()).tile, mUnit.get(it).tile) > maxDistance);
         targets.removeIf((it) -> unitManageSystem.getMoveAndActPath(getSelf(), it, 2, 1f) == null);
-        if (saveResult) mBehavior.get(getSelf()).targets.addAll(targets);
+        if (saveResult) {
+            IntArray it = mBehavior.get(getSelf()).targets;
+            for (int target : targets) {
+                it.add(target);
+            }
+        }
         return !targets.isEmpty();
     }
 }

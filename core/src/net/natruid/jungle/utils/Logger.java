@@ -1,11 +1,10 @@
 package net.natruid.jungle.utils;
 
 import com.badlogic.gdx.Application;
+import com.badlogic.gdx.utils.ObjectMap;
 import net.natruid.jungle.core.Sky;
 
 import java.time.LocalTime;
-import java.util.HashMap;
-import java.util.Map;
 
 public final class Logger {
     public static final String ANSI_RESET = "\u001B[0m";
@@ -15,7 +14,7 @@ public final class Logger {
 
     public int logLevel = Sky.jungle.isDebug() ? Application.LOG_DEBUG : Application.LOG_INFO;
 
-    private final Map<String, Long> stopWatchMap = new HashMap<>();
+    private final ObjectMap<String, Long> stopWatchMap = new ObjectMap<>();
 
     public void debug(String message, Throwable exception) {
         output(Application.LOG_DEBUG, exception, "DEBUG", ANSI_RESET, message);

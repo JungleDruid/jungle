@@ -1,9 +1,9 @@
 package net.natruid.jungle.utils;
 
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.utils.ObjectMap;
 
 import java.lang.reflect.Array;
-import java.util.HashMap;
 
 public final class Shader {
     private static final String DEFAULT_NAME = "default";
@@ -11,19 +11,23 @@ public final class Shader {
     private static boolean resetting = false;
     private static int index = 0;
     @SuppressWarnings("unchecked")
-    private static final HashMap<Pair<String, String>, ExposedShaderProgram>[] shaderProgramsArray
-        = (HashMap<Pair<String, String>, ExposedShaderProgram>[]) Array.newInstance(HashMap.class, 2);
+    private static final ObjectMap<Pair<String, String>, ExposedShaderProgram>[] shaderProgramsArray
+        = (ObjectMap<Pair<String, String>, ExposedShaderProgram>[]) Array.newInstance(ObjectMap.class, 2);
 
     static {
         for (int i = 0; i < shaderProgramsArray.length; i++) {
-            shaderProgramsArray[i] = new HashMap<>();
+            shaderProgramsArray[i] = new ObjectMap<>();
         }
     }
 
     public static final Shader DEFAULT = new Shader();
 
     public static ShaderProgram getDefaultShaderProgram() {
-        return shaderProgramsArray[index].computeIfAbsent(defaultPair, k -> new ExposedShaderProgram(defaultPair));
+        ExposedShaderProgram program = shaderProgramsArray[index].get(defaultPair);
+        if (program == null) {
+            shaderProgramsArray[index].put(defaultPair, new ExposedShaderProgram(defaultPair));
+        }
+        return program;
     }
 
     private static void resetGlobal() {
@@ -35,7 +39,7 @@ public final class Shader {
     private static void restore() {
         if (!resetting) return;
         resetting = false;
-        HashMap<Pair<String, String>, ExposedShaderProgram> map = shaderProgramsArray[1 - index];
+        ObjectMap<Pair<String, String>, ExposedShaderProgram> map = shaderProgramsArray[1 - index];
         for (ExposedShaderProgram program : map.values()) {
             try {
                 program.dispose();
@@ -69,14 +73,16 @@ public final class Shader {
     }
 
     private void initSource() {
-        HashMap<Pair<String, String>, ExposedShaderProgram> map = shaderProgramsArray[index];
-        source = map.computeIfAbsent(pair, k -> {
-            ExposedShaderProgram p = createShaderProgram();
+        ObjectMap<Pair<String, String>, ExposedShaderProgram> map = shaderProgramsArray[index];
+        ExposedShaderProgram program = map.get(pair);
+        if (program == null) {
+            program = createShaderProgram();
             if (source != null && source.pair == pair) {
-                p.copy(source);
+                program.copy(source);
             }
-            return p;
-        });
+            map.put(pair, program);
+        }
+        source = program;
     }
 
     public ShaderProgram getProgram() {

@@ -4,17 +4,16 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.BufferUtils;
+import com.badlogic.gdx.utils.ObjectMap;
 import net.natruid.jungle.core.Sky;
 import net.natruid.jungle.utils.types.ShaderUniformType;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.HashMap;
-import java.util.Map;
 
 public final class ExposedShaderProgram extends ShaderProgram {
-    private static final HashMap<Pair<String, String>, HashMap<Integer, ShaderUniformType>> uniformTypeMap
-        = new HashMap<>();
+    private static final ObjectMap<Pair<String, String>, ObjectMap<Integer, ShaderUniformType>> uniformTypeMap
+        = new ObjectMap<>();
 
     public final Pair<String, String> pair;
     private int program = 0;
@@ -52,12 +51,12 @@ public final class ExposedShaderProgram extends ShaderProgram {
 
     public void copy(ExposedShaderProgram other) {
         assert this.pair == other.pair;
-        final HashMap<Integer, ShaderUniformType> map = uniformTypeMap.get(pair);
+        final ObjectMap<Integer, ShaderUniformType> map = uniformTypeMap.get(pair);
         if (map == null) return;
         final GL20 gl = Gdx.gl;
-        for (Map.Entry<Integer, ShaderUniformType> kv : map.entrySet()) {
-            final Integer location = kv.getKey();
-            final ShaderUniformType type = kv.getValue();
+        for (ObjectMap.Entry<Integer, ShaderUniformType> kv : map.entries()) {
+            final Integer location = kv.key;
+            final ShaderUniformType type = kv.value;
             if (type.value == 0) continue;
             if (type.value < 9) {
                 floatBuffer.clear();
@@ -110,7 +109,10 @@ public final class ExposedShaderProgram extends ShaderProgram {
     }
 
     private void setType(int location, ShaderUniformType type) {
-        HashMap<Integer, ShaderUniformType> map = uniformTypeMap.computeIfAbsent(pair, k -> new HashMap<>());
+        ObjectMap<Integer, ShaderUniformType> map = uniformTypeMap.get(pair);
+        if (map == null) {
+            map = new ObjectMap<>();
+        }
         map.put(location, type);
     }
 

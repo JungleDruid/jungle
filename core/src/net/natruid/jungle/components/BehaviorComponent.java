@@ -2,17 +2,16 @@ package net.natruid.jungle.components;
 
 import com.artemis.Component;
 import com.artemis.annotations.PooledWeaver;
+import com.badlogic.gdx.utils.IntArray;
+import com.badlogic.gdx.utils.ObjectMap;
 import net.natruid.jungle.utils.PathNode;
 import net.natruid.jungle.utils.ai.BehaviorAction;
 import net.natruid.jungle.utils.ai.BehaviorTree;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
 @PooledWeaver
 public class BehaviorComponent extends Component {
-    public final ArrayList<Integer> targets = new ArrayList<>();
-    public final HashMap<Integer, Float> threatMap = new HashMap<>();
+    public final IntArray targets = new IntArray();
+    public final ObjectMap<Integer, Float> threatMap = new ObjectMap<>();
     public BehaviorTree tree = null;
     public PathNode[] moveArea = null;
     public PathNode[] fullMoveArea = null;

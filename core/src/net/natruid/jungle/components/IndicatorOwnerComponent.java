@@ -2,15 +2,14 @@ package net.natruid.jungle.components;
 
 import com.artemis.Component;
 import com.artemis.annotations.PooledWeaver;
+import com.badlogic.gdx.utils.ObjectMap;
 import net.natruid.jungle.utils.PathNode;
 import net.natruid.jungle.utils.types.IndicatorType;
 
-import java.util.HashMap;
-
 @PooledWeaver
 public class IndicatorOwnerComponent extends Component {
-    public final HashMap<IndicatorType, PathNode[]> resultMap = new HashMap<>();
-    public final HashMap<IndicatorType, int[]> indicatorMap = new HashMap<>();
+    public final ObjectMap<IndicatorType, PathNode[]> resultMap = new ObjectMap<>();
+    public final ObjectMap<IndicatorType, int[]> indicatorMap = new ObjectMap<>();
 
     protected void reset() {
         resultMap.clear();

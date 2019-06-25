@@ -1,12 +1,12 @@
 package net.natruid.jungle.utils.ai.actions;
 
 import com.artemis.annotations.EntityId;
+import com.badlogic.gdx.utils.IntArray;
 import net.natruid.jungle.events.UnitSkillEvent;
 import net.natruid.jungle.utils.PathNode;
 import net.natruid.jungle.utils.ai.BehaviorAction;
 import net.natruid.jungle.utils.skill.Skill;
 
-import java.util.ArrayList;
 import java.util.Deque;
 
 public class AttackAction extends BehaviorAction {
@@ -17,11 +17,12 @@ public class AttackAction extends BehaviorAction {
     @Override
     public Float evaluate() {
         Skill skill = mUnit.get(getSelf()).skills.get(0);
-        ArrayList<Integer> targets = mBehavior.get(getSelf()).targets;
+        IntArray targets = mBehavior.get(getSelf()).targets;
         if (targets.isEmpty()) return null;
         int bestTarget = -1;
         float bestScore = Float.NaN;
-        for (int target : targets) {
+        for (int i = 0; i < targets.size; i++) {
+            int target = targets.get(i);
             float damage = 10f;
             boolean kill = mUnit.get(target).hp < damage;
             float score = behaviorSystem.getScore(kill ? "kill" : "damage", skill.cost, damage);

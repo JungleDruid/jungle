@@ -1,19 +1,18 @@
 package net.natruid.jungle.utils.ai;
 
 import com.artemis.ComponentMapper;
+import com.badlogic.gdx.utils.IntArray;
 import net.natruid.jungle.components.UnitComponent;
 import net.natruid.jungle.systems.PathfinderSystem;
 import net.natruid.jungle.systems.UnitManageSystem;
 import net.natruid.jungle.utils.PathNode;
-
-import java.util.ArrayList;
 
 public abstract class BehaviorLeaf extends BehaviorNode {
     protected PathfinderSystem pathfinderSystem;
     protected UnitManageSystem unitManageSystem;
     protected ComponentMapper<UnitComponent> mUnit;
 
-    protected ArrayList<Integer> getTargets() {
+    protected IntArray getTargets() {
         return mBehavior.get(getSelf()).targets;
     }
 

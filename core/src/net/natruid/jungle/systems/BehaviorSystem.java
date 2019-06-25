@@ -6,6 +6,7 @@ import com.artemis.ComponentMapper;
 import com.artemis.annotations.EntityId;
 import com.artemis.utils.IntBag;
 import com.badlogic.gdx.utils.IntArray;
+import com.badlogic.gdx.utils.ObjectMap;
 import net.natruid.jungle.components.BehaviorComponent;
 import net.natruid.jungle.components.TurnComponent;
 import net.natruid.jungle.components.UnitComponent;
@@ -26,7 +27,7 @@ public class BehaviorSystem extends BaseEntitySystem {
             put("damage", 100f);
         }
     };
-    private final HashMap<UnitTargetType, List<Integer>> unitGroup = new HashMap<>();
+    private final ObjectMap<UnitTargetType, List<Integer>> unitGroup = new ObjectMap<>();
     private final IntArray idleAgents = new IntArray();
     private final IntArray activeAgents = new IntArray();
 
@@ -90,7 +91,7 @@ public class BehaviorSystem extends BaseEntitySystem {
         for (int i = 0; i < entityIds.size(); i++) {
             int unit = data[i];
             if (mUnit.get(unit).faction != combatTurnSystem.getFaction()) continue;
-            if (mBehavior.get(unit).threatMap.size() == 0) {
+            if (mBehavior.get(unit).threatMap.size == 0) {
                 idleAgents.add(unit);
             } else {
                 activeAgents.add(unit);
