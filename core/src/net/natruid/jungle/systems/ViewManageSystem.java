@@ -1,13 +1,13 @@
 package net.natruid.jungle.systems;
 
-import com.artemis.BaseSystem;
 import com.badlogic.gdx.utils.ObjectMap;
+import net.mostlyoriginal.api.system.core.PassiveSystem;
 import net.natruid.jungle.core.Sky;
 import net.natruid.jungle.utils.Utils;
 import net.natruid.jungle.views.AbstractView;
 
 @SuppressWarnings("unchecked")
-public class ViewManageSystem extends BaseSystem {
+public class ViewManageSystem extends PassiveSystem {
     private ObjectMap<Class<? extends AbstractView>, AbstractView> viewMap = new ObjectMap<>();
 
     public <T extends AbstractView> T show(Class<T> type) {
@@ -54,9 +54,5 @@ public class ViewManageSystem extends BaseSystem {
             Utils.safelyDispose(view);
         }
         viewMap.clear();
-    }
-
-    @Override
-    protected void processSystem() {
     }
 }

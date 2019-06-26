@@ -1,11 +1,11 @@
 package net.natruid.jungle.systems;
 
 import com.artemis.Aspect;
-import com.artemis.BaseEntitySystem;
 import com.artemis.ComponentMapper;
 import net.natruid.jungle.components.render.ActingComponent;
+import net.natruid.jungle.systems.abstracts.PassiveEntitySystem;
 
-public class FlowControlSystem extends BaseEntitySystem {
+public class FlowControlSystem extends PassiveEntitySystem {
 
     private ComponentMapper<ActingComponent> mActing;
 
@@ -27,9 +27,5 @@ public class FlowControlSystem extends BaseEntitySystem {
         if (actingComponent.actions == 0) {
             mActing.remove(entityId);
         }
-    }
-
-    @Override
-    protected void processSystem() {
     }
 }

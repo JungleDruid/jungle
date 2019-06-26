@@ -1,7 +1,6 @@
 package net.natruid.jungle.systems.render;
 
 import com.artemis.Aspect;
-import com.artemis.BaseEntitySystem;
 import com.artemis.ComponentMapper;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -11,10 +10,11 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import net.natruid.jungle.components.render.*;
 import net.natruid.jungle.systems.CameraSystem;
+import net.natruid.jungle.systems.abstracts.PassiveEntitySystem;
 import net.natruid.jungle.utils.RendererHelper;
 import net.natruid.jungle.utils.types.RendererType;
 
-public abstract class RenderSystem extends BaseEntitySystem {
+public abstract class RenderSystem extends PassiveEntitySystem {
     final float zOverride;
     private final RendererType rendererType;
     private final Vector3 position = new Vector3();
@@ -102,8 +102,4 @@ public abstract class RenderSystem extends BaseEntitySystem {
     }
 
     public abstract void render(int entityId);
-
-    @Override
-    protected void processSystem() {
-    }
 }

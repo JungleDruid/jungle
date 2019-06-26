@@ -1,12 +1,12 @@
 package net.natruid.jungle.systems;
 
-import com.artemis.BaseSystem;
 import com.artemis.ComponentMapper;
 import com.artemis.utils.IntDeque;
 import com.badlogic.gdx.utils.BinaryHeap;
 import com.badlogic.gdx.utils.BooleanArray;
 import com.badlogic.gdx.utils.IntMap;
 import com.badlogic.gdx.utils.Pool;
+import net.mostlyoriginal.api.system.core.PassiveSystem;
 import net.natruid.jungle.components.TileComponent;
 import net.natruid.jungle.utils.PathNode;
 import net.natruid.jungle.utils.Point;
@@ -18,7 +18,7 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.LinkedList;
 
-public class PathfinderSystem extends BaseSystem {
+public class PathfinderSystem extends PassiveSystem {
     private ComponentMapper<TileComponent> mTile;
     private TileSystem tileSystem;
     private final Pool<Pathfinder> pool = new Pool<Pathfinder>(8) {
@@ -131,10 +131,6 @@ public class PathfinderSystem extends BaseSystem {
             current = current.prev;
         }
         return path;
-    }
-
-    @Override
-    protected void processSystem() {
     }
 
     private class Pathfinder {

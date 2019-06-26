@@ -1,15 +1,15 @@
 package net.natruid.jungle.systems;
 
 import com.artemis.Aspect;
-import com.artemis.BaseEntitySystem;
 import com.artemis.ComponentMapper;
 import com.artemis.utils.IntBag;
 import net.natruid.jungle.components.AttributesComponent;
 import net.natruid.jungle.components.BehaviorComponent;
 import net.natruid.jungle.components.UnitComponent;
+import net.natruid.jungle.systems.abstracts.PassiveEntitySystem;
 import net.natruid.jungle.utils.types.AttributeType;
 
-public class ThreatSystem extends BaseEntitySystem {
+public class ThreatSystem extends PassiveEntitySystem {
     private ComponentMapper<BehaviorComponent> mBehavior;
     private ComponentMapper<UnitComponent> mUnit;
     private ComponentMapper<AttributesComponent> mAttributes;
@@ -39,9 +39,5 @@ public class ThreatSystem extends BaseEntitySystem {
                 mBehavior.get(u).threatMap.put(u, 1f);
             }
         }
-    }
-
-    @Override
-    protected void processSystem() {
     }
 }

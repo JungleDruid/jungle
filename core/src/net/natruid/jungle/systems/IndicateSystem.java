@@ -1,12 +1,12 @@
 package net.natruid.jungle.systems;
 
-import com.artemis.BaseSystem;
 import com.artemis.Component;
 import com.artemis.ComponentMapper;
 import com.artemis.utils.Bag;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.IntArray;
+import net.mostlyoriginal.api.system.core.PassiveSystem;
 import net.natruid.jungle.components.IndicatorComponent;
 import net.natruid.jungle.components.IndicatorOwnerComponent;
 import net.natruid.jungle.components.LabelComponent;
@@ -19,7 +19,7 @@ import net.natruid.jungle.utils.types.IndicatorType;
 import java.text.DecimalFormat;
 import java.util.Deque;
 
-public class IndicateSystem extends BaseSystem {
+public class IndicateSystem extends PassiveSystem {
     private static final DecimalFormat FORMATTER = new DecimalFormat("#.#");
     private static final Color MOVE_AREA_COLOR = new Color(0, 1, 1, .4f);
     private final IntArray entityArrayBuilder = new IntArray();
@@ -179,9 +179,5 @@ public class IndicateSystem extends BaseSystem {
             }
         }
         cOwner.indicatorMap.remove(indicatorType);
-    }
-
-    @Override
-    protected void processSystem() {
     }
 }
